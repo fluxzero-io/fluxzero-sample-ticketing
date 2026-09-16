@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -58,9 +59,13 @@ class RuntimeRecoveryTest extends TicketingTestSupport {
                 .givenCommandsByUser(PAYMENTS, success())
                 .givenCommandsByUser(BOB, seats(pendingReservation, "B1"))
                 .whenCommandByUser(BILLING, new DraftInvoice(I, R)).expectSuccessfulResult().expectNoErrors()
-                .expectThat(f -> assertTrue(f.messageScheduler()
-                        .getSchedule(ScheduleId.of("expire-reservation", pendingReservation)).isPresent(),
-                        "The pending reservation deadline must be stored before shutdown"));
+                .expectThat(f -> {
+                    // Tracked reconciliation completes after the initiating Model commit.
+                    await().pollInSameThread().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
+                            assertTrue(f.messageScheduler().getSchedule(
+                                    ScheduleId.of("expire-reservation", pendingReservation)).isPresent(),
+                                    "The pending reservation deadline must be stored before shutdown"));
+                });
         TestFixture.shutDownActiveFixtures();
 
         var readerClient = WebSocketClient.newInstance(WebSocketClient.ClientConfig.builder()

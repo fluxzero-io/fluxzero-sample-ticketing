@@ -13,7 +13,7 @@ import lombok.With;
 @Model
 @With
 public record RefundAttempt(@EntityId RefundAttemptId refundAttemptId,
-                            @Parent(pathInParent = "refundAttempts", deleteOnParentDeletion = false) PaymentId paymentId,
+                            @Parent(pathInParent = "refundAttempts") PaymentId paymentId,
                             ProviderAccount account, Money amount, String operationKey, Instant requestedAt,
                             String externalId, @Alias(prefix = "provider-refund:") String externalReference,
                             Status status, String failureCode) {

@@ -12,7 +12,7 @@ import lombok.With;
 @Model
 @With
 public record Ticket(@EntityId TicketId ticketId,
-                     @Parent(pathInParent = "tickets", deleteOnParentDeletion = false) ReservationId reservationId,
+                     @Parent(pathInParent = "tickets") ReservationId reservationId,
                      PerformanceId performanceId, String customerId, Admission admission, TicketStatus status) {
 
 }

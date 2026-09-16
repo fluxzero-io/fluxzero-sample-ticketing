@@ -16,9 +16,9 @@ public class ReservationDeadlines {
     @HandleEvent
     void reconcile(Graph<Reservation> changed) {
         Reservation current = changed.current().get();
-        if (current == null) return;
-        ScheduleId id = ScheduleId.of("expire-reservation", current.reservationId());
-        if (current.status() == HELD) {
+        ScheduleId id = ScheduleId.of("expire-reservation",
+                current == null ? changed.functionalId() : current.reservationId());
+        if (current != null && current.status() == HELD) {
             Fluxzero.scheduleCommand(new ExpireReservation(current.reservationId()), id, current.expiresAt());
         } else {
             Fluxzero.cancelSchedule(id);

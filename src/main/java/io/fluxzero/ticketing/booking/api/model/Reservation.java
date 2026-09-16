@@ -15,7 +15,7 @@ import lombok.With;
 @Model
 @With
 public record Reservation(@EntityId ReservationId reservationId,
-                          @Parent(pathInParent = "reservations", deleteOnParentDeletion = false) PerformanceId performanceId,
+                          @Parent(pathInParent = "reservations") PerformanceId performanceId,
                           String customerId, List<Admission> admissions, Money total,
                           Instant createdAt, Instant expiresAt, ReservationStatus status, PaymentId paidBy) {
 

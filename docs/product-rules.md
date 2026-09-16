@@ -70,6 +70,15 @@ issuance are independent facts, so either may happen first.
 These are illustrative commercial documents. Tax calculation, legal numbering, seller/buyer
 billing details, delivery and jurisdiction-specific requirements are not implemented.
 
+## Parent deletion
+
+Owned models follow their parent on logical deletion, while their event-sourced history is
+retained. This also applies to payments and billing records: retaining history does not mean
+they must remain current after their owning reservation is deleted. Physical erasure is a
+separate, explicitly selected operation that may remove those Model histories. It does not
+erase the global event log or perform a refund. See [deletion semantics](model.md#deletion-history-and-cancellation).
+The current product exposes cancellation and financial correction, without deletion endpoints.
+
 ## Example journeys
 
 | Scenario | Commands | Observable outcome |

@@ -16,10 +16,9 @@ erDiagram
 ```
 
 Every box is an independent Fluxzero `@Model` with typed identity and event-sourced
-history. Every drawn edge is a child-side `@Parent` relation with an explicit composition
-path and `deleteOnParentDeletion = false`. The graph expresses business relationships;
-it does not give one model permission to erase another's retained history. There are
-no delete commands.
+history. Every drawn edge is an owning child-side `@Parent` relation with an explicit
+composition path and the default cascade policy. Independent identity and history do not
+require a child to remain active after its parent is deleted.
 
 | Model | Identity and purpose | Lifecycle |
 | --- | --- | --- |
@@ -31,7 +30,7 @@ no delete commands.
 | Ticket | `TicketId`, reservation, explicit performance, customer and admission | Issued only on accepted payment; valid → void |
 | Payment | `PaymentId`, reservation, expected and actual amounts | Pending → failed or captured; captured → refund required → refunded |
 | Invoice | `InvoiceId`, reservation and paying attempt, frozen lines and total | Draft → issued or void; issued → credited |
-| CreditNote | `CreditNoteId`, original invoice, full amount and reason | Issued correction retained independently |
+| CreditNote | `CreditNoteId`, original invoice, full amount and reason | Issued correction with its own retained history |
 | ProviderPayment | `ProviderPaymentId` derived from `PaymentId`, provider/account/environment and durable operation key | Prepared before external I/O, then bound to an external object |
 | RefundAttempt | `RefundAttemptId`, payment, full captured amount, account and operation key | Requested → pending/requires action → succeeded, failed or cancelled |
 | LumaImport | Calendar/event-derived `LumaImportId`, performance and source snapshot | Retained import provenance; identical reimport is a no-op |
@@ -40,6 +39,42 @@ no delete commands.
 already runs through the reservation, so an extra parent edge would duplicate the same
 placement. `Invoice.paymentId` identifies the paying attempt without making that attempt
 own the invoice.
+
+## Deletion, history and cancellation
+
+Logical deletion makes the current Model empty and recursively does the same for its owned
+children in one atomic commit. Their event-sourced history remains available, including the
+last financial facts through `previous()`. For example, deleting a venue also logically
+deletes its halls, performances and their reservation, ticket, payment, billing and adapter
+records. Deleting a reservation reaches its tickets, payments, invoices, credit notes,
+provider bindings and refund attempts. Cascade follows descendants, not parents or siblings.
+
+A performance has two owning parents: its programme and its hall. Deleting **either** logically
+deletes that performance and its descendants. Deleting a hall does not delete the programme
+or performances hosted in other halls. The Luma source mapping belongs to its performance.
+Plain references such as `Ticket.performanceId` and `Invoice.paymentId` add no deletion edge.
+`deleteOnParentDeletion = false` would be appropriate for a relation whose child must remain
+an active, independently addressable record after that parent disappears; none of these
+ownership edges needs that exception merely to preserve history.
+
+Physical deletion deliberately erases selected Model streams, documents, snapshots and cache
+state. The SDK treats descendant erasure separately: inspect `planDeletion(id, DESCENDANTS)`
+and execute that exact plan with `deleteModel(plan)`. Globally published events remain outside
+this Model-stream erasure boundary, so this is not a claim that all copies or all audit events
+disappear.
+
+Qualification currently exposes an SDK defect in erasure **after** logical cascade: the build
+from SDK commit `cad64c70973` selects a reservation and its direct children but misses nested
+credit notes, provider bindings and refund attempts. Direct hard deletion of the current tree
+passes. `ModelDeletionTest` keeps both cases explicit and rejects an incomplete plan; later
+hard erasure after logical cascade is not qualified until that SDK defect is fixed.
+
+Cancellation is a business transition: `CancelReservation` and `CancelPerformance` keep
+current records, void tickets and record refund obligations. Invoice crediting and completed
+repayment remain separate actions. Neither logical nor physical deletion executes a refund.
+There are no production deletion commands or erasure endpoints in this phase; fixture-only
+commands exercise the declared lifecycle and history behavior. A future deletion action must
+first handle any outstanding commercial work rather than use deletion as cancellation.
 
 ## Selection identity
 
@@ -81,8 +116,10 @@ remain intact: crediting is a separate billing decision and creates a credit not
 
 `ReservationDeadlines` reconciles current committed intent. It installs the stable deadline
 for a held reservation and removes it on terminal state. Old event redelivery therefore
-does not recreate a timer for a completed purchase. Availability and payment rules check
-time themselves, so delayed timer delivery never extends a hold.
+does not recreate a timer for a completed or logically deleted purchase. Cascade notifications
+reach the same handler, which cancels the existing stable schedule. An already delivered
+command treats a missing reservation as a no-op. Availability and payment rules check time
+themselves, so delayed timer delivery never extends a hold.
 
 
 ## Integration transactions

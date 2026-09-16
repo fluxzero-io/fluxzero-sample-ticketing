@@ -16,7 +16,7 @@ import lombok.With;
 @Model
 @With
 public record Invoice(@EntityId InvoiceId invoiceId,
-                      @Parent(pathInParent = "invoices", deleteOnParentDeletion = false) ReservationId reservationId,
+                      @Parent(pathInParent = "invoices") ReservationId reservationId,
                       PaymentId paymentId, String customerId, List<Admission> lines, Money total,
                       InvoiceStatus status, Instant issuedAt) {
     public Invoice { lines = List.copyOf(lines); }

@@ -37,6 +37,7 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 | `LumaIntegrationTest` | Current API contract, scoped calendar, safe mapping, validated direct acceptance, atomic rollback and idempotent import |
 | `IntegrationRecoveryTest` | Fresh client recovers adapter intent and imported source, then completes a pending refund without another POST |
 | `PackageMigrationTest` | Historical names for messages, nested values and invoice state, plus synthetic payment-history reconstruction |
+| `ModelDeletionTest` | Owning-parent cascade, preserved values after logical deletion, reservation deadline cleanup and explicit erasure of selected Model histories |
 | `RuntimeRecoveryTest` | New WebSocket client and application load models and a pending deadline written to the managed runtime by the previous application, without reseeding |
 
 The race test delays transport to the real SDK store; it does not implement substitute
@@ -46,7 +47,8 @@ the runtime, since an external scheduler cannot be advanced with fixture time.
 Recovery covers an application/client restart while the separate development runtime remains
 alive. These retained-runtime fixtures explicitly use the SDK's `UuidFactory`: a fresh fixture's
 default predictable counter would otherwise reuse message and commit IDs already retained by
-the runtime. The deadline scenario checks that its schedule exists before closing the writer.
+the runtime. The deadline scenario waits for tracked reconciliation to store its schedule
+before closing the writer; completion of the initiating Model commit alone is not that boundary.
 Recovery does not claim persistence across a runtime/database/process restart. The default
 local development runtime is ephemeral. Production durability and deployment qualification
 belong to deployment work.
@@ -65,6 +67,11 @@ instead of retrying. The concurrency tests require the intended retry behavior a
 SDK limitation; they do not suppress unexpected command failures. Adopt the corrected SDK
 release before treating these scenarios as qualified. Explicit `RETRY` annotations have been
 removed as agreed; this package refactor does not reintroduce an override.
+
+The parent-deletion scenarios also expose a separate SDK issue on the qualification build from
+commit `cad64c70973`: a hard-deletion plan made after logical cascade omits nested descendants.
+The two corresponding `ModelDeletionTest` cases intentionally remain failing. Soft cascade and
+direct hard deletion pass; see [deletion semantics](model.md#deletion-history-and-cancellation).
 
 A reservation contains at most 12 admissions. Availability and reservation validation read
 the performance's retained reservations; cost therefore grows with that performance's booking

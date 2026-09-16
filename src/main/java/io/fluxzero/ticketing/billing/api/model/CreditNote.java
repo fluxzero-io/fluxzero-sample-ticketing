@@ -13,7 +13,7 @@ import lombok.With;
 @Model
 @With
 public record CreditNote(@EntityId CreditNoteId creditNoteId,
-                         @Parent(pathInParent = "credits", deleteOnParentDeletion = false) InvoiceId invoiceId,
+                         @Parent(pathInParent = "credits") InvoiceId invoiceId,
                          Money total, String reason, Instant issuedAt) {
 
 }

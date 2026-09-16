@@ -11,7 +11,7 @@ import lombok.With;
 @Model
 @With
 public record Hall(@EntityId HallId hallId,
-                   @Parent(pathInParent = "halls", deleteOnParentDeletion = false) VenueId venueId,
+                   @Parent(pathInParent = "halls") VenueId venueId,
                    HallDetails details) {
 
 }

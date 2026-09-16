@@ -12,8 +12,8 @@ import lombok.With;
 @Model
 @With
 public record Performance(@EntityId PerformanceId performanceId,
-                          @Parent(pathInParent = "performances", deleteOnParentDeletion = false) EventId eventId,
-                          @Parent(pathInParent = "performances", deleteOnParentDeletion = false) HallId hallId,
+                          @Parent(pathInParent = "performances") EventId eventId,
+                          @Parent(pathInParent = "performances") HallId hallId,
                           PerformanceDetails details, HallDetails layout, boolean cancelled) {
 
 }

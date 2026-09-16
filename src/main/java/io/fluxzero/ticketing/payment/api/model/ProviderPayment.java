@@ -13,7 +13,7 @@ import lombok.With;
 @Model
 @With
 public record ProviderPayment(@EntityId ProviderPaymentId providerPaymentId,
-                              @Parent(pathInParent = "providerPayments", deleteOnParentDeletion = false) PaymentId paymentId,
+                              @Parent(pathInParent = "providerPayments") PaymentId paymentId,
                               ProviderAccount account, String operationKey, Instant requestedAt,
                               String externalId, @Alias(prefix = "provider-payment:") String externalReference) {
 

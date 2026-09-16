@@ -13,7 +13,7 @@ import lombok.With;
 @Model
 @With
 public record Payment(@EntityId PaymentId paymentId,
-                      @Parent(pathInParent = "payments", deleteOnParentDeletion = false) ReservationId reservationId,
+                      @Parent(pathInParent = "payments") ReservationId reservationId,
                       Money expected, PaymentStatus status,
                       @Alias(prefix = "capture:") String captureReference, Money captured,
                       Instant capturedAt, String failureReason,
