@@ -10,12 +10,15 @@ erDiagram
     RESERVATION ||--o{ PAYMENT : has_attempts
     RESERVATION ||--o{ INVOICE : bills
     INVOICE ||--o| CREDIT_NOTE : corrects
+    PAYMENT ||--o| PROVIDER_PAYMENT : executes_through
+    PAYMENT ||--o{ REFUND_ATTEMPT : repays_through
+    PERFORMANCE ||--o| LUMA_IMPORT : originates_from
 ```
 
 Every box is an independent Fluxzero `@Model` with typed identity and event-sourced
 history. Every drawn edge is a child-side `@Parent` relation with an explicit composition
 path and `deleteOnParentDeletion = false`. The graph expresses business relationships;
-it does not give one model permission to erase another's retained history. Phase 1 has
+it does not give one model permission to erase another's retained history. There are
 no delete commands.
 
 | Model | Identity and purpose | Lifecycle |
@@ -29,6 +32,9 @@ no delete commands.
 | Payment | `PaymentId`, reservation, expected and actual amounts | Pending → failed or captured; captured → refund required → refunded |
 | Invoice | `InvoiceId`, reservation and paying attempt, frozen lines and total | Draft → issued or void; issued → credited |
 | CreditNote | `CreditNoteId`, original invoice, full amount and reason | Issued correction retained independently |
+| ProviderPayment | `ProviderPaymentId` derived from `PaymentId`, provider/account/environment and durable operation key | Prepared before external I/O, then bound to an external object |
+| RefundAttempt | `RefundAttemptId`, payment, full captured amount, account and operation key | Requested → pending/requires action → succeeded, failed or cancelled |
+| LumaImport | Calendar/event-derived `LumaImportId`, performance and source snapshot | Retained import provenance; identical reimport is a no-op |
 
 `Ticket.performanceId` is an explicit typed reference. Its graph path to the performance
 already runs through the reservation, so an extra parent edge would duplicate the same
@@ -77,3 +83,20 @@ remain intact: crediting is a separate billing decision and creates a credit not
 for a held reservation and removes it on terminal state. Old event redelivery therefore
 does not recreate a timer for a completed purchase. Availability and payment rules check
 time themselves, so delayed timer delivery never extends a hold.
+
+
+## Integration transactions
+
+`PrepareProviderPayment` records the chosen provider account and stable operation key without
+changing `Payment`. One binding belongs to one payment attempt. `PrepareRefund` reads the
+payment's refund-attempt graph under `RETRY`, so competing requests cannot create two
+unresolved attempts. Both preparation commands commit before an adapter sends HTTP.
+
+`ObserveRefund` records the attempt outcome and, on success, applies `ConfirmRefund` in the
+same commit. External calls do not run inside a retrying model decision. Each adapter
+interprets its protocol while reservation, payment and invoice commands retain business
+ownership. See [integration recovery](integrations.md) for uncertain outcomes and late callbacks.
+
+`AcceptLumaImport` creates the programme, performance and source mapping in one transaction.
+Its deterministic source identity prevents duplicate local performances. The existing local
+hall layout and operator-supplied prices define inventory; remote capacity never does.

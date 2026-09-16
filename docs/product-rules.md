@@ -4,7 +4,7 @@
 
 1. A reservation contains 1–12 admissions for **one performance**. A customer either gets
    the entire selection or none of it. Cross-performance baskets and partial fulfilment are
-   outside phase 1.
+   not implemented.
 2. A reserved seat may occur once across active holds and confirmed purchases for that
    performance. General admission counts both against the section capacity. Different
    performances have independent inventory even when they use the same physical seats.
@@ -13,7 +13,7 @@
    hold is no longer valid. Scheduler delays do not extend it.
 4. Reservations expire or cancel as complete groups. Their records remain available.
    A duplicate reservation ID is rejected, rather than treated as a fresh purchase.
-5. Phase 1 deliberately permits full customer cancellation of a held or confirmed purchase,
+5. The example permits full customer cancellation of a held or confirmed purchase,
    including after the scheduled performance time. It voids every ticket and requires a
    full refund of captured funds. Expired reservations remain expired. An organizer can
    cancel a whole performance. Partial cancellation, admission scanning and commercial
@@ -52,7 +52,8 @@ A late failure notification cannot overwrite a capture.
 `ConfirmRefund` records a provider's completed **full** refund of the actual captured amount.
 Marking money as `REFUND_REQUIRED` does not claim that a bank transfer happened. The capture
 reference, amount, timestamp and earlier failure reason remain after refund. Partial refunds,
-chargebacks, multiple currencies and provider reconciliation are later extensions.
+chargebacks and multiple currencies are later extensions. Phase 2 supplies provider
+reconciliation for the supported full-payment/refund flow.
 
 ## Invoicing is a separate lifecycle
 
@@ -82,3 +83,21 @@ billing details, delivery and jurisdiction-specific requirements are not impleme
 
 The tests execute these messages through Fluxzero's command/query gateways and `TestFixture`.
 There is no alternative in-memory implementation of this domain.
+
+
+## External execution examples
+
+- **Checkout response lost:** the provider operation and key already exist locally. Retry the
+  same payment operation within its safe window, or reconcile the known external intent.
+  A technical failure does not assert that no charge happened.
+- **Payment arrives after resale:** verified current provider success records the actual
+  captured money and a full refund obligation. The new reservation keeps the places.
+- **Refund accepted but pending:** payment remains refund-required. A second attempt is
+  blocked until the first definitively fails or is cancelled. Only observed success records
+  repayment; the original capture remains in history.
+- **Delayed refund observation:** a finished attempt does not reopen. Contradictory terminal
+  facts require explicit reconciliation rather than changing history automatically.
+- **Same Luma event imported twice:** stable source identity yields one local programme and
+  performance. Changed source details require an explicit decision before affecting sales.
+
+See [integration commands and protocol rules](integrations.md) for provider setup and recovery.

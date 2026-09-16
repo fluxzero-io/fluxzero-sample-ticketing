@@ -8,6 +8,8 @@
   time-based release, ticket issuance/voiding, payment attempts/capture/refund recording,
   invoice drafting/issuance/voiding and credit notes.
 - Availability and owner-only purchase queries, without HTTP adapters.
+- Provider-independent payment execution records, Stripe checkout/refund/reconciliation and
+  verified callback handling, plus atomic Luma event import with local inventory ownership.
 - Operator, payments and billing permissions plus customer ownership at message boundaries.
   The customer identity is injected from `User`, not accepted as a reservation field.
 
@@ -29,6 +31,11 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 | `BoundaryTest` | Cross-payment capture/refund uniqueness, refund redelivery, blocked direct internal-event dispatch and invalid selections |
 | `ConcurrencyTest` | Simultaneous seat/group requests, competing payment attempts and capture/cancellation |
 | `ExpiryRaceTest` | Deterministically pause an actual SDK commit before expiry, commit a replacement hold through another application, then release and verify retry/refund |
+| `StripeIntegrationTest`, `IntegrationBoundaryTest` | Exact outgoing contract, uncertain outcomes, stable keys, retry-window cutoff, provider/mode isolation, capture after expiry |
+| `RefundConcurrencyTest` | Competing refund preparations commit one unresolved attempt under contention |
+| `StripeRefundTest`, `StripeWebhookTest` | Pending/failed/refunded separation, retained attempts, terminal-state protection, signature verification, duplicate and out-of-order callbacks |
+| `LumaIntegrationTest` | Current API contract, scoped calendar, safe mapping, validated direct acceptance, atomic rollback and idempotent import |
+| `IntegrationRecoveryTest` | Fresh client recovers adapter intent and imported source, then completes a pending refund without another POST |
 | `RuntimeRecoveryTest` | New WebSocket client and application load models and a pending deadline written to the managed runtime by the previous application, without reseeding |
 
 The race test delays transport to the real SDK store; it does not implement substitute
@@ -57,27 +64,14 @@ the atomic group boundary or substitute eventually consistent search for validat
 
 Hall-calendar collision checks, programme rescheduling, waiting rooms, seat-plan editing,
 ticket transfer/resale and admission scanning are not implemented. Existing sold selections
-are never silently moved by catalogue updates; phase 1 exposes no layout-editing command.
+are never silently moved by catalogue updates; there is no layout-editing command.
 
 ## Phase 2: external services
 
-Keep the verified core as the decision maker. Research Stripe's and the chosen event
-platform's current official API versions before implementing an adapter.
-
-Each external interaction gets a specific **local command or query**, with the actual
-HTTP call in its handler through Fluxzero's webrequest API. Examples of intended operations:
-`CreateStripePaymentIntent`, `RequestStripeRefund` and `FetchLumaEvent`. Do not add a generic
-HTTP-client layer, pass-through dependency injection, or extra consumers for local calls.
-
-Provider adapters must correlate with `PaymentId`, verify source/authenticity, normalize
-amounts and references, and feed the existing payment commands. Provider success still does
-not override expiry. Use deterministic provider idempotency keys and preserve normalized
-capture/refund reference namespaces. Refund-required state is durable intent; phase 2 must
-connect it to retryable external execution and reconciliation.
-
-Use Fluxzero fixture-controlled web responses to cover accepted, rejected, delayed, repeated,
-out-of-order and uncertain responses. Event imports map external identity into local `Event`
-and `Performance` identities; changing imported data must respect existing sales.
+Implemented. See [integration setup and recovery](integrations.md) for configuration,
+local command names, supported API contracts and boundaries. Controlled HTTP handlers are
+fixture-only and never replace domain behavior. Live merchant/calendar account qualification
+has not been performed.
 
 ## Phase 3: access and UI
 
@@ -86,4 +80,4 @@ checkout and owner ticket/billing views. Bind the signed-in customer at the serv
 Keep the demonstration-layout notice visible and distinguish a hold from a ticket and a
 refund request from completed repayment. Add routed transport tests for every public action.
 
-No provider calls, frontend, deployment workflow or publication is part of phase 1.
+No frontend, public HTTP routes, deployment workflow or publication is implemented.

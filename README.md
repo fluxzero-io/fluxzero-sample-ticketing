@@ -5,8 +5,9 @@ seat and section availability, tickets, payments and invoicing. Inspired by
 [Product code](https://fluxzero.io/product-code/), with separate lifecycles for admission
 rights and financial facts.
 
-**Phase 1 is implemented.** This repository contains the core domain and behavior tests.
-Stripe, Luma, HTTP endpoints, browser authentication and a frontend are later phases.
+**Phases 1 and 2 are implemented.** The core domain now has Stripe payment/refund adapters
+and safe Luma event import, with controlled external-response tests. Payments remain provider
+independent. HTTP endpoints, browser authentication and a frontend belong to phase 3.
 
 ## Get started
 
@@ -32,17 +33,18 @@ For CI, or explicit verification with the development environment stopped:
 ./mvnw -B verify
 ```
 
-`RuntimeRecoveryTest` additionally connects to the running managed runtime discovered in
-`.fluxzero/dev/session.json`, or to `ticketing.test.runtimeUrl`
-(`TICKETING_TEST_RUNTIMEURL`). It uses an isolated namespace. Without either, only that
-external-runtime test is skipped. The remaining tests use the real SDK through `TestFixture`.
+`RuntimeRecoveryTest` and `IntegrationRecoveryTest` additionally connect to the running
+managed runtime discovered in `.fluxzero/dev/session.json`, or to
+`ticketing.test.runtimeUrl` (`TICKETING_TEST_RUNTIMEURL`). Each uses an isolated namespace. Without either, only those
+external-runtime tests are skipped. The remaining tests use the real SDK through `TestFixture`.
 
 ## Explore the product
 
 - [Model graph and transaction boundaries](docs/model.md)
 - [Product rules and example scenarios](docs/product-rules.md)
 - [Real venue sources and demonstration data](docs/demo-data.md)
-- [Testing, integration seams and next phases](docs/development.md)
+- [Stripe and Luma setup, commands and recovery](docs/integrations.md)
+- [Testing and next phases](docs/development.md)
 
 Start with [`ReserveTickets`](src/main/java/io/fluxzero/ticketing/commands/ReserveTickets.java),
 [`RecordPaymentSuccess`](src/main/java/io/fluxzero/ticketing/commands/RecordPaymentSuccess.java)
@@ -50,4 +52,5 @@ and [`GetAvailability`](src/main/java/io/fluxzero/ticketing/queries/GetAvailabil
 The query exposes stable section and seat identities for a later selection UI; the command
 always checks availability again before committing.
 
-No deployment, payment provider, account credentials or GitHub remote is configured.
+Provider credentials, deployment and a GitHub remote are not configured.
+See [integration setup](docs/integrations.md) before connecting real accounts.
