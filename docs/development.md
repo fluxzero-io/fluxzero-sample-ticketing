@@ -36,6 +36,7 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 | `StripeRefundTest`, `StripeWebhookTest` | Pending/failed/refunded separation, retained attempts, terminal-state protection, signature verification, duplicate and out-of-order callbacks |
 | `LumaIntegrationTest` | Current API contract, scoped calendar, safe mapping, validated direct acceptance, atomic rollback and idempotent import |
 | `IntegrationRecoveryTest` | Fresh client recovers adapter intent and imported source, then completes a pending refund without another POST |
+| `PackageMigrationTest` | Historical names for messages, nested values and invoice state, plus synthetic payment-history reconstruction |
 | `RuntimeRecoveryTest` | New WebSocket client and application load models and a pending deadline written to the managed runtime by the previous application, without reseeding |
 
 The race test delays transport to the real SDK store; it does not implement substitute
@@ -54,6 +55,13 @@ Update conflicts use `RETRY`, including graph membership reads. Routing is an
 optimization, not the uniqueness mechanism. Transactions do not use external search results.
 The performance inventory is derived from reservations, so there is no separately maintained
 availability counter that can drift.
+
+The pinned `2.0.0-rc.14` still applies a separate fail-on-conflict default to Model creation.
+A competing command that creates a reservation, ticket or refund attempt can therefore fail
+instead of retrying. The concurrency tests require the intended retry behavior and report this
+SDK limitation; they do not suppress unexpected command failures. Adopt the corrected SDK
+release before treating these scenarios as qualified. Explicit `RETRY` annotations have been
+removed as agreed; this package refactor does not reintroduce an override.
 
 A reservation contains at most 12 admissions. Availability and reservation validation read
 the performance's retained reservations; cost therefore grows with that performance's booking

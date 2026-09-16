@@ -1,0 +1,13 @@
+package io.fluxzero.ticketing.catalog.api.model;
+
+import io.fluxzero.sdk.modeling.EntityId;
+import io.fluxzero.sdk.modeling.Model;
+import io.fluxzero.ticketing.catalog.api.VenueId;
+import lombok.With;
+
+/** A real venue with sourced descriptive data. */
+@Model
+@With
+public record Venue(@EntityId VenueId venueId, VenueDetails details) {
+
+}

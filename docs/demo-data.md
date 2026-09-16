@@ -1,6 +1,6 @@
 # Demonstration catalogue
 
-[`DemoCatalog.commands(firstPerformance)`](../src/main/java/io/fluxzero/ticketing/DemoCatalog.java)
+[`DemoCatalog.commands(firstPerformance)`](../src/main/java/io/fluxzero/ticketing/catalog/DemoCatalog.java)
 returns ordinary domain commands. It does not bypass validation or write directly to storage.
 The behavior tests submit them as an operator. Startup does not silently seed production data.
 

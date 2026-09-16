@@ -21,7 +21,7 @@ fz dev
 The supported environment manages Java 25, the matching local runtime, application reloads
 and affected tests. Agents use the installed Fluxzero plugin and its `fluxzero-dev` MCP
 connection. There is no UI to open yet. The executable product scenarios are in
-[`TicketingTest`](src/test/java/io/fluxzero/ticketing/TicketingTest.java).
+[`TicketingTest`](src/test/java/io/fluxzero/ticketing/booking/TicketingTest.java).
 
 The Maven BOM pins **`2.0.0-rc.14`**, the latest published 2.0 release candidate verified
 on 16 September 2026. The CLI starter was generated with `fz 1.18.9`; SDK/runtime and
@@ -40,15 +40,16 @@ external-runtime tests are skipped. The remaining tests use the real SDK through
 
 ## Explore the product
 
+- [Domain packages and example tree](docs/packages.md)
 - [Model graph and transaction boundaries](docs/model.md)
 - [Product rules and example scenarios](docs/product-rules.md)
 - [Real venue sources and demonstration data](docs/demo-data.md)
 - [Stripe and Luma setup, commands and recovery](docs/integrations.md)
 - [Testing and next phases](docs/development.md)
 
-Start with [`ReserveTickets`](src/main/java/io/fluxzero/ticketing/commands/ReserveTickets.java),
-[`RecordPaymentSuccess`](src/main/java/io/fluxzero/ticketing/commands/RecordPaymentSuccess.java)
-and [`GetAvailability`](src/main/java/io/fluxzero/ticketing/queries/GetAvailability.java).
+Start with [`ReserveTickets`](src/main/java/io/fluxzero/ticketing/booking/api/ReserveTickets.java),
+[`RecordPaymentSuccess`](src/main/java/io/fluxzero/ticketing/payment/api/RecordPaymentSuccess.java)
+and [`GetAvailability`](src/main/java/io/fluxzero/ticketing/booking/api/GetAvailability.java).
 The query exposes stable section and seat identities for a later selection UI; the command
 always checks availability again before committing.
 

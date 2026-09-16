@@ -1,0 +1,18 @@
+package io.fluxzero.ticketing.booking.api.model;
+
+import io.fluxzero.sdk.modeling.EntityId;
+import io.fluxzero.sdk.modeling.Model;
+import io.fluxzero.sdk.modeling.Parent;
+import io.fluxzero.ticketing.booking.api.ReservationId;
+import io.fluxzero.ticketing.booking.api.TicketId;
+import io.fluxzero.ticketing.catalog.api.PerformanceId;
+import lombok.With;
+
+/** One issued admission; voiding preserves its original performance, selection and owner. */
+@Model
+@With
+public record Ticket(@EntityId TicketId ticketId,
+                     @Parent(pathInParent = "tickets", deleteOnParentDeletion = false) ReservationId reservationId,
+                     PerformanceId performanceId, String customerId, Admission admission, TicketStatus status) {
+
+}

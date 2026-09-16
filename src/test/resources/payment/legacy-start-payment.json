@@ -1,0 +1,5 @@
+{
+  "@class": "io.fluxzero.ticketing.commands.StartPayment",
+  "paymentId": "attempt-1",
+  "reservationId": "alice-order"
+}

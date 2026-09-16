@@ -16,3 +16,7 @@ Use the plugin as the single documentation source; do not add repository-local F
 - Preserve financial history and atomic group selection. Test both synchronous and asynchronous message handling.
 - Phase 2 external calls use specific local commands/queries and Fluxzero webrequest handlers.
 - Do not publish or deploy without an explicit request. Use Conventional Commits; omit test output from commit messages.
+
+## Package structure
+
+Follow [the domain package layout](docs/packages.md): messages and typed IDs in each domain's `api`, Models and values in `api.model`, and separate handlers near their owning domain. Put Stripe under `payment.stripe` and Luma under `catalog.luma`; keep the payment API provider-independent. Preserve the configured historical type aliases and check package paths, source links and tests before committing.

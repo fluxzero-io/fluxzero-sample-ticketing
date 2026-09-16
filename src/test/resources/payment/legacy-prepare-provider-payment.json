@@ -1,0 +1,12 @@
+{
+  "@class": "io.fluxzero.ticketing.integrations.payments.ProviderCommands$PrepareProviderPayment",
+  "providerPaymentId": "attempt-1",
+  "paymentId": "attempt-1",
+  "account": {
+    "@class": "io.fluxzero.ticketing.integrations.payments.ProviderAccount",
+    "provider": "stripe",
+    "account": "acct_fixture",
+    "environment": "test"
+  },
+  "operationKey": "legacy-operation"
+}
