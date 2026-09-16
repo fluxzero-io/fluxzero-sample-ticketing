@@ -2,6 +2,7 @@ package io.fluxzero.ticketing.payment.stripe;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fluxzero.sdk.Fluxzero;
+import io.fluxzero.sdk.common.UuidFactory;
 import io.fluxzero.sdk.configuration.ApplicationProperties;
 import io.fluxzero.sdk.configuration.client.WebSocketClient;
 import io.fluxzero.sdk.test.TestFixture;
@@ -28,7 +29,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-/** Recover adapter intent and source mappings with a fresh application against retained runtime storage. */
+/**
+ * Recover adapter intent and source mappings with a fresh application against retained runtime storage.
+ * Each client uses production IDs: restarting a predictable fixture counter would reuse retained message/commit IDs.
+ */
 class IntegrationRecoveryTest extends StripeTestSupport {
     @Test
     void freshApplicationCompletesAnOutstandingRefundWithoutAnotherPost() throws Exception {
@@ -68,7 +72,8 @@ class IntegrationRecoveryTest extends StripeTestSupport {
                 }).expectNoErrors();
     }
     TestFixture connected(String url, String namespace, RemoteStripe stripe, LumaTestSupport.RemoteLuma luma) {
-        return TestFixture.createAsync(builder(), WebSocketClient.newInstance(WebSocketClient.ClientConfig.builder()
+        return TestFixture.createAsync(builder().replaceIdentityProvider(ignored -> new UuidFactory()),
+                WebSocketClient.newInstance(WebSocketClient.ClientConfig.builder()
                         .runtimeBaseUrl(url).namespace(namespace).name("ticketing-integration-recovery").build()), new ReservationDeadlines(), stripe, luma)
                 .withProperty("ticketing.stripe.secretKey", "sk_test_fixture")
                 .withProperty("ticketing.stripe.accountId", "acct_fixture")

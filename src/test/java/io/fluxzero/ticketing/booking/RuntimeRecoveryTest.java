@@ -2,6 +2,7 @@ package io.fluxzero.ticketing.booking;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fluxzero.sdk.Fluxzero;
+import io.fluxzero.sdk.common.UuidFactory;
 import io.fluxzero.sdk.configuration.ApplicationProperties;
 import io.fluxzero.sdk.configuration.client.WebSocketClient;
 import io.fluxzero.sdk.scheduling.ScheduleId;
@@ -30,7 +31,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-/** Fresh clients read real stored model history from the managed runtime, without reseeding. */
+/**
+ * Fresh clients read real stored model history from the managed runtime, without reseeding.
+ * Each client uses production IDs: restarting a predictable fixture counter would reuse retained message/commit IDs.
+ */
 class RuntimeRecoveryTest extends TicketingTestSupport {
     @Test
     void freshApplicationReconstructsAPurchaseFromRetainedRuntimeStorage() throws Exception {
@@ -46,18 +50,23 @@ class RuntimeRecoveryTest extends TicketingTestSupport {
         String namespace = "ticketing-recovery-" + UUID.randomUUID();
         var writerClient = WebSocketClient.newInstance(WebSocketClient.ClientConfig.builder()
                 .runtimeBaseUrl(runtimeUrl).namespace(namespace).name("ticketing-recovery-writer").build());
-        var writer = TestFixture.createAsync(builder(), writerClient, new ReservationDeadlines()).atFixedTime(runtimeNow);
+        var writer = TestFixture.createAsync(builder().replaceIdentityProvider(ignored -> new UuidFactory()),
+                writerClient, new ReservationDeadlines()).atFixedTime(runtimeNow);
         var pendingReservation = new ReservationId("still-held");
         writer.givenCommandsByUser(OPERATOR, DemoCatalog.commands(runtimeNow.plus(Duration.ofDays(1))).toArray())
                 .givenCommandsByUser(ALICE, seats(R, "A1", "A2"), new StartPayment(P, R))
                 .givenCommandsByUser(PAYMENTS, success())
                 .givenCommandsByUser(BOB, seats(pendingReservation, "B1"))
-                .whenCommandByUser(BILLING, new DraftInvoice(I, R)).expectSuccessfulResult().expectNoErrors();
+                .whenCommandByUser(BILLING, new DraftInvoice(I, R)).expectSuccessfulResult().expectNoErrors()
+                .expectThat(f -> assertTrue(f.messageScheduler()
+                        .getSchedule(ScheduleId.of("expire-reservation", pendingReservation)).isPresent(),
+                        "The pending reservation deadline must be stored before shutdown"));
         TestFixture.shutDownActiveFixtures();
 
         var readerClient = WebSocketClient.newInstance(WebSocketClient.ClientConfig.builder()
                 .runtimeBaseUrl(runtimeUrl).namespace(namespace).name("ticketing-recovery-reader").build());
-        var reader = TestFixture.createAsync(builder(), readerClient, new ReservationDeadlines())
+        var reader = TestFixture.createAsync(builder().replaceIdentityProvider(ignored -> new UuidFactory()),
+                readerClient, new ReservationDeadlines())
                 .atFixedTime(runtimeNow);
         reader.whenQueryByUser(ALICE, new GetReservation(R)).expectResult((Purchase purchase) -> {
             assertEquals(ReservationStatus.CONFIRMED, purchase.reservation().status());

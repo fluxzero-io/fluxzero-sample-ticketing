@@ -44,7 +44,10 @@ booking logic. Time is fixed in local fixtures. The network test uses a clock al
 the runtime, since an external scheduler cannot be advanced with fixture time.
 
 Recovery covers an application/client restart while the separate development runtime remains
-alive. It does not claim persistence across a runtime/database/process restart. The default
+alive. These retained-runtime fixtures explicitly use the SDK's `UuidFactory`: a fresh fixture's
+default predictable counter would otherwise reuse message and commit IDs already retained by
+the runtime. The deadline scenario checks that its schedule exists before closing the writer.
+Recovery does not claim persistence across a runtime/database/process restart. The default
 local development runtime is ephemeral. Production durability and deployment qualification
 belong to deployment work.
 
