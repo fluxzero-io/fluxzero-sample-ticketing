@@ -4,10 +4,9 @@ import io.fluxzero.sdk.modeling.*;
 import io.fluxzero.ticketing.domain.Ids.PaymentId;
 import lombok.With;
 import java.time.Instant;
-import static io.fluxzero.common.api.modeling.ModelConflictPolicy.RETRY;
 
 /** Durable provider binding and create-operation identity; the Payment itself remains provider-independent. */
-@Model(conflictPolicy = RETRY)
+@Model
 @With
 public record ProviderPayment(@EntityId ProviderPaymentId providerPaymentId,
                               @Parent(pathInParent = "providerPayments", deleteOnParentDeletion = false) PaymentId paymentId,

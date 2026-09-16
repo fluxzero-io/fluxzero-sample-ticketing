@@ -5,10 +5,9 @@ import io.fluxzero.ticketing.domain.Ids.PaymentId;
 import io.fluxzero.ticketing.domain.Values.Money;
 import lombok.With;
 import java.time.Instant;
-import static io.fluxzero.common.api.modeling.ModelConflictPolicy.RETRY;
 
 /** One retained attempt to execute the full refund obligation; pending is never reported as refunded. */
-@Model(conflictPolicy = RETRY)
+@Model
 @With
 public record RefundAttempt(@EntityId RefundAttemptId refundAttemptId,
                             @Parent(pathInParent = "refundAttempts", deleteOnParentDeletion = false) PaymentId paymentId,

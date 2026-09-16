@@ -4,10 +4,9 @@ import io.fluxzero.sdk.modeling.*;
 import io.fluxzero.ticketing.domain.Ids.*;
 import io.fluxzero.ticketing.domain.Values.Money;
 import java.util.Map;
-import static io.fluxzero.common.api.modeling.ModelConflictPolicy.RETRY;
 
 /** Retained source-to-performance mapping. Reimport cannot silently rewrite an on-sale occurrence. */
-@Model(conflictPolicy = RETRY)
+@Model
 public record LumaImport(@EntityId LumaImportId lumaImportId,
                          @Parent(pathInParent = "imports", deleteOnParentDeletion = false) PerformanceId performanceId,
                          HallId hallId, LumaEvent source, Map<String, Money> prices) {

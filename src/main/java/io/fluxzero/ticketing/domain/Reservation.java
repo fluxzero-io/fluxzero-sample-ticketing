@@ -4,12 +4,11 @@ import io.fluxzero.sdk.modeling.*;
 import lombok.With;
 import java.time.*;
 import java.util.*;
-import static io.fluxzero.common.api.modeling.ModelConflictPolicy.RETRY;
 import static io.fluxzero.ticketing.domain.Ids.*;
 import static io.fluxzero.ticketing.domain.Values.*;
 
 /** An all-or-nothing admission selection. Closed reservations remain in history. */
-@Model(conflictPolicy = RETRY)
+@Model
 @With
 public record Reservation(@EntityId ReservationId reservationId,
                           @Parent(pathInParent = "reservations", deleteOnParentDeletion = false) PerformanceId performanceId,

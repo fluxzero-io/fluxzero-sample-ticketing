@@ -4,12 +4,11 @@ import io.fluxzero.sdk.modeling.*;
 import lombok.With;
 import java.time.*;
 import java.util.*;
-import static io.fluxzero.common.api.modeling.ModelConflictPolicy.RETRY;
 import static io.fluxzero.ticketing.domain.Ids.*;
 import static io.fluxzero.ticketing.domain.Values.*;
 
 /** An independently retained correction of an issued invoice, without rewriting its amount. */
-@Model(conflictPolicy = RETRY)
+@Model
 @With
 public record CreditNote(@EntityId CreditNoteId creditNoteId,
                          @Parent(pathInParent = "credits", deleteOnParentDeletion = false) InvoiceId invoiceId,

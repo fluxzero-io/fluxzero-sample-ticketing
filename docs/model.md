@@ -60,8 +60,8 @@ own lifecycle. It should not rewrite the layout of an already on-sale performanc
 ## Atomic business decisions
 
 `ReserveTickets` reads `Graph<Performance>` and its reservations, including an empty child
-set. The SDK validates that relationship read and the relevant model heads at commit under
-`RETRY`. A conflicting seat or section request is reevaluated. A rejected group produces no
+set. The SDK validates that relationship read and the relevant model heads at commit using the
+configured conflict policy. A conflicting request cannot commit a stale admission decision. A rejected group produces no
 partial hold and no expiry schedule. No search index or advisory query decides the sale.
 
 `RecordPaymentSuccess` reads payment, reservation and, for a potentially accepted capture,
@@ -89,7 +89,7 @@ time themselves, so delayed timer delivery never extends a hold.
 
 `PrepareProviderPayment` records the chosen provider account and stable operation key without
 changing `Payment`. One binding belongs to one payment attempt. `PrepareRefund` reads the
-payment's refund-attempt graph under `RETRY`, so competing requests cannot create two
+payment's refund-attempt graph with transactional conflict validation, so competing requests cannot create two
 unresolved attempts. Both preparation commands commit before an adapter sends HTTP.
 
 `ObserveRefund` records the attempt outcome and, on success, applies `ConfirmRefund` in the

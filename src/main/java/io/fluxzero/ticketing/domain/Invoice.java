@@ -4,12 +4,11 @@ import io.fluxzero.sdk.modeling.*;
 import lombok.With;
 import java.time.*;
 import java.util.*;
-import static io.fluxzero.common.api.modeling.ModelConflictPolicy.RETRY;
 import static io.fluxzero.ticketing.domain.Ids.*;
 import static io.fluxzero.ticketing.domain.Values.*;
 
 /** A commercial billing document. Issued totals and lines never change. */
-@Model(conflictPolicy = RETRY)
+@Model
 @With
 public record Invoice(@EntityId InvoiceId invoiceId,
                       @Parent(pathInParent = "invoices", deleteOnParentDeletion = false) ReservationId reservationId,

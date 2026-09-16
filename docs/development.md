@@ -49,7 +49,8 @@ belong to deployment work.
 
 ## Capacity and performance boundary
 
-Correctness is protected by `RETRY`, including graph membership reads. Routing is an
+Models use plain `@Model` and the configured SDK defaults (`fluxzero.defaults.version=2026.09.10`).
+Update conflicts use `RETRY`, including graph membership reads. Routing is an
 optimization, not the uniqueness mechanism. Transactions do not use external search results.
 The performance inventory is derived from reservations, so there is no separately maintained
 availability counter that can drift.

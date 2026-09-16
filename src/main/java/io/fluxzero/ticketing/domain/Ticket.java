@@ -4,12 +4,11 @@ import io.fluxzero.sdk.modeling.*;
 import lombok.With;
 import java.time.*;
 import java.util.*;
-import static io.fluxzero.common.api.modeling.ModelConflictPolicy.RETRY;
 import static io.fluxzero.ticketing.domain.Ids.*;
 import static io.fluxzero.ticketing.domain.Values.*;
 
 /** One issued admission; voiding preserves its original performance, selection and owner. */
-@Model(conflictPolicy = RETRY)
+@Model
 @With
 public record Ticket(@EntityId TicketId ticketId,
                      @Parent(pathInParent = "tickets", deleteOnParentDeletion = false) ReservationId reservationId,

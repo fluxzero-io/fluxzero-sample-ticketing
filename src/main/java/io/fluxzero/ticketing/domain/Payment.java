@@ -4,12 +4,11 @@ import io.fluxzero.sdk.modeling.*;
 import lombok.With;
 import java.time.*;
 import java.util.*;
-import static io.fluxzero.common.api.modeling.ModelConflictPolicy.RETRY;
 import static io.fluxzero.ticketing.domain.Ids.*;
 import static io.fluxzero.ticketing.domain.Values.*;
 
 /** A payment attempt with retained capture/refund facts, independently of admission rights. */
-@Model(conflictPolicy = RETRY)
+@Model
 @With
 public record Payment(@EntityId PaymentId paymentId,
                       @Parent(pathInParent = "payments", deleteOnParentDeletion = false) ReservationId reservationId,
