@@ -1,10 +1,11 @@
-package io.fluxzero.ticketing.catalog.luma.api;
+package io.fluxzero.ticketing.catalog.luma.privateapi;
 
 import io.fluxzero.sdk.modeling.AutomaticModelHandling;
 import io.fluxzero.sdk.persisting.eventsourcing.Apply;
 import io.fluxzero.sdk.publishing.LocalOnly;
 import io.fluxzero.ticketing.catalog.api.HallId;
 import io.fluxzero.ticketing.catalog.api.PerformanceId;
+import io.fluxzero.ticketing.catalog.luma.api.*;
 import io.fluxzero.ticketing.catalog.luma.api.model.LumaEvent;
 import io.fluxzero.ticketing.catalog.luma.api.model.LumaImport;
 import io.fluxzero.ticketing.payment.api.model.Money;

@@ -3,11 +3,11 @@
 The root package is `io.fluxzero.ticketing`. Business domains own their messages, identities,
 state and behavior. Commands, queries and typed IDs live in each domain's `api`; Models,
 query results and value objects live in `api.model`. Self-handling commands and queries keep
-their Fluxzero handlers. Outgoing Stripe HTTP messages live in `payment.stripe.request`,
+their Fluxzero handlers. Outgoing HTTP messages live in `payment.stripe.request` and `catalog.luma.request`,
 separate from commands and queries intended for UI or endpoint adapters. They retain local
 Fluxzero dispatch and are not public application actions. Package names alone do not grant
 or enforce endpoint access. Internal workflow events and refund identities live in
-`payment.stripe.privateapi`; retained refund values live in its `model` subpackage. Separate observers and domain rules sit beside the domain's API.
+`payment.stripe.privateapi`; retained refund values live in its `model` subpackage. Internal inventory and accepted domain transitions live in each owning `privateapi`, including Luma import acceptance. Separate observers and domain rules sit beside the domain's API.
 
 | Domain | Responsibility |
 | --- | --- |
@@ -37,17 +37,23 @@ src/main/java/io/fluxzero/ticketing/
 │   │       ├── Performance.java
 │   │       ├── Section.java
 │   │       └── Seat.java
-│   └── luma/api/
-│       ├── ImportLumaEvent.java
-│       ├── FetchLumaEvent.java
-│       ├── LumaImportId.java
-│       └── model/
-│           ├── LumaImport.java
-│           └── LumaEvent.java
+│   ├── privateapi/
+│   │   ├── PerformanceCancelled.java
+│   │   └── SettlePerformanceCancellation.java
+│   └── luma/
+│       ├── api/
+│       │   ├── ImportLumaEvent.java
+│       │   ├── LumaImportId.java
+│       │   └── model/
+│       │       ├── LumaImport.java
+│       │       └── LumaEvent.java
+│       ├── privateapi/AcceptLumaImport.java
+│       └── request/FetchLumaEvent.java
 ├── booking/
 │   ├── ReservationDeadlines.java
 │   ├── ReservationRules.java
 │   ├── InventoryChanges.java
+│   ├── privateapi/ChangeSectionInventory.java
 │   └── api/
 │       ├── ReserveTickets.java
 │       ├── GetAvailability.java
@@ -60,6 +66,7 @@ src/main/java/io/fluxzero/ticketing/
 │           ├── Selection.java
 │           └── Availability.java
 ├── payment/
+│   ├── privateapi/PaymentCaptured.java
 │   ├── api/
 │   │   ├── StartPayment.java
 │   │   ├── RecordPaymentSuccess.java
@@ -74,6 +81,7 @@ src/main/java/io/fluxzero/ticketing/
 │       ├── StripeRefundProcess.java
 │       ├── StripeRefundEffects.java
 │       ├── api/
+│       │   ├── GetStripeCheckoutStatus.java
 │       │   ├── BeginStripePayment.java
 │       │   ├── BeginStripeRefund.java
 │       │   ├── RetryStripeRefund.java
@@ -84,7 +92,9 @@ src/main/java/io/fluxzero/ticketing/
 │       │   ├── StripeWebhookReceived.java
 │       │   ├── StripeRefundEvents.java
 │       │   ├── StripeRefundId.java
-│       │   └── model/StripeRefund.java
+│       │   └── model/
+│       │       ├── StripeRefund.java
+│       │       └── StripeProblem.java
 │       └── request/
 │           ├── SendToStripe.java
 │           ├── CreateStripeIntent.java

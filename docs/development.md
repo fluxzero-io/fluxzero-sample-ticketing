@@ -27,13 +27,16 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 
 | Test class | Evidence |
 | --- | --- |
+| `PerformanceCancellationTest` | Multiple bounded pages and recovery after losing a continuation publication |
+| `StripeObservationConflictTest` | Durable conflicting-fact reconciliation and provider-free checkout status reads |
+| `LayoutValidationTest` | Input constraints and immutable stored layouts through direct and serialized commands |
 | `TicketingTest` | Core journeys in synchronous and asynchronous fixtures; time boundaries, roles, ownership, invoice history and schedule cleanup |
 | `BoundaryTest` | Cross-payment capture/refund uniqueness, refund redelivery, blocked direct internal-event dispatch and invalid selections |
 | `InventoryTest`, `InventoryScaleTest` | Atomic group rollback, expiry-safe ownership, exact section counts and bounded commit scope with retained history and concurrent load |
 | `CancellationBoundaryTest`, `SeatSelectionTest` | Cancellation before settlement, bounded seat pages, selection visibility and expiry |
 | `StripeReconciliationTest` | Wrong recovery IDs, permanent failure isolation on one tracker and explicit retry with retained keys |
 | `PerformanceCancellationTest` | Immediate sale/capture gate and paged settlement through independent purchase commits |
-| `ConcurrencyTest` | Simultaneous seat/group requests, competing payment attempts and capture/cancellation |
+| `ConcurrencyTest`, `ActiveFinancialRelationsTest` | Simultaneous seat/group requests, competing payment/invoice identities, retained attempt history and capture/cancellation |
 | `ExpiryRaceTest` | Deterministically pause an actual SDK commit before expiry, commit a replacement hold through another application, then release and verify retry/refund |
 | `StripeIntegrationTest`, `StripeProviderValidationTest` | Exact outgoing contract, uncertain outcomes, stable keys, retry-window cutoff, provider/mode isolation, capture after expiry |
 | `StripeRefundIsolationTest` | Old attempts cannot restart or release their replacement; payment notifications cannot resume a paused refund |
@@ -61,7 +64,7 @@ belong to deployment work.
 
 The app uses the configured SDK conflict defaults; it does not add explicit retry overrides.
 Reservation and performance Models additionally maintain public documents for cancellation
-discovery and recovery. Inventory uses current documents so a cold stock load does not replay
+discovery. Cancellation reactions and continuation use durable events. Inventory uses current documents so a cold stock load does not replay
 its allocation history. Financial and reservation history remain event sourced.
 
 The SDK/testserver pin is a local build from `f22aa0df867`. It contains the required fixes for

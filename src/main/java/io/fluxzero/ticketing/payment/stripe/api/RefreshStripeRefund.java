@@ -6,7 +6,6 @@ import io.fluxzero.sdk.publishing.LocalOnly;
 import io.fluxzero.sdk.tracking.handling.HandleCommand;
 import io.fluxzero.sdk.tracking.handling.authentication.RequiresAnyRole;
 import io.fluxzero.ticketing.common.Checks;
-import io.fluxzero.ticketing.common.web.ExternalResponse;
 import io.fluxzero.ticketing.payment.api.PaymentId;
 import io.fluxzero.ticketing.payment.stripe.StripeProtocol;
 import io.fluxzero.ticketing.payment.stripe.StripeRefundProcess;
@@ -29,7 +28,7 @@ public record RefreshStripeRefund(@NotNull PaymentId paymentId, @NotBlank String
             var response = Fluxzero.queryAndWait(new FetchStripeRefund(target));
             StripeProtocol.validateRefund(response, process);
             Checks.require(target.equals(
-                    ExternalResponse.text(response, "id")), "Recovered refund identity mismatch");
+                    response.id()), "Recovered refund identity mismatch");
         }
         Fluxzero.get().eventGateway().publish(Guarantee.STORED,
                 new StripeRefundEvents.RefundNotification(paymentId, process.refundId(), Fluxzero.generateId(), target)).join();

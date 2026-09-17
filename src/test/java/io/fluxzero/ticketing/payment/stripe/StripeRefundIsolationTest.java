@@ -1,13 +1,11 @@
 package io.fluxzero.ticketing.payment.stripe;
 
 import io.fluxzero.sdk.Fluxzero;
-import io.fluxzero.sdk.test.TestFixture;
-import io.fluxzero.ticketing.booking.api.CancelReservation;
 import io.fluxzero.ticketing.common.web.IntegrationFailure;
 import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
 import io.fluxzero.ticketing.payment.stripe.api.*;
-import io.fluxzero.ticketing.payment.stripe.privateapi.StripeRefundId;
 import io.fluxzero.ticketing.payment.stripe.privateapi.StripeRefundEvents.*;
+import io.fluxzero.ticketing.payment.stripe.privateapi.StripeRefundId;
 import io.fluxzero.ticketing.payment.stripe.privateapi.model.StripeRefund;
 import java.time.Duration;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -16,13 +14,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StripeRefundIsolationTest extends StripeTestSupport {
-    TestFixture refundable(boolean async, RemoteStripe remote) {
-        var fixture = stripe(async, remote).givenCommandsByUser(PAYMENTS, new BeginStripePayment(P));
-        remote.intent.put("status", "succeeded").put("amount_received", 7000).put("latest_charge", "ch_fixture");
-        return fixture.givenCommandsByUser(PAYMENTS, new RefreshStripePayment(P, null))
-                .givenCommandsByUser(ALICE, new CancelReservation(R));
-    }
-
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void oldAttemptsCannotRestartOrReleaseTheirReplacement(boolean async) {
         var remote = new RemoteStripe();

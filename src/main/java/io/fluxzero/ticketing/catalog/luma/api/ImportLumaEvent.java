@@ -8,6 +8,8 @@ import io.fluxzero.ticketing.catalog.api.EventId;
 import io.fluxzero.ticketing.catalog.api.HallId;
 import io.fluxzero.ticketing.catalog.api.PerformanceId;
 import io.fluxzero.ticketing.catalog.luma.api.model.LumaEvent;
+import io.fluxzero.ticketing.catalog.luma.privateapi.AcceptLumaImport;
+import io.fluxzero.ticketing.catalog.luma.request.FetchLumaEvent;
 import io.fluxzero.ticketing.payment.api.model.Money;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -22,7 +24,6 @@ import static io.fluxzero.ticketing.common.Checks.require;
 @LocalOnly @RequiresAnyRole("OPERATOR")
 public record ImportLumaEvent(@NotBlank @Pattern(regexp = "evt-[A-Za-z0-9_-]+") String externalId,
                               @NotNull HallId hallId, @NotEmpty Map<@NotBlank String, @NotNull @Valid Money> prices) {
-    public ImportLumaEvent { prices = prices == null ? null : Map.copyOf(prices); }
     @HandleCommand void handle() {
         LumaEvent source = Fluxzero.queryAndWait(new FetchLumaEvent(externalId));
         require(source.calendarId().matches("[A-Za-z0-9_-]+"), "Invalid Luma calendar identity");

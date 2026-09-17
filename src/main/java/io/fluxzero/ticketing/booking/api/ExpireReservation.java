@@ -1,6 +1,7 @@
 package io.fluxzero.ticketing.booking.api;
 
 import io.fluxzero.sdk.Fluxzero;
+import io.fluxzero.sdk.modeling.Parent;
 import io.fluxzero.sdk.persisting.eventsourcing.Apply;
 import io.fluxzero.sdk.persisting.eventsourcing.InterceptApply;
 import io.fluxzero.sdk.tracking.handling.authentication.NoUserRequired;
@@ -11,7 +12,7 @@ import jakarta.validation.constraints.NotNull;
 
 /** Close a due hold; stale, early and repeated timer deliveries are harmless. */
 @NoUserRequired
-public record ExpireReservation(@NotNull ReservationId reservationId) {
+public record ExpireReservation(@Parent @NotNull ReservationId reservationId) {
     @InterceptApply Object ignoreStale(@Nullable Reservation reservation) {
         return reservation != null && reservation.status() == ReservationStatus.HELD && !Fluxzero.currentTime().isBefore(reservation.expiresAt())
                 ? this : null;

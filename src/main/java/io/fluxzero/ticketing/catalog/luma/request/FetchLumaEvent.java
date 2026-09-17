@@ -1,4 +1,4 @@
-package io.fluxzero.ticketing.catalog.luma.api;
+package io.fluxzero.ticketing.catalog.luma.request;
 
 import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.sdk.configuration.ApplicationProperties;
@@ -10,6 +10,7 @@ import io.fluxzero.sdk.web.RedirectPolicy;
 import io.fluxzero.sdk.web.WebRequest;
 import io.fluxzero.sdk.web.WebRequestSettings;
 import io.fluxzero.ticketing.catalog.api.model.EventDetails;
+import io.fluxzero.ticketing.catalog.luma.api.*;
 import io.fluxzero.ticketing.catalog.luma.api.model.LumaEvent;
 import io.fluxzero.ticketing.common.web.IntegrationFailure;
 import jakarta.validation.constraints.NotBlank;

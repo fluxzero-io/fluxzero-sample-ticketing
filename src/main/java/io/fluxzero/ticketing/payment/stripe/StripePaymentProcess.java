@@ -10,11 +10,11 @@ import io.fluxzero.sdk.tracking.handling.Stateful;
 import io.fluxzero.ticketing.payment.api.PaymentId;
 import io.fluxzero.ticketing.payment.api.model.Money;
 import io.fluxzero.ticketing.payment.stripe.api.model.ProviderAccount;
-import io.fluxzero.ticketing.payment.stripe.api.model.StripeProblem;
 import io.fluxzero.ticketing.payment.stripe.privateapi.StripePaymentRequested;
 import io.fluxzero.ticketing.payment.stripe.privateapi.StripeProcessEvents.*;
 import io.fluxzero.ticketing.payment.stripe.privateapi.StripeRefundEvents.*;
 import io.fluxzero.ticketing.payment.stripe.privateapi.StripeWebhookReceived;
+import io.fluxzero.ticketing.payment.stripe.privateapi.model.StripeProblem;
 import java.time.Instant;
 import lombok.With;
 
@@ -50,11 +50,11 @@ public record StripePaymentProcess(@EntityId @Association PaymentId paymentId, M
         return withIntentId(event.intentId()).withRequestedObservation(event.eventId()).withProblem(null);
     }
     @HandleEvent StripePaymentProcess observed(IntentObserved event) {
-        require(intentId == null || intentId.equals(event.intentId()), "PaymentIntent identity cannot change");
         if (!requestedObservation.equals(event.requestId())) return this;
-        if (chargeId != null) {
-            require(chargeId.equals(event.chargeId()) && captured.equals(event.captured()), "Conflicting capture observation");
-        }
+        if (intentId != null && !intentId.equals(event.intentId()))
+            return withProblem(new StripeProblem(workId(), "PaymentIntent identity cannot change", null));
+        if (chargeId != null && (!chargeId.equals(event.chargeId()) || !captured.equals(event.captured())))
+            return withProblem(new StripeProblem(workId(), "Conflicting capture observation requires reconciliation", null));
         return withIntentId(event.intentId()).withProviderStatus(event.status()).withChargeId(event.chargeId())
                 .withCaptured(event.captured()).withCompletedObservation(event.requestId());
     }
@@ -91,13 +91,19 @@ public record StripePaymentProcess(@EntityId @Association PaymentId paymentId, M
                 && java.util.Objects.equals(problem.retryAt(), event.due())
                 && !Fluxzero.currentTime().isBefore(event.due()) ? withProblem(null) : this;
     }
-    /** Identity of the next unacknowledged effect; stale failures cannot pause newer work. */
-    public String workId() {
-        if (needsObservation()) return "observe:" + requestedObservation;
-        if (chargeId != null && !captureRecorded) return "capture:" + chargeId;
-        if ("canceled".equals(providerStatus) && !cancellationRecorded) return "cancel:" + intentId;
-        if (refundAuthorization != null && !refundDispatched) return "refund-start:" + refundAuthorization.refundId();
+    public enum Action { OBSERVE, RECORD_CAPTURE, RECORD_CANCELLATION, AUTHORIZE_REFUND }
+    public record Work(Action action, String id) {}
+
+    /** Select once; execution and failure correlation share this decision. */
+    public Work nextWork() {
+        if (needsObservation()) return new Work(Action.OBSERVE, "observe:" + requestedObservation);
+        if (chargeId != null && !captureRecorded) return new Work(Action.RECORD_CAPTURE, "capture:" + chargeId);
+        if ("canceled".equals(providerStatus) && !cancellationRecorded)
+            return new Work(Action.RECORD_CANCELLATION, "cancel:" + intentId);
+        if (refundAuthorization != null && !refundDispatched)
+            return new Work(Action.AUTHORIZE_REFUND, "refund-start:" + refundAuthorization.refundId());
         return null;
     }
+    public String workId() { var work = nextWork(); return work == null ? null : work.id(); }
     public boolean needsObservation() { return !requestedObservation.equals(completedObservation); }
 }

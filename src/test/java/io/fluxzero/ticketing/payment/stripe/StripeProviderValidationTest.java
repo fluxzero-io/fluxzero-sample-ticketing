@@ -12,6 +12,16 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class StripeProviderValidationTest extends StripeTestSupport {
+    @ParameterizedTest @ValueSource(booleans = {false, true})
+    void malformedClientSecretCannotBecomeACheckoutCapability(boolean async) {
+        var remote = new RemoteStripe();
+        var fixture = stripe(async, remote).givenCommandsByUser(PAYMENTS, new BeginStripePayment(P));
+        remote.intent.put("client_secret", 123);
+        fixture.whenQueryByUser(PAYMENTS, new GetStripeCheckout(P))
+                .expectExceptionalResult(io.fluxzero.ticketing.common.web.IntegrationFailure.class)
+                .expectThat(f -> assertEquals(PaymentStatus.PENDING, payment().status()));
+    }
+
     @ParameterizedTest
     @CsvSource({"false, object", "true, object", "false, id", "true, id", "false, amount", "true, amount",
             "false, currency", "true, currency", "false, livemode", "true, livemode"})
@@ -26,10 +36,15 @@ class StripeProviderValidationTest extends StripeTestSupport {
             case "livemode" -> remote.intent.put(field, true);
         }
         remote.intent.put("status", "succeeded").put("amount_received", 7000).put("latest_charge", "ch_fixture");
-        fixture.whenQueryByUser(PAYMENTS, new GetStripeCheckout(P)).expectExceptionalResult(IllegalCommandException.class)
-                .andThen().whenCommandByUser(PAYMENTS, new RefreshStripePayment(P, null)).expectSuccessfulResult()
-                .expectNoErrors().expectThat(f -> org.junit.jupiter.api.Assertions.assertNotNull(binding().problem()))
-                .expectThat(f -> assertEquals(PaymentStatus.PENDING, payment().status()));
+        var refreshed = fixture.whenQueryByUser(PAYMENTS, new GetStripeCheckout(P)).expectExceptionalResult(IllegalCommandException.class)
+                .andThen().whenCommandByUser(PAYMENTS, new RefreshStripePayment(P, null)).expectSuccessfulResult();
+        // Malformed wire objects now fail at the local request boundary; valid but unrelated objects fail correlation.
+        if (field.equals("object") || field.equals("currency")) refreshed.expectError(IllegalCommandException.class);
+        else refreshed.expectNoErrors();
+        refreshed.expectThat(f -> {
+            org.junit.jupiter.api.Assertions.assertNotNull(binding().problem());
+            assertEquals(PaymentStatus.PENDING, payment().status());
+        });
     }
 
     @ParameterizedTest @ValueSource(booleans = {false, true})

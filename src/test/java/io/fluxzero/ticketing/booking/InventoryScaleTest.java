@@ -7,6 +7,7 @@ import io.fluxzero.sdk.persisting.eventsourcing.client.EventStoreClient;
 import io.fluxzero.sdk.test.TestFixture;
 import io.fluxzero.ticketing.booking.api.*;
 import io.fluxzero.ticketing.booking.api.model.Availability;
+import io.fluxzero.ticketing.booking.privateapi.ReservationHeld;
 import io.fluxzero.ticketing.catalog.DemoCatalog;
 import io.fluxzero.ticketing.support.TicketingTestSupport;
 import java.lang.reflect.InvocationTargetException;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class InventoryScaleTest extends TicketingTestSupport {

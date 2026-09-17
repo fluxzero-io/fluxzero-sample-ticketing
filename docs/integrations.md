@@ -47,6 +47,7 @@ application operations, not public customer endpoints.
 | Operation | External interaction | Local outcome |
 | --- | --- | --- |
 | `BeginStripePayment(paymentId)` | None in the accepting handler | Stores a request event; the process later creates the intent |
+| `GetStripeCheckoutStatus(paymentId)` | None | Stored readiness and a presentation-safe problem, without a client secret |
 | `GetStripeCheckout(paymentId)` | `FetchStripePaymentIntent`: GET the known intent | Preparing, or a validated checkout capability while the hold remains active |
 | `RefreshStripePayment(paymentId, intentId)` | GET when verifying the first recovered identity | Stores a reconciliation request; null ID uses the stored identity |
 | `BeginStripeRefund(paymentId, attemptId)` | None in the accepting handler | Requests execution; the ordered process allows only one unresolved attempt |
@@ -62,7 +63,9 @@ refund documents. They reload current intent and invoke concrete local messages 
 `payment.stripe.request`: `CreateStripeIntent`, `FetchStripePaymentIntent`, `CreateStripeRefund`
 and `FetchStripeRefund`. `SendToStripe` supplies their common authentication, version header,
 idempotency header, response validation and Fluxzero webrequest execution. It is not a separate
-HTTP client. UI and endpoint adapters invoke application actions instead.
+HTTP client. Each request validates its wire response into the small `StripeIntent` or
+`StripeRefundSnapshot` value. Workflow correlation and financial acceptance remain explicit.
+UI and endpoint adapters invoke application actions instead.
 Each workflow and effect consumer uses four threads; different payments can progress independently.
 
 The payment process retains only one refund authorization. Its effect observer publishes
@@ -79,6 +82,10 @@ observation after HTTP, and an acknowledgement only after the core command has c
 A crash between these steps causes repetition with the same provider key or idempotent core
 fact. There is no exactly-once external-effect claim. A newly started observer reads retained
 process documents, so accepted work survives an application restart without a recovery scan.
+Document delivery may skip intermediate versions. These observers are valid only because the
+latest state retains all unfinished effects, and newer observation requests subsume older reads
+of authoritative provider state. They do not infer domain transitions from document versions.
+Each process selects one next action; execution and failure correlation share that decision.
 
 Every Stripe request pins API version **`2026-08-26.dahlia`**, uses a 15-second timeout and
 refuses redirects. The transport does not retry; the workflow retries technical failures. POST bodies are form encoded;
@@ -169,7 +176,10 @@ bindings. A real deployment would need an explicit migration before changing ret
 
 ## Provider problems and recovery
 
-Expected provider failures become a `StripeProblem` in the stateful process. HTTP 408, 429,
+Expected provider failures become an internal `StripeProblem` in the stateful process.
+Contradictory terminal observations are retained as reconciliation problems by the state
+transition itself; they do not throw past an earlier observer's failure handling. Previously
+accepted capture/refund facts remain intact. HTTP 408, 429,
 5xx and response timeouts retain uncertain work and request a retry after 30 seconds. Other
 HTTP failures, malformed responses and failed correlation or domain checks require explicit
 reconciliation. Neither outcome means that no money moved. A provider problem releases the
@@ -186,7 +196,9 @@ The supplied object is fetched and validated before its first identity binding; 
 recovery ID therefore does not prevent a later correct recovery. Signed webhooks retain their
 verified notification path.
 
-`GetStripeCheckout` includes the current problem for an authenticated adapter to present, and
+`GetStripeCheckoutStatus` reads stored progress without a provider call. `GetStripeCheckout`
+fetches the sensitive capability when opening checkout. Both expose only a problem reason and
+retry time, not internal work correlation. `GetStripeCheckout`
 withholds the client capability after expiry or performance cancellation. New payment and
 invoice actions also respect the performance cancellation immediately, before purchase
 settlement finishes. Retained captures and refund confirmations remain processable.

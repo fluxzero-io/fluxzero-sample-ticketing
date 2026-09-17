@@ -19,6 +19,7 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class PerformanceCancellationTest extends TicketingTestSupport {
@@ -38,12 +39,21 @@ class PerformanceCancellationTest extends TicketingTestSupport {
                 .expectSuccessfulResult().expectThat(f -> assertEquals(PaymentStatus.REFUND_REQUIRED, payment().status()));
     }
 
-    @Test
-    void moreThanOnePageOfPurchasesSettlesInBoundedIndependentCommits() {
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void pagesResumeAfterALostContinuationWithoutRepeatingSettledPurchases(boolean interruptContinuation) {
         var client = new InventoryScaleTest.MeasuringClient();
         var performanceId = new PerformanceId("large-demo");
         var hallId = new HallId("large-demo");
-        var fixture = TestFixture.createAsync(builder(), client, new ReservationDeadlines(), new PerformanceCancellation()).atFixedTime(NOW)
+        var continuations = new java.util.concurrent.atomic.AtomicInteger();
+        var configured = builder().addDispatchInterceptor((message, type, topic) -> {
+            if (message.getPayload() instanceof io.fluxzero.ticketing.catalog.privateapi.SettlePerformanceCancellation
+                    && continuations.incrementAndGet() == 2 && interruptContinuation)
+                throw new IllegalStateException("Injected lost cancellation continuation");
+            return message;
+        }, io.fluxzero.common.MessageType.EVENT);
+        var fixture = TestFixture.createAsync(configured, client, new ReservationDeadlines(), new PerformanceCancellation())
+                .consumerTimeout(Duration.ofSeconds(30)).atFixedTime(NOW)
                 .givenCommandsByUser(OPERATOR, DemoCatalog.commands(NOW.plus(Duration.ofDays(1))).toArray())
                 .givenCommandsByUser(OPERATOR,
                         new CreateHall(hallId, new VenueId("concertgebouw"), new HallDetails("Capacity test", DemoCatalog.NOTICE,
@@ -55,14 +65,18 @@ class PerformanceCancellationTest extends TicketingTestSupport {
                 .mapToObj(i -> new ReserveTickets(new ReservationId("cancel-" + i), performanceId,
                         List.of(new Selection("floor", null)))).toArray());
         client.measured.clear();
-        fixture.whenCommandByUser(OPERATOR, new CancelPerformance(performanceId)).expectSuccessfulResult().expectNoErrors()
-                .expectNoSchedules().expectThat(f -> {
+        var result = fixture.whenCommandByUser(OPERATOR, new CancelPerformance(performanceId)).expectSuccessfulResult();
+        if (interruptContinuation) result.expectError(IllegalStateException.class);
+        else result.expectNoErrors();
+        result.expectNoSchedules().expectThat(f -> {
                     assertTrue(Fluxzero.search(Reservation.class).match(performanceId, true, "performanceId").fetchAll().stream()
                             .allMatch(r -> r.status() == ReservationStatus.CANCELLED));
                     assertEquals(0, Fluxzero.loadModel(new SectionInventoryId(performanceId, "floor")).get().occupiedAt(NOW));
                     long settled = client.measured.stream().filter(c -> c.getSubsteps().stream().anyMatch(s ->
                             s.getEvent().getData().getType().endsWith("ReservationCancelled"))).count();
                     assertEquals(205, settled);
+                    assertEquals(Performance.Cancellation.SETTLED, Fluxzero.loadModel(performanceId).get().cancellation());
+                    assertEquals(4, continuations.get());
                     assertTrue(client.measured.stream().allMatch(c -> c.getSubsteps().size() <= 2));
                     System.out.printf("Cancellation purchases=205 commits=%d maxSubsteps=%d%n", client.measured.size(),
                             client.measured.stream().mapToInt(c -> c.getSubsteps().size()).max().orElseThrow());

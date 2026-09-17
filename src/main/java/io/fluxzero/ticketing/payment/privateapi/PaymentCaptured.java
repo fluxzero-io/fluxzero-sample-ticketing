@@ -1,4 +1,4 @@
-package io.fluxzero.ticketing.payment.api;
+package io.fluxzero.ticketing.payment.privateapi;
 
 import io.fluxzero.sdk.modeling.AssertLegal;
 import io.fluxzero.sdk.modeling.AutomaticModelHandling;
@@ -10,6 +10,7 @@ import io.fluxzero.ticketing.booking.api.model.Reservation;
 import io.fluxzero.ticketing.booking.api.model.ReservationStatus;
 import io.fluxzero.ticketing.booking.api.model.Ticket;
 import io.fluxzero.ticketing.booking.api.model.TicketStatus;
+import io.fluxzero.ticketing.payment.api.*;
 import io.fluxzero.ticketing.payment.api.model.Money;
 import io.fluxzero.ticketing.payment.api.model.Payment;
 import io.fluxzero.ticketing.payment.api.model.PaymentStatus;

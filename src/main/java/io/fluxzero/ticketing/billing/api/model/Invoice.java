@@ -1,5 +1,6 @@
 package io.fluxzero.ticketing.billing.api.model;
 
+import io.fluxzero.sdk.modeling.Alias;
 import io.fluxzero.sdk.modeling.EntityId;
 import io.fluxzero.sdk.modeling.Model;
 import io.fluxzero.sdk.modeling.Parent;
@@ -20,4 +21,8 @@ public record Invoice(@EntityId InvoiceId invoiceId,
                       PaymentId paymentId, String customerId, List<Admission> lines, Money total,
                       InvoiceStatus status, Instant issuedAt) {
     public Invoice { lines = List.copyOf(lines); }
+    @Alias(prefix = "active-invoice:")
+    public String invoicedReservation() {
+        return status == InvoiceStatus.VOID ? null : reservationId.toString();
+    }
 }

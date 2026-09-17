@@ -50,14 +50,25 @@ class ConcurrencyTest extends TicketingTestSupport {
         }).expectSuccessfulResult().andThen().whenQuery(new GetAvailability(GA))
                 .expectResult((Availability a) -> a.sections().getFirst().remaining() == 0);
     }
-    @Test
-    void competingPaymentAttemptsCannotBothBePending() {
-        held(false).whenExecuting(f -> {
+    @org.junit.jupiter.params.ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void competingPaymentAttemptsCannotBothBePending(boolean async) {
+        held(async).whenExecuting(f -> {
             assertEquals(1, compete(8, i -> f.apply(fc -> ALICE.apply(() -> {
                 Fluxzero.sendCommandAndWait(new StartPayment(new PaymentId("pay-racer-" + i), R));
                 return true;
             }))));
             assertEquals(1, Fluxzero.loadGraph(R).childModels(Payment.class).size());
+        }).expectSuccessfulResult();
+    }
+    @org.junit.jupiter.params.ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void competingInvoicesHaveOneWinnerWithoutScanningHistory(boolean async) {
+        pending(async).givenCommandsByUser(PAYMENTS, success()).whenExecuting(f -> {
+            assertEquals(1, compete(8, i -> f.apply(fc -> BILLING.apply(() -> {
+                Fluxzero.sendCommandAndWait(new io.fluxzero.ticketing.billing.api.DraftInvoice(
+                        new io.fluxzero.ticketing.billing.api.InvoiceId("invoice-racer-" + i), R));
+                return true;
+            }))));
+            assertEquals(1, Fluxzero.loadGraph(R).childModels(io.fluxzero.ticketing.billing.api.model.Invoice.class).size());
         }).expectSuccessfulResult();
     }
     @Test

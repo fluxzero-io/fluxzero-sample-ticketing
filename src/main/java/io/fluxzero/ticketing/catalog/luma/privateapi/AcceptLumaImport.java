@@ -1,4 +1,4 @@
-package io.fluxzero.ticketing.catalog.luma.api;
+package io.fluxzero.ticketing.catalog.luma.privateapi;
 
 import io.fluxzero.sdk.persisting.eventsourcing.InterceptApply;
 import io.fluxzero.sdk.tracking.handling.authentication.RequiresAnyRole;
@@ -8,6 +8,7 @@ import io.fluxzero.ticketing.catalog.api.HallId;
 import io.fluxzero.ticketing.catalog.api.PerformanceId;
 import io.fluxzero.ticketing.catalog.api.SchedulePerformance;
 import io.fluxzero.ticketing.catalog.api.model.PerformanceDetails;
+import io.fluxzero.ticketing.catalog.luma.api.*;
 import io.fluxzero.ticketing.catalog.luma.api.model.LumaEvent;
 import io.fluxzero.ticketing.catalog.luma.api.model.LumaImport;
 import io.fluxzero.ticketing.payment.api.model.Money;
@@ -27,7 +28,6 @@ public record AcceptLumaImport(@NotNull LumaImportId lumaImportId, @NotNull Even
                                @NotNull PerformanceId performanceId, @NotNull HallId hallId,
                                @NotNull @Valid LumaEvent source,
                                @NotEmpty Map<@NotBlank String, @NotNull @Valid Money> prices) {
-    public AcceptLumaImport { prices = prices == null ? null : Map.copyOf(prices); }
     @InterceptApply List<Object> decide(@Nullable LumaImport previous) {
         String identity = "luma-" + source.calendarId() + ":" + source.externalId();
         require(lumaImportId.equals(new LumaImportId(identity)) && eventId.equals(new EventId(identity))

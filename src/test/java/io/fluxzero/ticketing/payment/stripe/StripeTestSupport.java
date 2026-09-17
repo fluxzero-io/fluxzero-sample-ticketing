@@ -10,9 +10,7 @@ import io.fluxzero.sdk.web.WebRequest;
 import io.fluxzero.sdk.web.WebResponse;
 import io.fluxzero.ticketing.booking.ReservationDeadlines;
 import io.fluxzero.ticketing.catalog.DemoCatalog;
-
 import io.fluxzero.ticketing.payment.api.StartPayment;
-
 import io.fluxzero.ticketing.support.TicketingTestSupport;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -26,13 +24,26 @@ import static org.junit.jupiter.api.Assertions.*;
 
 abstract class StripeTestSupport extends TicketingTestSupport {
     TestFixture stripe(boolean async, RemoteStripe remote) {
-        return (async ? TestFixture.createAsync(builder(), StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), new ReservationDeadlines(), remote)
-                : TestFixture.create(builder(), StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), new ReservationDeadlines(), remote)).atFixedTime(NOW)
+        return stripe(async, remote, "A1", "A2");
+    }
+    TestFixture stripe(boolean async, Object remote, String... seatIds) {
+        Object[] handlers = {StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class,
+                new StripeRefundEffects(), new ReservationDeadlines(), remote};
+        return (async ? TestFixture.createAsync(builder(), handlers) : TestFixture.create(builder(), handlers)).atFixedTime(NOW)
                 .withProperty("ticketing.stripe.secretKey", "sk_test_fixture")
                 .withProperty("ticketing.stripe.accountId", "acct_fixture")
                 .withProperty("ticketing.stripe.webhookSecret", "whsec_fixture")
                 .givenCommandsByUser(OPERATOR, DemoCatalog.commands(NOW.plus(Duration.ofDays(1))).toArray())
-                .givenCommandsByUser(ALICE, seats(R, "A1", "A2"), new StartPayment(P, R));
+                .givenCommandsByUser(ALICE, seats(R, seatIds), new StartPayment(P, R));
+    }
+    TestFixture captured(boolean async, RemoteStripe remote) {
+        var fixture = stripe(async, remote).givenCommandsByUser(PAYMENTS,
+                new io.fluxzero.ticketing.payment.stripe.api.BeginStripePayment(P));
+        remote.intent.put("status", "succeeded").put("amount_received", 7000).put("latest_charge", "ch_fixture");
+        return fixture.givenCommandsByUser(PAYMENTS, new io.fluxzero.ticketing.payment.stripe.api.RefreshStripePayment(P, null));
+    }
+    TestFixture refundable(boolean async, RemoteStripe remote) {
+        return captured(async, remote).givenCommandsByUser(ALICE, new io.fluxzero.ticketing.booking.api.CancelReservation(R));
     }
     static StripePaymentProcess binding() { return Fluxzero.getDocument(P, StripePaymentProcess.class).orElseThrow(); }
 

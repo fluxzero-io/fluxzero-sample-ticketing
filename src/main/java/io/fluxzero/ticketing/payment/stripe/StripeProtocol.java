@@ -1,10 +1,11 @@
 package io.fluxzero.ticketing.payment.stripe;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fluxzero.sdk.configuration.ApplicationProperties;
 import io.fluxzero.sdk.web.RedirectPolicy;
 import io.fluxzero.sdk.web.WebRequestSettings;
 import io.fluxzero.ticketing.payment.stripe.api.model.ProviderAccount;
+import io.fluxzero.ticketing.payment.stripe.request.StripeIntent;
+import io.fluxzero.ticketing.payment.stripe.request.StripeRefundSnapshot;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -12,8 +13,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.fluxzero.ticketing.common.Checks.require;
-import static io.fluxzero.ticketing.common.web.ExternalResponse.positiveAmount;
-import static io.fluxzero.ticketing.common.web.ExternalResponse.text;
 
 /** Stripe wire-format rules, without a client layer or domain lifecycle decisions. */
 public final class StripeProtocol {
@@ -40,33 +39,24 @@ public final class StripeProtocol {
     public static void validateAccount(ProviderAccount account) {
         require(configuredAccount().equals(account), "Configured Stripe account differs from process account");
     }
-    public static String validateIntent(JsonNode intent, StripePaymentProcess process) {
-        require("payment_intent".equals(text(intent, "object")), "Expected a Stripe PaymentIntent");
-        String intentId = id(text(intent, "id"), "pi_");
-        require(process.intentId() == null || process.intentId().equals(intentId), "PaymentIntent identity mismatch");
-        require(process.paymentId().getFunctionalId().equals(text(intent.path("metadata"), "payment_id"))
-                && process.operationKey().equals(text(intent.path("metadata"), "operation_key")), "PaymentIntent correlation mismatch");
-        require("eur".equals(text(intent, "currency")) && positiveAmount(intent, "amount") == process.amount().minorUnits(),
-                "PaymentIntent amount or currency mismatch");
-        require(intent.path("livemode").isBoolean()
-                && process.account().environment().equals(intent.path("livemode").booleanValue() ? "live" : "test"),
-                "Stripe environment mismatch");
-        return intentId;
+    public static String validateIntent(StripeIntent intent, StripePaymentProcess process) {
+        require(process.intentId() == null || process.intentId().equals(intent.id()), "PaymentIntent identity mismatch");
+        require(process.paymentId().getFunctionalId().equals(intent.paymentId())
+                && process.operationKey().equals(intent.operationKey()), "PaymentIntent correlation mismatch");
+        require(process.amount().equals(intent.amount()), "PaymentIntent amount or currency mismatch");
+        require(process.account().environment().equals(intent.live() ? "live" : "test"), "Stripe environment mismatch");
+        return intent.id();
     }
-    public static String validateRefund(JsonNode response, StripeRefundProcess process) {
+    public static String validateRefund(StripeRefundSnapshot response, StripeRefundProcess process) {
         var refund = process.refund();
-        require("refund".equals(text(response, "object")), "Expected a Stripe refund");
-        String refundId = id(text(response, "id"), "re_");
-        require(refund.externalId() == null || refund.externalId().equals(refundId), "Refund identity mismatch");
-        require(process.intentId().equals(text(response, "payment_intent"))
-                && process.chargeId().equals(text(response, "charge")), "Refund belongs to another capture");
-        require("eur".equals(text(response, "currency")) && positiveAmount(response, "amount") == refund.amount().minorUnits(),
-                "Refund amount or currency mismatch");
-        var metadata = response.path("metadata");
-        require(process.paymentId().getFunctionalId().equals(text(metadata, "payment_id"))
-                && refund.attemptId().equals(text(metadata, "refund_attempt_id"))
-                && refund.operationKey().equals(text(metadata, "operation_key")), "Refund correlation mismatch");
-        return refundId;
+        require(refund.externalId() == null || refund.externalId().equals(response.id()), "Refund identity mismatch");
+        require(process.intentId().equals(response.intentId()) && process.chargeId().equals(response.chargeId()),
+                "Refund belongs to another capture");
+        require(refund.amount().equals(response.amount()), "Refund amount or currency mismatch");
+        require(process.paymentId().getFunctionalId().equals(response.paymentId())
+                && refund.attemptId().equals(response.attemptId())
+                && refund.operationKey().equals(response.operationKey()), "Refund correlation mismatch");
+        return response.id();
     }
     public static void safeToRepeat(java.time.Instant requestedAt, java.time.Instant now) {
         require(!now.isBefore(requestedAt) && now.isBefore(requestedAt.plus(Duration.ofHours(23))),

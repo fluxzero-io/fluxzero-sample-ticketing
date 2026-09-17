@@ -3,17 +3,17 @@ package io.fluxzero.ticketing.payment.stripe;
 import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.sdk.test.TestFixture;
 import io.fluxzero.sdk.tracking.handling.HandleDocument;
-import io.fluxzero.ticketing.payment.stripe.api.BeginStripePayment;
-import io.fluxzero.ticketing.support.TicketingTestSupport;
 import io.fluxzero.ticketing.booking.ReservationDeadlines;
 import io.fluxzero.ticketing.catalog.DemoCatalog;
 import io.fluxzero.ticketing.payment.api.StartPayment;
+import io.fluxzero.ticketing.payment.stripe.api.BeginStripePayment;
 import java.time.Duration;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-class StripeProcessBoundaryTest extends TicketingTestSupport {
+class StripeProcessBoundaryTest extends StripeTestSupport {
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void processIntentIsDurableBeforeItsDocumentObserverRuns(boolean async) {
         var observer = new ObserveCommittedProcess();
@@ -30,12 +30,7 @@ class StripeProcessBoundaryTest extends TicketingTestSupport {
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void recoverableDeclineKeepsTheCorePaymentPendingAndLaterCaptureIssuesTickets(boolean async) {
         var remote = new ProcessRemote();
-        var fixture = (async ? TestFixture.createAsync(builder(), StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), remote, new ReservationDeadlines())
-                : TestFixture.create(builder(), StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), remote, new ReservationDeadlines()))
-                .withProperty("ticketing.stripe.accountId", "acct_fixture")
-                .withProperty("ticketing.stripe.secretKey", "sk_test_fixture").atFixedTime(NOW)
-                .givenCommandsByUser(OPERATOR, DemoCatalog.commands(NOW.plus(Duration.ofDays(1))).toArray())
-                .givenCommandsByUser(ALICE, seats(R, "A1"), new StartPayment(P, R));
+        var fixture = stripe(async, remote, "A1");
         var started = fixture.whenCommandByUser(PAYMENTS, new BeginStripePayment(P)).expectSuccessfulResult()
                 .expectThat(f -> {
                     assertEquals(io.fluxzero.ticketing.payment.api.model.PaymentStatus.PENDING, payment().status());

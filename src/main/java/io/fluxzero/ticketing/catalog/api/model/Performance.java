@@ -16,6 +16,8 @@ import lombok.With;
 public record Performance(@EntityId PerformanceId performanceId,
                           @Parent(pathInParent = "performances") EventId eventId,
                           @Parent(pathInParent = "performances") HallId hallId,
-                          PerformanceDetails details, HallDetails layout, boolean cancelled) {
+                          PerformanceDetails details, HallDetails layout, Cancellation cancellation) {
 
+    public enum Cancellation { NONE, SETTLING, SETTLED }
+    public boolean cancelled() { return cancellation != Cancellation.NONE; }
 }

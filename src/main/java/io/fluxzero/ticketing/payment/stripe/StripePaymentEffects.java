@@ -1,6 +1,5 @@
 package io.fluxzero.ticketing.payment.stripe;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fluxzero.common.Guarantee;
 import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.sdk.common.exception.FunctionalException;
@@ -13,15 +12,13 @@ import io.fluxzero.sdk.tracking.handling.HandleSchedule;
 import io.fluxzero.ticketing.common.web.IntegrationFailure;
 import io.fluxzero.ticketing.payment.api.RecordPaymentFailure;
 import io.fluxzero.ticketing.payment.api.RecordPaymentSuccess;
-import io.fluxzero.ticketing.payment.api.model.Money;
-import io.fluxzero.ticketing.payment.stripe.api.model.StripeProblem;
 import io.fluxzero.ticketing.payment.stripe.privateapi.StripeProcessEvents.*;
 import io.fluxzero.ticketing.payment.stripe.privateapi.StripeRefundEvents.RefundAuthorized;
 import io.fluxzero.ticketing.payment.stripe.request.CreateStripeIntent;
 import io.fluxzero.ticketing.payment.stripe.request.FetchStripePaymentIntent;
+import io.fluxzero.ticketing.payment.stripe.request.StripeIntent;
 import org.springframework.stereotype.Component;
 
-import static io.fluxzero.ticketing.common.web.ExternalResponse.*;
 import static io.fluxzero.ticketing.payment.stripe.StripeProtocol.*;
 
 /** Execute only committed process intent. Repeated delivery uses the same external and core identities. */
@@ -30,7 +27,8 @@ import static io.fluxzero.ticketing.payment.stripe.StripeProtocol.*;
 public class StripePaymentEffects {
     @HandleDocument void reconcile(StripePaymentProcess observed) {
         var process = Fluxzero.getDocument(observed.paymentId(), StripePaymentProcess.class).orElseThrow();
-        if (process.workId() == null) return;
+        var work = process.nextWork();
+        if (work == null) return;
         if (process.problem() != null) {
             if (process.problem().retryAt() != null) {
                 Fluxzero.schedule(new RetryDue(process.paymentId(), process.problem().workId(), process.problem().retryAt()),
@@ -40,53 +38,47 @@ public class StripePaymentEffects {
         }
         Object outcome;
         try {
-            outcome = execute(process);
-        } catch (IntegrationFailure failure) {
-            outcome = new WorkFailed(process.paymentId(), new StripeProblem(
-                    process.workId(), failure.getMessage(), failure.retryable() ? Fluxzero.currentTime().plusSeconds(30) : null));
-        } catch (TimeoutException failure) {
-            outcome = new WorkFailed(process.paymentId(), new StripeProblem(
-                    process.workId(), "Provider response timed out; outcome is uncertain", Fluxzero.currentTime().plusSeconds(30)));
-        } catch (FunctionalException failure) {
-            outcome = new WorkFailed(process.paymentId(), new StripeProblem(
-                    process.workId(), failure.getMessage(), null));
+            outcome = execute(process, work.action());
+        } catch (IntegrationFailure | TimeoutException | FunctionalException failure) {
+            outcome = new WorkFailed(process.paymentId(), StripeFailures.problem(work.id(), failure));
         }
-        if (outcome != null) publish(outcome);
+        publish(outcome);
     }
     @HandleSchedule
     void retry(RetryDue due) { publish(due); }
 
-    private Object execute(StripePaymentProcess process) {
+    private Object execute(StripePaymentProcess process, StripePaymentProcess.Action action) {
         validateAccount(process);
         var account = process.account();
-        if (process.needsObservation()) {
-            JsonNode intent;
-            if (process.intentId() == null) {
-                safeToRepeat(process.requestedAt(), Fluxzero.currentTime());
-                intent = Fluxzero.sendCommandAndWait(new CreateStripeIntent(process.paymentId(), process.amount(), process.operationKey()));
-            } else {
-                intent = Fluxzero.queryAndWait(new FetchStripePaymentIntent(process.intentId()));
+        return switch (action) {
+            case OBSERVE -> {
+                StripeIntent intent;
+                if (process.intentId() == null) {
+                    safeToRepeat(process.requestedAt(), Fluxzero.currentTime());
+                    intent = Fluxzero.sendCommandAndWait(new CreateStripeIntent(process.paymentId(), process.amount(), process.operationKey()));
+                } else {
+                    intent = Fluxzero.queryAndWait(new FetchStripePaymentIntent(process.intentId()));
+                }
+                String intentId = validateIntent(intent, process);
+                yield new IntentObserved(process.paymentId(), process.requestedObservation(), intentId,
+                        intent.status(), intent.chargeId(), intent.captured());
             }
-            String intentId = validateIntent(intent, process);
-            String status = text(intent, "status");
-            String chargeId = status.equals("succeeded") ? id(text(intent, "latest_charge"), "ch_") : null;
-            Money captured = chargeId == null ? null : new Money(positiveAmount(intent, "amount_received"), "EUR");
-            return new IntentObserved(process.paymentId(), process.requestedObservation(), intentId, status, chargeId, captured);
-        } else if (process.chargeId() != null && !process.captureRecorded()) {
-            Fluxzero.sendCommandAndWait(new RecordPaymentSuccess(process.paymentId(), account.reference(process.chargeId()), process.captured()));
-            Fluxzero.commit().join();
-            return new CaptureRecorded(process.paymentId(), process.chargeId());
-        } else if ("canceled".equals(process.providerStatus()) && !process.cancellationRecorded()) {
-            Fluxzero.sendCommandAndWait(new RecordPaymentFailure(process.paymentId(), "Payment cancelled by provider"));
-            Fluxzero.commit().join();
-            return new CancellationRecorded(process.paymentId());
-        } else if (process.refundAuthorization() != null && !process.refundDispatched()) {
-            var request = process.refundAuthorization();
-            return new RefundAuthorized(process.paymentId(), request.refundId(), request, process.account(),
-                    process.intentId(), process.chargeId());
-        }
-
-        return null;
+            case RECORD_CAPTURE -> {
+                Fluxzero.sendCommandAndWait(new RecordPaymentSuccess(process.paymentId(), account.reference(process.chargeId()), process.captured()));
+                Fluxzero.commit().join();
+                yield new CaptureRecorded(process.paymentId(), process.chargeId());
+            }
+            case RECORD_CANCELLATION -> {
+                Fluxzero.sendCommandAndWait(new RecordPaymentFailure(process.paymentId(), "Payment cancelled by provider"));
+                Fluxzero.commit().join();
+                yield new CancellationRecorded(process.paymentId());
+            }
+            case AUTHORIZE_REFUND -> {
+                var request = process.refundAuthorization();
+                yield new RefundAuthorized(process.paymentId(), request.refundId(), request, process.account(),
+                        process.intentId(), process.chargeId());
+            }
+        };
     }
     private static void publish(Object event) { Fluxzero.get().eventGateway().publish(Guarantee.STORED, event).join(); }
 }

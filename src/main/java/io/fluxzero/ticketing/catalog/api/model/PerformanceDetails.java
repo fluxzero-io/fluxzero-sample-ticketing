@@ -11,5 +11,9 @@ import java.util.Map;
 
 public record PerformanceDetails(@NotNull Instant startsAt, @NotNull ZoneId timeZone,
                                  @NotEmpty Map<@NotBlank String, @NotNull @Valid Money> sectionPrices) {
-    public PerformanceDetails { sectionPrices = sectionPrices == null ? null : Map.copyOf(sectionPrices); }
+    public PerformanceDetails {
+        sectionPrices = sectionPrices == null ? null : java.util.Collections.unmodifiableMap(
+                new java.util.LinkedHashMap<>(sectionPrices));
+    }
+
 }

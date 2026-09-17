@@ -9,9 +9,9 @@ import io.fluxzero.sdk.tracking.handling.HandleEvent;
 import io.fluxzero.sdk.tracking.handling.Stateful;
 import io.fluxzero.ticketing.payment.api.PaymentId;
 import io.fluxzero.ticketing.payment.stripe.api.model.ProviderAccount;
-import io.fluxzero.ticketing.payment.stripe.api.model.StripeProblem;
 import io.fluxzero.ticketing.payment.stripe.privateapi.StripeRefundEvents.*;
 import io.fluxzero.ticketing.payment.stripe.privateapi.StripeRefundId;
+import io.fluxzero.ticketing.payment.stripe.privateapi.model.StripeProblem;
 import io.fluxzero.ticketing.payment.stripe.privateapi.model.StripeRefund;
 import lombok.With;
 
@@ -43,10 +43,12 @@ public record StripeRefundProcess(@EntityId @Association StripeRefundId refundId
         return withRefund(refund.withExternalId(event.externalId()).withRequestedObservation(event.eventId())).withProblem(null);
     }
     @HandleEvent StripeRefundProcess observed(RefundObserved event) {
-        require(refund.externalId() == null || refund.externalId().equals(event.externalId()), "Refund identity cannot change");
         if (!refund.requestedObservation().equals(event.requestId())) return this;
+        if (refund.externalId() != null && !refund.externalId().equals(event.externalId()))
+            return withProblem(new StripeProblem(workId(), "Refund identity cannot change", null));
         if (refund.status().terminal()) {
-            require(!event.status().terminal() || event.status() == refund.status(), "Conflicting terminal refund facts require reconciliation");
+            if (event.status().terminal() && event.status() != refund.status())
+                return withProblem(new StripeProblem(workId(), "Conflicting terminal refund facts require reconciliation", null));
             return withRefund(refund.withCompletedObservation(event.requestId()));
         }
         return withRefund(refund.withExternalId(event.externalId()).withStatus(event.status())
@@ -66,10 +68,16 @@ public record StripeRefundProcess(@EntityId @Association StripeRefundId refundId
                 && java.util.Objects.equals(problem.retryAt(), event.due())
                 && !Fluxzero.currentTime().isBefore(event.due()) ? withProblem(null) : this;
     }
-    public String workId() {
-        if (refund.needsObservation()) return "observe:" + refund.requestedObservation();
-        if (refund.status() == StripeRefund.Status.SUCCEEDED && !refund.recorded()) return "record:" + refund.externalId();
-        if (!refund.blocksAnotherAttempt() && !released) return "release:" + refundId;
+    public enum Action { OBSERVE, RECORD_REFUND, RELEASE_AUTHORIZATION }
+    public record Work(Action action, String id) {}
+
+    public Work nextWork() {
+        if (refund.needsObservation()) return new Work(Action.OBSERVE, "observe:" + refund.requestedObservation());
+        if (refund.status() == StripeRefund.Status.SUCCEEDED && !refund.recorded())
+            return new Work(Action.RECORD_REFUND, "record:" + refund.externalId());
+        if (!refund.blocksAnotherAttempt() && !released)
+            return new Work(Action.RELEASE_AUTHORIZATION, "release:" + refundId);
         return null;
     }
+    public String workId() { var work = nextWork(); return work == null ? null : work.id(); }
 }

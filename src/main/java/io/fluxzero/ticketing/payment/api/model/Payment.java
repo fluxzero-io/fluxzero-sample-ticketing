@@ -19,4 +19,8 @@ public record Payment(@EntityId PaymentId paymentId,
                       Instant capturedAt, String failureReason,
                       @Alias(prefix = "refund:") String refundReference, Instant refundedAt) {
 
+    @Alias(prefix = "pending-payment:")
+    public String pendingReservation() {
+        return status == PaymentStatus.PENDING ? reservationId.toString() : null;
+    }
 }

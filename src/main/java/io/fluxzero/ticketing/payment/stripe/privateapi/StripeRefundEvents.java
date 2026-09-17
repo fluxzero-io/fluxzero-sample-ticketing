@@ -4,7 +4,7 @@ import io.fluxzero.sdk.publishing.routing.RoutingKey;
 import io.fluxzero.ticketing.payment.api.PaymentId;
 import io.fluxzero.ticketing.payment.api.model.Money;
 import io.fluxzero.ticketing.payment.stripe.api.model.ProviderAccount;
-import io.fluxzero.ticketing.payment.stripe.api.model.StripeProblem;
+import io.fluxzero.ticketing.payment.stripe.privateapi.model.StripeProblem;
 import io.fluxzero.ticketing.payment.stripe.privateapi.model.StripeRefund.Status;
 import java.time.Instant;
 

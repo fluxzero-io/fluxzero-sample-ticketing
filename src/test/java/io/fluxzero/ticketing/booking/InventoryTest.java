@@ -4,13 +4,15 @@ import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.ticketing.booking.api.*;
 import io.fluxzero.ticketing.booking.api.model.Availability;
 import io.fluxzero.ticketing.booking.api.model.ReservationStatus;
-import io.fluxzero.ticketing.payment.api.StartPayment;
+import io.fluxzero.ticketing.booking.privateapi.ChangeSectionInventory;
 import io.fluxzero.ticketing.payment.api.RecordPaymentSuccess;
+import io.fluxzero.ticketing.payment.api.StartPayment;
 import io.fluxzero.ticketing.payment.api.model.Money;
 import io.fluxzero.ticketing.support.TicketingTestSupport;
 import java.time.Duration;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class InventoryTest extends TicketingTestSupport {
@@ -60,7 +62,7 @@ class InventoryTest extends TicketingTestSupport {
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void internalStockAdjustmentsCannotBeSubmittedAsStandaloneCommands(boolean async) {
         fixture(async).whenCommandByUser(ALICE, new ChangeSectionInventory(new SectionInventoryId(GA, "floor"), GA,
-                        NOW.plus(Duration.ofMinutes(15)), NOW, 1, 0, 6))
+                        NOW.plus(Duration.ofMinutes(15)), NOW, io.fluxzero.ticketing.booking.privateapi.InventoryAction.HOLD, 1, 6))
                 .expectExceptionalResult().expectNoEvents()
                 .expectThat(f -> assertNull(Fluxzero.loadModel(new SectionInventoryId(GA, "floor")).get()));
     }

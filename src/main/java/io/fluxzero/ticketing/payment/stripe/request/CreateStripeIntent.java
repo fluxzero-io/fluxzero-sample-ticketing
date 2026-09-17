@@ -1,6 +1,5 @@
 package io.fluxzero.ticketing.payment.stripe.request;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fluxzero.sdk.publishing.LocalOnly;
 import io.fluxzero.sdk.tracking.handling.HandleCommand;
 import io.fluxzero.sdk.tracking.handling.authentication.RequiresAnyRole;
@@ -13,8 +12,8 @@ import static io.fluxzero.ticketing.payment.stripe.StripeProtocol.*;
 
 /** One idempotent provider operation; the workflow owns its durable intent. */
 @LocalOnly @RequiresAnyRole("PAYMENTS")
-public record CreateStripeIntent(PaymentId paymentId, Money amount, String operationKey) implements SendToStripe {
-    @HandleCommand JsonNode handle() { return send(); }
+public record CreateStripeIntent(PaymentId paymentId, Money amount, String operationKey) implements SendToStripe<StripeIntent> {
+    @HandleCommand StripeIntent handle() { return StripeIntent.from(send()); }
 
     @Override public WebRequest.Builder request() {
         return WebRequest.post("https://api.stripe.com/v1/payment_intents")

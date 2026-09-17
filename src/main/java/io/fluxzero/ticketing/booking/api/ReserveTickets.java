@@ -10,6 +10,7 @@ import io.fluxzero.ticketing.booking.api.model.Admission;
 import io.fluxzero.ticketing.booking.api.model.Reservation;
 import io.fluxzero.ticketing.booking.api.model.ReservationStatus;
 import io.fluxzero.ticketing.booking.api.model.Selection;
+import io.fluxzero.ticketing.booking.privateapi.ReservationHeld;
 import io.fluxzero.ticketing.catalog.api.PerformanceId;
 import io.fluxzero.ticketing.catalog.api.model.Performance;
 import jakarta.validation.Valid;
@@ -30,7 +31,6 @@ import static io.fluxzero.ticketing.common.Checks.require;
 @RequiresUser
 public record ReserveTickets(@NotNull ReservationId reservationId, @NotNull PerformanceId performanceId,
                              @NotEmpty @Size(max = 12) List<@NotNull @Valid Selection> selection) {
-    public ReserveTickets { selection = selection == null ? null : List.copyOf(selection); }
     @InterceptApply
     Object decide(Performance performance, User user, Instant sentAt) {
         Instant now = Fluxzero.currentTime();

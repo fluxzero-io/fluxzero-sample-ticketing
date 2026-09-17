@@ -1,7 +1,8 @@
-package io.fluxzero.ticketing.booking.api;
+package io.fluxzero.ticketing.booking.privateapi;
 
 import io.fluxzero.sdk.modeling.AutomaticModelHandling;
 import io.fluxzero.sdk.persisting.eventsourcing.Apply;
+import io.fluxzero.ticketing.booking.api.*;
 import io.fluxzero.ticketing.booking.api.model.Reservation;
 
 /** Normalized creation, emitted only together with the complete inventory claim. */

@@ -8,6 +8,7 @@ import io.fluxzero.ticketing.booking.api.model.Reservation;
 import io.fluxzero.ticketing.catalog.api.model.Performance;
 import io.fluxzero.ticketing.payment.api.model.Money;
 import io.fluxzero.ticketing.payment.api.model.Payment;
+import io.fluxzero.ticketing.payment.privateapi.PaymentCaptured;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

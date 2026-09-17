@@ -113,23 +113,39 @@ into the new inventory. See the storage boundary below.
 
 `CancelReservation` releases at most twelve selections, voids at most twelve tickets and marks
 its one paying attempt for refund. It does not scan the history of failed payment attempts.
-`CancelPerformance` commits only the cancellation flag. That flag immediately blocks further
+`CancelPerformance` commits cancellation state `SETTLING`. That immediately blocks further
 booking and accepted capture. `Purchase.performanceCancelled` exposes the gate even before
 individual ticket statuses have been settled; future admission checks must enforce it too.
 
-`PerformanceCancellation` observes the retained performance document. It searches active
-reservations in pages of 100 and invokes one idempotent `CancelPerformanceReservation` per
-purchase, committing each before continuing. Each command rechecks the authoritative performance
-and reservation; search is discovery, not permission to mutate detached state. On interruption,
-the remaining active records are the recovery worklist. There is no unbounded Model transaction
-or all-performance reservation list. Issued invoices remain intact and crediting stays separate.
+`PerformanceCancellation` reacts to the committed cancellation event with an injected
+`Graph<Performance>` and `previous()`. It stores a `SettlePerformanceCancellation` event.
+Each delivery discovers at most 100 active reservations and commits each idempotent
+`CancelPerformanceReservation` separately, then durably stores a continuation. It never loops
+through every page in one handler invocation. A crash before continuation publication replays
+the page; already settled reservations are excluded and stale candidates are rechecked.
+
+The cancelled performance gate prevents new active purchases. Reservation Model commit completion
+includes their public document writes, so an empty discovery page after the gate closes completes
+admission settlement as `SETTLED`. This does not claim that refunds or credit notes have finished.
+There is no unbounded Model transaction or all-performance reservation list.
 
 `ReservationDeadlines` reconciles current committed intent. It installs the stable deadline
-for a held reservation and removes it on terminal state. Old event redelivery therefore
-does not recreate a timer for a completed or logically deleted purchase. Cascade notifications
-reach the same handler, which cancels the existing stable schedule. An already delivered
-command treats a missing reservation as a no-op. Availability and payment rules check time
-themselves, so delayed timer delivery never extends a hold.
+for a held reservation and removes it on terminal state. `ExpireReservation` declares its
+`ReservationId` as `@Parent`, so direct or cascaded deletion also cancels the stored schedule
+without an application observer. Already delivered commands still check current status and time;
+a missing reservation is a no-op. Availability and payment rules check time themselves, so
+scheduler delays never extend a hold.
+
+## Current financial relationships
+
+`Payment.pendingReservation()` exposes an alias only while the attempt is `PENDING`.
+`Invoice.invoicedReservation()` exposes one while the invoice is not `VOID`. Their distinct
+alias prefixes prevent identity collisions, and the SDK replaces each alias set atomically with
+the state transition. The commands inspect these identities through transaction-aware
+`loadGraph(...)` reads, including absence. Concurrent contenders retry and re-evaluate the domain
+rule; no search or historical child scan decides uniqueness. Failure/void releases the active
+identity while retaining the original model and history. A late capture of an older attempt
+does not remove a newer attempt's alias.
 
 
 ## Integration transactions

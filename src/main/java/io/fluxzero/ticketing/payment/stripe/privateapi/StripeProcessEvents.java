@@ -3,7 +3,7 @@ package io.fluxzero.ticketing.payment.stripe.privateapi;
 import io.fluxzero.sdk.publishing.routing.RoutingKey;
 import io.fluxzero.ticketing.payment.api.PaymentId;
 import io.fluxzero.ticketing.payment.api.model.Money;
-import io.fluxzero.ticketing.payment.stripe.api.model.StripeProblem;
+import io.fluxzero.ticketing.payment.stripe.privateapi.model.StripeProblem;
 
 /** Verified observations and acknowledgements, all ordered by the same payment identity. */
 public final class StripeProcessEvents {

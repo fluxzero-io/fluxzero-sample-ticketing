@@ -10,7 +10,7 @@ import static io.fluxzero.ticketing.common.web.ExternalResponse.json;
 import static io.fluxzero.ticketing.payment.stripe.StripeProtocol.*;
 
 /** Shared Stripe wire policy; concrete local messages define each operation. */
-public interface SendToStripe extends Request<JsonNode> {
+public interface SendToStripe<T> extends Request<T> {
     WebRequest.Builder request();
     default String operationKey() { return null; }
 

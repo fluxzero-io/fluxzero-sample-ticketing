@@ -13,6 +13,7 @@ import io.fluxzero.ticketing.payment.api.RecordPaymentSuccess;
 import io.fluxzero.ticketing.payment.api.StartPayment;
 import io.fluxzero.ticketing.payment.api.model.Money;
 import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
+import io.fluxzero.ticketing.payment.privateapi.PaymentCaptured;
 import io.fluxzero.ticketing.support.TicketingTestSupport;
 import java.lang.reflect.*;
 import java.time.Clock;
@@ -20,7 +21,6 @@ import java.time.Duration;
 import java.time.ZoneOffset;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 

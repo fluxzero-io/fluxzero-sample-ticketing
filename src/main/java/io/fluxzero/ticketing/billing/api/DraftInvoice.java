@@ -1,7 +1,7 @@
 package io.fluxzero.ticketing.billing.api;
 
+import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.sdk.modeling.AssertLegal;
-import io.fluxzero.sdk.modeling.Graph;
 import io.fluxzero.sdk.persisting.eventsourcing.Apply;
 import io.fluxzero.sdk.tracking.handling.authentication.RequiresAnyRole;
 import io.fluxzero.ticketing.billing.api.model.Invoice;
@@ -17,10 +17,10 @@ import static io.fluxzero.ticketing.common.Checks.require;
 /** Create a billing snapshot independently after the reservation is confirmed. */
 @RequiresAnyRole("BILLING")
 public record DraftInvoice(@NotNull InvoiceId invoiceId, @NotNull ReservationId reservationId) {
-    @AssertLegal void validate(Graph<Reservation> reservation, Performance performance) {
+    @AssertLegal void validate(Reservation reservation, Performance performance) {
         require(!performance.cancelled(), "Performance is cancelled");
-        require(reservation.get().status() == ReservationStatus.CONFIRMED, "Only confirmed reservations can be invoiced");
-        require(reservation.childModels(Invoice.class).stream().allMatch(i -> i.status() == InvoiceStatus.VOID),
+        require(reservation.status() == ReservationStatus.CONFIRMED, "Only confirmed reservations can be invoiced");
+        require(Fluxzero.loadGraph("active-invoice:" + reservationId, Invoice.class).get() == null,
                 "Reservation already has an invoice");
     }
     @Apply Invoice apply(Reservation reservation) {

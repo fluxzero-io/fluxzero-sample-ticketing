@@ -23,9 +23,9 @@ import io.fluxzero.ticketing.catalog.api.model.Event;
 import io.fluxzero.ticketing.catalog.api.model.EventDetails;
 import io.fluxzero.ticketing.catalog.api.model.Performance;
 import io.fluxzero.ticketing.catalog.api.model.Venue;
-import io.fluxzero.ticketing.catalog.luma.api.AcceptLumaImport;
 import io.fluxzero.ticketing.catalog.luma.api.LumaImportId;
 import io.fluxzero.ticketing.catalog.luma.api.model.LumaEvent;
+import io.fluxzero.ticketing.catalog.luma.privateapi.AcceptLumaImport;
 import io.fluxzero.ticketing.payment.api.RecordPaymentSuccess;
 import io.fluxzero.ticketing.payment.api.model.Money;
 import io.fluxzero.ticketing.support.TicketingTestSupport;
@@ -48,6 +48,19 @@ class ModelDeletionTest extends TicketingTestSupport {
     private static final EventId EVENT = new EventId("night-lights");
     private static final ReservationId HOLD = new ReservationId("pending-deadline");
     private static final String SOURCE_ID = "luma-cal_fixture:evt-deletion";
+
+    @ParameterizedTest @ValueSource(booleans = {false, true})
+    void deletingAHoldCancelsItsOwnedDeadlineWithoutADeadlineObserver(boolean async) {
+        (async ? TestFixture.createAsync(builder()) : TestFixture.create(builder())).atFixedTime(NOW)
+                .givenCommandsByUser(OPERATOR, io.fluxzero.ticketing.catalog.DemoCatalog.commands(NOW.plus(Duration.ofDays(1))).toArray())
+                .givenCommandsByUser(ALICE, seats(R, "A1"))
+                .given(f -> Fluxzero.scheduleCommand(new ExpireReservation(R),
+                        io.fluxzero.sdk.scheduling.ScheduleId.of("expire-reservation", R), NOW.plus(Duration.ofMinutes(15))))
+                .whenCommandByUser(OPERATOR, new DeleteReservation(R)).expectSuccessfulResult().expectNoErrors()
+                .expectOnlyActiveScheduledCommands().andThen()
+                .whenCommandByUser(OPERATOR, new io.fluxzero.ticketing.booking.api.CancelPerformanceReservation(R))
+                .expectSuccessfulResult().expectNoEvents().expectNoErrors();
+    }
 
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void deletingVenueCascadesThroughItsHallsAndPurchasesWhileKeepingEveryPriorValue(boolean async) {

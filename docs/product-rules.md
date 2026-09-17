@@ -17,7 +17,9 @@
    including after the scheduled performance time. It voids every ticket and requires a
    full refund of captured funds. Expired reservations remain expired. An organizer can
    cancel a whole performance: its gate closes immediately and purchases are settled in
-   separate bounded transactions. The purchase view exposes that cancellation even before
+   pages of at most 100, with separate bounded transactions and durable continuation between pages.
+   The cancellation moves from `NONE` to `SETTLING` to `SETTLED`; the last state describes admission
+   settlement, while refunds and credits retain their own lifecycle. The purchase view exposes cancellation even before
    its ticket statuses finish updating. New payment and invoice actions are blocked immediately.
    Partial cancellation, admission scanning and commercial cancellation windows need explicit policies before launching a real service.
 6. Availability queries are advisory. `GetAvailability` exposes section names, remaining
@@ -113,3 +115,9 @@ There is no alternative in-memory implementation of this domain.
   performance. Changed source details require an explicit decision before affecting sales.
 
 See [integration commands and protocol rules](integrations.md) for provider setup and recovery.
+
+- **Conflicting provider facts:** a second, contradictory terminal refund or capture observation
+  retains the accepted financial fact and pauses that process with an explicit reconciliation
+  problem. It never silently replaces money already recorded.
+- **Checkout progress:** read `GetStripeCheckoutStatus` without contacting the provider. Fetch
+  the client capability with `GetStripeCheckout` only when opening the authorized checkout.

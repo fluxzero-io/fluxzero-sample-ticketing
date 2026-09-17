@@ -1,15 +1,15 @@
-package io.fluxzero.ticketing.booking.api;
+package io.fluxzero.ticketing.booking.privateapi;
 
 import io.fluxzero.sdk.modeling.AutomaticModelHandling;
 import io.fluxzero.sdk.modeling.Graph;
 import io.fluxzero.sdk.persisting.eventsourcing.Apply;
+import io.fluxzero.ticketing.booking.api.*;
 import io.fluxzero.ticketing.booking.api.model.Reservation;
 import io.fluxzero.ticketing.booking.api.model.ReservationStatus;
 import io.fluxzero.ticketing.booking.api.model.Ticket;
 import io.fluxzero.ticketing.booking.api.model.TicketStatus;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
-
 
 /** Cancel a complete purchase, void its tickets and require refunds without erasing money. */
 public record ReservationCancelled(@NotNull ReservationId reservationId) {

@@ -24,6 +24,6 @@ public record SchedulePerformance(@NotNull PerformanceId performanceId, @NotNull
                 .map(Section::id).collect(java.util.stream.Collectors.toSet())), "Price every section exactly once");
     }
     @Apply Performance apply(Hall hall) {
-        return new Performance(performanceId, eventId, hallId, details, hall.details(), false);
+        return new Performance(performanceId, eventId, hallId, details, hall.details(), Performance.Cancellation.NONE);
     }
 }
