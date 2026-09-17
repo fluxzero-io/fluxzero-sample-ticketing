@@ -8,6 +8,7 @@ import io.fluxzero.sdk.tracking.handling.authentication.RequiresUser;
 import io.fluxzero.sdk.tracking.handling.authentication.User;
 import io.fluxzero.ticketing.booking.api.ReservationId;
 import io.fluxzero.ticketing.booking.api.model.Reservation;
+import io.fluxzero.ticketing.catalog.api.model.Performance;
 import io.fluxzero.ticketing.payment.api.model.Payment;
 import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
 import jakarta.validation.constraints.NotNull;
@@ -18,7 +19,8 @@ import static io.fluxzero.ticketing.common.Checks.require;
 /** Create one active payment attempt, priced from the held reservation. */
 @RequiresUser
 public record StartPayment(@NotNull PaymentId paymentId, @NotNull ReservationId reservationId) {
-    @AssertLegal void validate(Graph<Reservation> reservation, User user) {
+    @AssertLegal void validate(Graph<Reservation> reservation, User user, Performance performance) {
+        require(!performance.cancelled(), "Performance is cancelled");
         owner(reservation.get(), user);
         require(reservation.get().holdsAt(Fluxzero.currentTime()), "An active hold is required to start payment");
         require(reservation.childModels(Payment.class).stream().noneMatch(p -> p.status() == PaymentStatus.PENDING),

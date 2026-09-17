@@ -8,7 +8,9 @@ public final class ExternalResponse {
     private ExternalResponse() {}
     public static JsonNode json(WebResponse response) {
         if (response.getStatus() == null || response.getStatus() < 200 || response.getStatus() >= 300)
-            throw new IntegrationFailure("External service returned HTTP " + response.getStatus());
+            throw new IntegrationFailure("External service returned HTTP " + response.getStatus(),
+                    response.getStatus() == null || response.getStatus() >= 500
+                            || response.getStatus() == 408 || response.getStatus() == 429);
         try {
             JsonNode result = response.getPayloadAs(JsonNode.class);
             if (result == null || !result.isObject()) throw new IntegrationFailure("External response must be a JSON object");

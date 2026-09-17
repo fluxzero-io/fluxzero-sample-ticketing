@@ -110,7 +110,7 @@ class StripeRefundProcessTest extends TicketingTestSupport {
             case "metadata" -> ((ObjectNode) remote.refund.get(field)).put("operation_key", "other");
         }
         fixture.whenCommandByUser(PAYMENTS, new RefreshStripeRefund(P, "first", null)).expectSuccessfulResult()
-                .expectError(io.fluxzero.sdk.tracking.handling.IllegalCommandException.class)
+                .expectNoErrors().expectThat(f -> assertNotNull(StripeProcessBoundaryTest.process().problem()))
                 .expectThat(f -> assertEquals(PaymentStatus.REFUND_REQUIRED, payment().status()));
     }
 

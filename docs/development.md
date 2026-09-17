@@ -30,6 +30,8 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 | `TicketingTest` | Core journeys in synchronous and asynchronous fixtures; time boundaries, roles, ownership, invoice history and schedule cleanup |
 | `BoundaryTest` | Cross-payment capture/refund uniqueness, refund redelivery, blocked direct internal-event dispatch and invalid selections |
 | `InventoryTest`, `InventoryScaleTest` | Atomic group rollback, expiry-safe ownership, exact section counts and bounded commit scope with retained history and concurrent load |
+| `CancellationBoundaryTest`, `SeatSelectionTest` | Cancellation before settlement, bounded seat pages, selection visibility and expiry |
+| `StripeReconciliationTest` | Wrong recovery IDs, permanent failure isolation on one tracker and explicit retry with retained keys |
 | `PerformanceCancellationTest` | Immediate sale/capture gate and paged settlement through independent purchase commits |
 | `ConcurrencyTest` | Simultaneous seat/group requests, competing payment attempts and capture/cancellation |
 | `ExpiryRaceTest` | Deterministically pause an actual SDK commit before expiry, commit a replacement hold through another application, then release and verify retry/refund |
@@ -38,7 +40,6 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 | `StripeEffectRecoveryTest`, `StripeWebhookTest` | Pending/failed/refunded separation, retained attempts, terminal-state protection, signature verification, duplicate and out-of-order callbacks |
 | `LumaIntegrationTest` | Current API contract, scoped calendar, safe mapping, validated direct acceptance, atomic rollback and idempotent import |
 | `IntegrationRecoveryTest` | Fresh client recovers adapter intent and imported source, then completes a pending refund without another POST |
-| `PackageMigrationTest` | Historical names for messages, nested values and invoice state, plus synthetic payment-history reconstruction |
 | `ModelDeletionTest` | Owning-parent cascade, preserved values after logical deletion, reservation deadline cleanup and explicit erasure of selected Model histories |
 | `RuntimeRecoveryTest` | New WebSocket client and application load models and a pending deadline written to the managed runtime by the previous application, without reseeding |
 
@@ -68,15 +69,19 @@ first consumer. A published SDK containing these fixes is required before publis
 
 A reservation touches at most twelve inventory selections. Seat claims are independent;
 a free-admission section has one exact capacity counter with at most 900 active deadline buckets.
-The counter is deliberately a contention boundary. Availability work depends on the requested
-layout and bounded current stock, not retained purchases; the current full-layout query still
-returns all seats. A paged section/seat API can be added for the later UI.
+The counter is deliberately a contention boundary. The section overview uses indexed occupied-seat counts rather than loading each seat.
+`GetSeats` exposes a stable layout page of at most 100 seats with one bounded inventory search.
+These reads are advisory; reservation commits still enforce ownership and exact capacity.
+The immutable performance layout is still loaded as one value; it is not a separate paged
+layout store.
 
 Local qualification checks commit scope after 100 and 1,000 historical reservations, concurrent
 groups competing for capacity, expiry/capture races and cancellation over multiple search pages.
 These tests use real SDK stores and observe actual commit requests. They establish correctness
 and bounded application work, not a production-runtime throughput SLA. Qualify on-sale traffic,
 latency, backpressure and deployment sizing against the chosen production runtime before launch.
+A domain-specific load test follows the completed UI, so it can exercise realistic browse,
+selection, payment and cancellation traffic together.
 
 Hall-calendar collision checks, programme rescheduling, waiting rooms, seat-plan editing,
 ticket transfer/resale and admission scanning are not implemented. Existing sold selections

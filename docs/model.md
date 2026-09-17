@@ -148,8 +148,7 @@ hall layout and operator-supplied prices define inventory; remote capacity never
 
 ## Storage transition
 
-This unpublished branch changes live inventory and provider execution storage. Use a fresh
-demo namespace. Existing financial event aliases and original booking/cancellation applies
-are retained, but an existing deployment needs an explicit inventory backfill and provider
-process migration before accepting new sales. Do not discard purchases or unresolved external
-operations to make that transition. No existing namespace is migrated or erased automatically.
+This unpublished reference app supports the current schema only. Use a fresh demo namespace
+after incompatible changes; no namespace is migrated or erased automatically. Compatibility
+aliases, upcasters and old-schema replay handlers are intentionally absent. Current payment,
+reservation and invoice events still preserve their financial and business history.

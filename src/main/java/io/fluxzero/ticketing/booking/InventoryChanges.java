@@ -32,7 +32,7 @@ public final class InventoryChanges {
         for (var admission : reservation.admissions()) {
             if (admission.seatId() == null) counts.merge(admission.sectionId(), 1, Integer::sum);
             else result.add(new ChangeSeatInventory(new SeatInventoryId(reservation.performanceId(), admission.sectionId(), admission.seatId()),
-                    reservation.performanceId(), reservation.reservationId(), reservation.expiresAt(), now, action));
+                    reservation.performanceId(), admission.sectionId(), admission.seatId(), reservation.reservationId(), reservation.expiresAt(), now, action));
         }
         counts.forEach((sectionId, count) -> result.add(new ChangeSectionInventory(
                 new SectionInventoryId(reservation.performanceId(), sectionId), reservation.performanceId(),

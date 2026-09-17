@@ -18,11 +18,12 @@
    full refund of captured funds. Expired reservations remain expired. An organizer can
    cancel a whole performance: its gate closes immediately and purchases are settled in
    separate bounded transactions. The purchase view exposes that cancellation even before
-   its ticket statuses finish updating. Partial cancellation, admission scanning and commercial
-   cancellation windows need explicit policies before launching a real service.
-6. Availability queries are advisory. They expose section names, remaining capacity,
-   available seats, rows, numbers, prices and the demonstration-layout notice. They do not
-   reserve anything. Selection must be submitted to `ReserveTickets`.
+   its ticket statuses finish updating. New payment and invoice actions are blocked immediately.
+   Partial cancellation, admission scanning and commercial cancellation windows need explicit policies before launching a real service.
+6. Availability queries are advisory. `GetAvailability` exposes section names, remaining
+   capacity, prices and the demonstration-layout notice. `GetSeats` returns a stable page
+   of up to 100 seats in a chosen section, including each seat's availability, row and number.
+   These queries do not reserve anything. Selection must be submitted to `ReserveTickets`.
 
 ## Payments are financial facts
 

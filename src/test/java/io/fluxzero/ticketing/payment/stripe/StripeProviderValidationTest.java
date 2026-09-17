@@ -28,7 +28,7 @@ class StripeProviderValidationTest extends StripeTestSupport {
         remote.intent.put("status", "succeeded").put("amount_received", 7000).put("latest_charge", "ch_fixture");
         fixture.whenQueryByUser(PAYMENTS, new GetStripeCheckout(P)).expectExceptionalResult(IllegalCommandException.class)
                 .andThen().whenCommandByUser(PAYMENTS, new RefreshStripePayment(P, null)).expectSuccessfulResult()
-                .expectError(IllegalCommandException.class)
+                .expectNoErrors().expectThat(f -> org.junit.jupiter.api.Assertions.assertNotNull(binding().problem()))
                 .expectThat(f -> assertEquals(PaymentStatus.PENDING, payment().status()));
     }
 
@@ -39,7 +39,7 @@ class StripeProviderValidationTest extends StripeTestSupport {
                 .withProperty("ticketing.stripe.accountId", "acct_other")
                 .whenQueryByUser(PAYMENTS, new GetStripeCheckout(P)).expectExceptionalResult(IllegalCommandException.class)
                 .expectNoWebRequests().andThen().whenCommandByUser(PAYMENTS, new RefreshStripePayment(P, null))
-                .expectSuccessfulResult().expectError(IllegalCommandException.class).expectNoWebRequests()
+                .expectSuccessfulResult().expectNoErrors().expectThat(f -> org.junit.jupiter.api.Assertions.assertNotNull(binding().problem())).expectNoWebRequests()
                 .expectThat(f -> assertEquals(PaymentStatus.PENDING, payment().status()));
     }
 
@@ -51,7 +51,7 @@ class StripeProviderValidationTest extends StripeTestSupport {
                 new io.fluxzero.ticketing.payment.stripe.api.model.ProviderAccount("stripe", "acct_fixture", "test"),
                 "durable-operation", NOW.minus(java.time.Duration.ofHours(24)));
         var phase = stripe(async, remote).whenEvent(requested)
-                .expectError(IllegalCommandException.class).expectNoWebRequests()
+                .expectNoErrors().expectThat(f -> org.junit.jupiter.api.Assertions.assertNotNull(binding().problem())).expectNoWebRequests()
                 .expectThat(f -> assertEquals(0, remote.creates));
         remote.intent = com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode()
                 .put("object", "payment_intent").put("id", "pi_recovered").put("amount", 7000)

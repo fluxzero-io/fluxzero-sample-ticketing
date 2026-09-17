@@ -1,7 +1,6 @@
 package io.fluxzero.ticketing.booking.api;
 
 import io.fluxzero.sdk.Fluxzero;
-import io.fluxzero.sdk.persisting.eventsourcing.Apply;
 import io.fluxzero.sdk.persisting.eventsourcing.InterceptApply;
 import io.fluxzero.sdk.tracking.handling.authentication.RequiresUser;
 import io.fluxzero.sdk.tracking.handling.authentication.User;
@@ -38,7 +37,7 @@ public record ReserveTickets(@NotNull ReservationId reservationId, @NotNull Perf
         require(!sentAt.isAfter(now), "Reservation request cannot be future-dated");
         require(sentAt.plus(Duration.ofMinutes(15)).isAfter(now), "Reservation request is too old");
         ReservationRules.validSelection(performance, selection, now);
-        var reservation = apply(performance, user, sentAt);
+        var reservation = hold(performance, user, sentAt);
         reservation = reservation.withExpiresAt(reservation.expiresAt().truncatedTo(ChronoUnit.SECONDS));
         require(reservation.expiresAt().isAfter(now), "Reservation request is too old");
         var changes = new ArrayList<Object>();
@@ -46,8 +45,7 @@ public record ReserveTickets(@NotNull ReservationId reservationId, @NotNull Perf
         changes.addAll(InventoryChanges.hold(reservation, performance, now));
         return changes;
     }
-    // Retained for replay of the original example's reservation events.
-    @Apply Reservation apply(Performance performance, User user, Instant timestamp) {
+    private Reservation hold(Performance performance, User user, Instant timestamp) {
         Instant expiresAt = timestamp.plus(Duration.ofMinutes(15));
         if (performance.details().startsAt().isBefore(expiresAt)) expiresAt = performance.details().startsAt();
         List<Admission> admissions = admissions(performance, selection);

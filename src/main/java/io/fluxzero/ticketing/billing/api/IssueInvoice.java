@@ -7,6 +7,7 @@ import io.fluxzero.ticketing.billing.api.model.Invoice;
 import io.fluxzero.ticketing.billing.api.model.InvoiceStatus;
 import io.fluxzero.ticketing.booking.api.model.Reservation;
 import io.fluxzero.ticketing.booking.api.model.ReservationStatus;
+import io.fluxzero.ticketing.catalog.api.model.Performance;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 
@@ -15,7 +16,8 @@ import static io.fluxzero.ticketing.common.Checks.require;
 /** Issue an immutable commercial invoice snapshot. */
 @RequiresAnyRole("BILLING")
 public record IssueInvoice(@NotNull InvoiceId invoiceId) {
-    @AssertLegal void validate(Invoice invoice, Reservation reservation) {
+    @AssertLegal void validate(Invoice invoice, Reservation reservation, Performance performance) {
+        require(!performance.cancelled(), "Performance is cancelled");
         require(invoice.status() == InvoiceStatus.DRAFT, "Only draft invoices can be issued");
         require(reservation.status() == ReservationStatus.CONFIRMED, "Cancelled purchases cannot be invoiced");
     }

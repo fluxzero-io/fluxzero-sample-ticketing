@@ -3,19 +3,25 @@ package io.fluxzero.ticketing.payment.stripe;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fluxzero.common.Guarantee;
 import io.fluxzero.sdk.Fluxzero;
+import io.fluxzero.sdk.common.exception.FunctionalException;
+import io.fluxzero.sdk.publishing.TimeoutException;
+import io.fluxzero.sdk.scheduling.ScheduleId;
 import io.fluxzero.sdk.tracking.Consumer;
 import io.fluxzero.sdk.tracking.ForeverRetryingErrorHandler;
 import io.fluxzero.sdk.tracking.handling.HandleDocument;
-import io.fluxzero.ticketing.payment.api.RecordPaymentFailure;
+import io.fluxzero.sdk.tracking.handling.HandleSchedule;
+import io.fluxzero.ticketing.common.web.IntegrationFailure;
 import io.fluxzero.ticketing.payment.api.ConfirmRefund;
-import io.fluxzero.ticketing.payment.stripe.api.CreateStripeRefund;
-import io.fluxzero.ticketing.payment.stripe.api.FetchStripeRefund;
-import io.fluxzero.ticketing.payment.stripe.api.model.StripeRefund;
+import io.fluxzero.ticketing.payment.api.RecordPaymentFailure;
 import io.fluxzero.ticketing.payment.api.RecordPaymentSuccess;
 import io.fluxzero.ticketing.payment.api.model.Money;
 import io.fluxzero.ticketing.payment.stripe.api.CreateStripeIntent;
+import io.fluxzero.ticketing.payment.stripe.api.CreateStripeRefund;
 import io.fluxzero.ticketing.payment.stripe.api.FetchStripePaymentIntent;
+import io.fluxzero.ticketing.payment.stripe.api.FetchStripeRefund;
 import io.fluxzero.ticketing.payment.stripe.api.StripeProcessEvents.*;
+import io.fluxzero.ticketing.payment.stripe.api.model.StripeProblem;
+import io.fluxzero.ticketing.payment.stripe.api.model.StripeRefund;
 import org.springframework.stereotype.Component;
 
 import static io.fluxzero.ticketing.common.Checks.require;
@@ -28,6 +34,33 @@ import static io.fluxzero.ticketing.payment.stripe.StripeProtocol.*;
 public class StripePaymentEffects {
     @HandleDocument void reconcile(StripePaymentProcess observed) {
         var process = Fluxzero.getDocument(observed.paymentId(), StripePaymentProcess.class).orElseThrow();
+        if (process.workId() == null) return;
+        if (process.problem() != null) {
+            if (process.problem().retryAt() != null) {
+                Fluxzero.schedule(new RetryDue(process.paymentId(), process.problem().workId(), process.problem().retryAt()),
+                        ScheduleId.of("stripe-retry", process.paymentId()), process.problem().retryAt());
+            }
+            return;
+        }
+        Object outcome;
+        try {
+            outcome = execute(process);
+        } catch (IntegrationFailure failure) {
+            outcome = new WorkFailed(process.paymentId(), new StripeProblem(
+                    process.workId(), failure.getMessage(), failure.retryable() ? Fluxzero.currentTime().plusSeconds(30) : null));
+        } catch (TimeoutException failure) {
+            outcome = new WorkFailed(process.paymentId(), new StripeProblem(
+                    process.workId(), "Provider response timed out; outcome is uncertain", Fluxzero.currentTime().plusSeconds(30)));
+        } catch (FunctionalException failure) {
+            outcome = new WorkFailed(process.paymentId(), new StripeProblem(
+                    process.workId(), failure.getMessage(), null));
+        }
+        if (outcome != null) publish(outcome);
+    }
+    @HandleSchedule
+    void retry(RetryDue due) { publish(due); }
+
+    private Object execute(StripePaymentProcess process) {
         validateAccount(process);
         var account = process.account();
         if (process.needsObservation()) {
@@ -42,15 +75,15 @@ public class StripePaymentEffects {
             String status = text(intent, "status");
             String chargeId = status.equals("succeeded") ? id(text(intent, "latest_charge"), "ch_") : null;
             Money captured = chargeId == null ? null : new Money(positiveAmount(intent, "amount_received"), "EUR");
-            publish(new IntentObserved(process.paymentId(), process.requestedObservation(), intentId, status, chargeId, captured));
+            return new IntentObserved(process.paymentId(), process.requestedObservation(), intentId, status, chargeId, captured);
         } else if (process.chargeId() != null && !process.captureRecorded()) {
             Fluxzero.sendCommandAndWait(new RecordPaymentSuccess(process.paymentId(), account.reference(process.chargeId()), process.captured()));
             Fluxzero.commit().join();
-            publish(new CaptureRecorded(process.paymentId(), process.chargeId()));
+            return new CaptureRecorded(process.paymentId(), process.chargeId());
         } else if ("canceled".equals(process.providerStatus()) && !process.cancellationRecorded()) {
             Fluxzero.sendCommandAndWait(new RecordPaymentFailure(process.paymentId(), "Payment cancelled by provider"));
             Fluxzero.commit().join();
-            publish(new CancellationRecorded(process.paymentId()));
+            return new CancellationRecorded(process.paymentId());
         } else {
             for (var refund : process.refunds().values()) {
                 if (refund.needsObservation()) {
@@ -62,34 +95,25 @@ public class StripePaymentEffects {
                     } else {
                         response = Fluxzero.queryAndWait(new FetchStripeRefund(refund.externalId()));
                     }
-                    require("refund".equals(text(response, "object")), "Expected a Stripe refund");
-                    String refundId = id(text(response, "id"), "re_");
-                    require(refund.externalId() == null || refund.externalId().equals(refundId), "Refund identity mismatch");
-                    require(process.intentId().equals(text(response, "payment_intent"))
-                            && process.chargeId().equals(text(response, "charge")), "Refund belongs to another capture");
-                    require("eur".equals(text(response, "currency")) && positiveAmount(response, "amount") == refund.amount().minorUnits(),
-                            "Refund amount or currency mismatch");
-                    var metadata = response.path("metadata");
-                    require(process.paymentId().getFunctionalId().equals(text(metadata, "payment_id"))
-                            && refund.attemptId().equals(text(metadata, "refund_attempt_id"))
-                            && refund.operationKey().equals(text(metadata, "operation_key")), "Refund correlation mismatch");
+                    String refundId = validateRefund(response, process, refund);
                     StripeRefund.Status status = switch (text(response, "status")) {
                         case "pending" -> StripeRefund.Status.PENDING;
                         case "requires_action" -> StripeRefund.Status.REQUIRES_ACTION;
                         case "succeeded" -> StripeRefund.Status.SUCCEEDED;
                         case "failed" -> StripeRefund.Status.FAILED;
                         case "canceled" -> StripeRefund.Status.CANCELLED;
-                        default -> throw new io.fluxzero.ticketing.common.web.IntegrationFailure("Unknown Stripe refund status");
+                        default -> throw new IntegrationFailure("Unknown Stripe refund status");
                     };
-                    publish(new RefundObserved(process.paymentId(), refund.attemptId(), refund.requestedObservation(), refundId,
-                            status, response.path("failure_reason").asText(null)));
+                    return new RefundObserved(process.paymentId(), refund.attemptId(), refund.requestedObservation(), refundId,
+                            status, response.path("failure_reason").asText(null));
                 } else if (refund.status() == StripeRefund.Status.SUCCEEDED && !refund.recorded()) {
                     Fluxzero.sendCommandAndWait(new ConfirmRefund(process.paymentId(), account.reference(refund.externalId()), refund.amount()));
                     Fluxzero.commit().join();
-                    publish(new RefundRecorded(process.paymentId(), refund.attemptId(), refund.externalId()));
+                    return new RefundRecorded(process.paymentId(), refund.attemptId(), refund.externalId());
                 }
             }
         }
+        return null;
     }
     private static void publish(Object event) { Fluxzero.get().eventGateway().publish(Guarantee.STORED, event).join(); }
 }

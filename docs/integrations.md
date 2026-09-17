@@ -147,9 +147,29 @@ deployed by this repository's development setup.
 
 ## Storage compatibility
 
-This unpublished refactor replaces the earlier demo's provider Models with workflow documents.
-Core payment, reservation and invoice history types remain supported. Old provider bindings and
-refund attempts have no automatic migration into the new workflow. Use a fresh demo namespace;
-do not run the new adapter over unresolved old provider operations or delete their records.
-An existing deployment needs an explicit migration that retains external identities and
-idempotency keys before enabling this workflow.
+This unpublished reference app supports its current schema only. Use a fresh demo namespace
+after incompatible changes. There are no historical type aliases, upcasters or old provider
+bindings. A real deployment would need an explicit migration before changing retained records.
+
+## Provider problems and recovery
+
+Expected provider failures become a `StripeProblem` in the stateful process. HTTP 408, 429,
+5xx and response timeouts retain uncertain work and request a retry after 30 seconds. Other
+HTTP failures, malformed responses and failed correlation or domain checks require explicit
+reconciliation. Neither outcome means that no money moved. A provider problem releases the
+tracker to handle other payments; infrastructure failures publishing durable acknowledgements
+still use the consumer's retry policy.
+
+The document observer schedules only persisted retry intent. `RetryDue` is guarded by the
+pending action identity and deadline, so stale deliveries cannot restart newer work. Operation
+keys and the original 23-hour create window survive retries. After correcting a cause, use
+`RetryStripePayment(paymentId)` to resume the same work. If an uncertain create is past its safe
+window, supply the existing provider ID through `RefreshStripePayment` or `RefreshStripeRefund`.
+The supplied object is fetched and validated before its first identity binding; a mistaken
+recovery ID therefore does not prevent a later correct recovery. Signed webhooks retain their
+verified notification path.
+
+`GetStripeCheckout` includes the current problem for an authenticated adapter to present, and
+withholds the client capability after expiry or performance cancellation. New payment and
+invoice actions also respect the performance cancellation immediately, before purchase
+settlement finishes. Retained captures and refund confirmations remain processable.

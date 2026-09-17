@@ -12,7 +12,7 @@ import static io.fluxzero.ticketing.common.Checks.require;
 
 /** Internal part of an atomic reservation decision, never a standalone command. */
 public record ChangeSeatInventory(SeatInventoryId seatInventoryId, PerformanceId performanceId,
-                                  ReservationId reservationId, Instant expiresAt, Instant decidedAt, Action action) {
+                                  String sectionId, String seatId, ReservationId reservationId, Instant expiresAt, Instant decidedAt, Action action) {
     public enum Action { HOLD, SELL, RELEASE }
     @AssertLegal void validate(@Nullable SeatInventory current) {
         if (action == Action.HOLD) require(current == null || !current.occupiedAt(decidedAt), "Seat is unavailable");
@@ -23,8 +23,8 @@ public record ChangeSeatInventory(SeatInventoryId seatInventoryId, PerformanceId
     SeatInventory apply(@Nullable SeatInventory current) {
         if (action == Action.RELEASE) {
             return current != null && reservationId.equals(current.reservationId())
-                    ? new SeatInventory(seatInventoryId, performanceId, null, null, false) : current;
+                    ? new SeatInventory(seatInventoryId, performanceId, sectionId, seatId, null, null, false) : current;
         }
-        return new SeatInventory(seatInventoryId, performanceId, reservationId, expiresAt, action == Action.SELL);
+        return new SeatInventory(seatInventoryId, performanceId, sectionId, seatId, reservationId, expiresAt, action == Action.SELL);
     }
 }

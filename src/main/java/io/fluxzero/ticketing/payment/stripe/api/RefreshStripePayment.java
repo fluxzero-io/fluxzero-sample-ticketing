@@ -7,8 +7,11 @@ import io.fluxzero.sdk.tracking.handling.HandleCommand;
 import io.fluxzero.sdk.tracking.handling.authentication.RequiresAnyRole;
 import io.fluxzero.ticketing.payment.api.PaymentId;
 import io.fluxzero.ticketing.payment.stripe.StripePaymentProcess;
+import io.fluxzero.ticketing.payment.stripe.StripeProtocol;
 import io.fluxzero.ticketing.payment.stripe.api.StripeProcessEvents.Notification;
 import jakarta.validation.constraints.NotNull;
+
+import static io.fluxzero.ticketing.common.Checks.require;
 import static io.fluxzero.ticketing.payment.stripe.StripeProtocol.id;
 
 /** Request durable reconciliation, including an external identity recovered after a lost create response. */
@@ -17,6 +20,12 @@ public record RefreshStripePayment(@NotNull PaymentId paymentId, String intentId
     @HandleCommand void handle() {
         var process = Fluxzero.getDocument(paymentId, StripePaymentProcess.class).orElseThrow();
         String target = id(intentId == null ? process.intentId() : intentId, "pi_");
+        if (process.intentId() == null) {
+            StripeProtocol.validateAccount(process);
+            var intent = Fluxzero.queryAndWait(new FetchStripePaymentIntent(target));
+            require(target.equals(StripeProtocol.validateIntent(intent, process)),
+                    "Recovered PaymentIntent identity mismatch");
+        }
         Fluxzero.get().eventGateway().publish(Guarantee.STORED,
                 new Notification(paymentId, Fluxzero.generateId(), target)).join();
     }

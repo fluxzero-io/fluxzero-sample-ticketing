@@ -54,7 +54,8 @@ external-runtime tests are skipped. The remaining tests use the real SDK through
 Start with [`ReserveTickets`](src/main/java/io/fluxzero/ticketing/booking/api/ReserveTickets.java),
 [`RecordPaymentSuccess`](src/main/java/io/fluxzero/ticketing/payment/api/RecordPaymentSuccess.java)
 and [`GetAvailability`](src/main/java/io/fluxzero/ticketing/booking/api/GetAvailability.java).
-The query exposes stable section and seat identities for a later selection UI; the command
+`GetAvailability` summarizes sections; [`GetSeats`](src/main/java/io/fluxzero/ticketing/booking/api/GetSeats.java)
+pages stable seat identities for the later selection UI. The reservation command
 always checks availability again before committing.
 
 Provider credentials, deployment and a GitHub remote are not configured.

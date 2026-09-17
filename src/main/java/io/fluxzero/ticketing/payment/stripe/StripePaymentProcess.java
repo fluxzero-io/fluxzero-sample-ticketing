@@ -1,5 +1,6 @@
 package io.fluxzero.ticketing.payment.stripe;
 
+import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.sdk.modeling.EntityId;
 import io.fluxzero.sdk.tracking.Consumer;
 import io.fluxzero.sdk.tracking.ForeverRetryingErrorHandler;
@@ -8,15 +9,16 @@ import io.fluxzero.sdk.tracking.handling.HandleEvent;
 import io.fluxzero.sdk.tracking.handling.Stateful;
 import io.fluxzero.ticketing.payment.api.PaymentId;
 import io.fluxzero.ticketing.payment.api.model.Money;
-import io.fluxzero.ticketing.payment.stripe.api.model.ProviderAccount;
 import io.fluxzero.ticketing.payment.stripe.api.StripePaymentRequested;
 import io.fluxzero.ticketing.payment.stripe.api.StripeProcessEvents.*;
-import java.time.Instant;
-import java.util.Map;
-import java.util.LinkedHashMap;
-import java.util.Collections;
-import io.fluxzero.ticketing.payment.stripe.api.model.StripeRefund;
 import io.fluxzero.ticketing.payment.stripe.api.StripeWebhookReceived;
+import io.fluxzero.ticketing.payment.stripe.api.model.ProviderAccount;
+import io.fluxzero.ticketing.payment.stripe.api.model.StripeProblem;
+import io.fluxzero.ticketing.payment.stripe.api.model.StripeRefund;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import lombok.With;
 
 import static io.fluxzero.ticketing.common.Checks.require;
@@ -30,10 +32,11 @@ public record StripePaymentProcess(@EntityId @Association PaymentId paymentId, M
                                    String requestedObservation, String completedObservation,
                                    String intentId, String providerStatus, String chargeId, Money captured,
                                    boolean captureRecorded, boolean cancellationRecorded,
-                                   Map<String, StripeRefund> refunds) {
+                                   Map<String, StripeRefund> refunds,
+                                   StripeProblem problem) {
     @HandleEvent static StripePaymentProcess start(StripePaymentRequested event) {
         return new StripePaymentProcess(event.paymentId(), event.amount(), event.account(), event.operationKey(), event.requestedAt(),
-                event.operationKey(), null, null, null, null, null, false, false, Map.of());
+                event.operationKey(), null, null, null, null, null, false, false, Map.of(), null);
     }
     @HandleEvent StripePaymentProcess alreadyStarted(StripePaymentRequested event) {
         require(amount.equals(event.amount()) && account.equals(event.account()), "Checkout request conflicts with the existing process");
@@ -50,7 +53,7 @@ public record StripePaymentProcess(@EntityId @Association PaymentId paymentId, M
     }
     @HandleEvent StripePaymentProcess notified(Notification event) {
         require(intentId == null || intentId.equals(event.intentId()), "Notification identifies another PaymentIntent");
-        return withIntentId(event.intentId()).withRequestedObservation(event.eventId());
+        return withIntentId(event.intentId()).withRequestedObservation(event.eventId()).withProblem(null);
     }
     @HandleEvent StripePaymentProcess observed(IntentObserved event) {
         require(intentId == null || intentId.equals(event.intentId()), "PaymentIntent identity cannot change");
@@ -81,7 +84,7 @@ public record StripePaymentProcess(@EntityId @Association PaymentId paymentId, M
     @HandleEvent StripePaymentProcess refundNotified(RefundNotification event) {
         var refund = refund(event.attemptId());
         require(refund.externalId() == null || refund.externalId().equals(event.refundId()), "Refund identity cannot change");
-        return updateRefund(refund.withExternalId(event.refundId()).withRequestedObservation(event.eventId()));
+        return updateRefund(refund.withExternalId(event.refundId()).withRequestedObservation(event.eventId())).withProblem(null);
     }
     @HandleEvent StripePaymentProcess refundObserved(RefundObserved event) {
         var refund = refund(event.attemptId());
@@ -98,6 +101,26 @@ public record StripePaymentProcess(@EntityId @Association PaymentId paymentId, M
         var refund = refund(event.attemptId());
         require(event.refundId().equals(refund.externalId()), "Refund acknowledgement identifies another refund");
         return updateRefund(refund.withRecorded(true));
+    }
+    @HandleEvent StripePaymentProcess failed(WorkFailed event) {
+        return java.util.Objects.equals(workId(), event.problem().workId()) ? withProblem(event.problem()) : this;
+    }
+    @HandleEvent StripePaymentProcess resume(RetryRequested event) { return withProblem(null); }
+    @HandleEvent StripePaymentProcess retry(RetryDue event) {
+        return problem != null && problem.workId().equals(event.workId())
+                && java.util.Objects.equals(problem.retryAt(), event.due())
+                && !Fluxzero.currentTime().isBefore(event.due()) ? withProblem(null) : this;
+    }
+    /** Identity of the next unacknowledged effect; stale failures cannot pause newer work. */
+    public String workId() {
+        if (needsObservation()) return "observe:" + requestedObservation;
+        if (chargeId != null && !captureRecorded) return "capture:" + chargeId;
+        if ("canceled".equals(providerStatus) && !cancellationRecorded) return "cancel:" + intentId;
+        for (var refund : refunds.values()) {
+            if (refund.needsObservation()) return "refund-observe:" + refund.attemptId() + ":" + refund.requestedObservation();
+            if (refund.status() == StripeRefund.Status.SUCCEEDED && !refund.recorded()) return "refund-record:" + refund.attemptId();
+        }
+        return null;
     }
     public StripeRefund refund(String attemptId) {
         var refund = refunds.get(attemptId);

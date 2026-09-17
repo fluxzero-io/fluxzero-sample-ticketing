@@ -63,7 +63,7 @@ class StripeIntegrationTest extends StripeTestSupport {
         ((ObjectNode)remote.intent.get("metadata")).put("operation_key", "wrong");
         remote.intent.put("status", "succeeded").put("amount_received", 7000).put("latest_charge", "ch_fixture");
         fixture.whenCommandByUser(PAYMENTS, new RefreshStripePayment(P, null)).expectSuccessfulResult()
-                .expectError(IllegalCommandException.class).expectThat(f -> assertEquals(PaymentStatus.PENDING, payment().status()));
+                .expectNoErrors().expectThat(f -> org.junit.jupiter.api.Assertions.assertNotNull(binding().problem())).expectThat(f -> assertEquals(PaymentStatus.PENDING, payment().status()));
     }
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void onlyProviderCancellationClosesAnUncapturedPayment(boolean async) {
@@ -122,7 +122,8 @@ class StripeIntegrationTest extends StripeTestSupport {
         };
         stripe(true, remote).consumerTimeout(Duration.ofSeconds(30))
                 .whenCommandByUser(PAYMENTS, new BeginStripePayment(P)).expectSuccessfulResult()
-                .expectError(io.fluxzero.ticketing.common.web.IntegrationFailure.class)
+                .expectError(io.fluxzero.ticketing.common.web.IntegrationFailure.class).expectThat(f -> assertEquals(1, remote.creates))
+                .andThen().whenTimeElapses(Duration.ofSeconds(30)).expectNoErrors()
                 .expectThat(f -> {
                     assertEquals(2, remote.creates);
                     assertEquals(1, remote.keys.size());

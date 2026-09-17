@@ -93,23 +93,13 @@ requests. `common` contains only a generic precondition and HTTP response valida
 business policy or an HTTP client layer.
 
 Tests mirror `booking`, `payment.stripe` and `catalog.luma`. The booking journey tests also
-exercise payments and billing together. Shared fixture setup lives in test-only `support`;
-`compatibility` tests cross-domain historical payloads. JSON fixtures are grouped under
-`src/test/resources/booking`, `payment` and `billing`.
+exercise payments and billing together. Shared fixture setup lives in test-only `support`.
+The root package registers current message and value types through `@RegisterType`.
 
-## Historical type names
+## Current schema
 
-The initial example used global `commands`, `queries` and `domain` packages and nested
-`Ids`, `Values` and `ProviderCommands` holders. Their historical binary names are mapped in
-[`fluxzero.properties`](../src/main/resources/fluxzero.properties) through the SDK's
-`fluxzero.serialization.typeAliases` property. This includes nested types promoted to
-standalone classes. The property is shared by application startup and standalone fixtures.
-If deployment supplies `FLUXZERO_SERIALIZATION_TYPE_ALIASES`, it replaces the complete list;
-preserve these entries when adding environment-specific mappings.
-
-Core package aliases retain the financial history format. The later provider workflow refactor
-is a separate storage change: removed provider Models are not migrated automatically. See
-[storage compatibility](integrations.md#storage-compatibility) before reusing an existing namespace. The root `@RegisterType` and application component scan
-still cover the whole tree. `PackageMigrationTest` checks old reservation messages,
-synthetic reconstruction of payment history and an issued invoice with old nested values.
-It does not claim an old-binary/new-binary production storage upgrade or an overlapping rollout.
+This unpublished reference app supports its current schema. Use a fresh temporary namespace
+when changing stored types or inventory structure. There are no historical aliases, upcasters
+or replay-only command handlers. Add a migration only when real retained data must be upgraded
+or a migration example is explicitly requested. Financial facts created by the current schema
+retain their normal event-sourced history.

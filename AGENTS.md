@@ -19,4 +19,4 @@ Use the plugin as the single documentation source; do not add repository-local F
 
 ## Package structure
 
-Follow [the domain package layout](docs/packages.md): messages and typed IDs in each domain's `api`, Models and values in `api.model`, and separate handlers near their owning domain. Put Stripe under `payment.stripe` and Luma under `catalog.luma`; keep the payment API provider-independent. Preserve the configured historical type aliases and check package paths, source links and tests before committing.
+Follow [the domain package layout](docs/packages.md): messages and typed IDs in each domain's `api`, Models and values in `api.model`, and separate handlers near their owning domain. Put Stripe under `payment.stripe` and Luma under `catalog.luma`; keep the payment API provider-independent. Check package paths, source links and tests before committing. This unpublished reference app supports its current schema only. Use a fresh demo namespace after incompatible changes; do not add historical type aliases, upcasters or replay-only handlers without an explicit migration requirement.

@@ -19,7 +19,10 @@ public record BeginStripePayment(@NotNull PaymentId paymentId) {
     @HandleCommand void handle() {
         var payment = Fluxzero.loadModel(paymentId).get();
         require(payment != null && payment.status() == PaymentStatus.PENDING, "Payment is not pending");
-        require(Fluxzero.loadModel(payment.reservationId()).get().holdsAt(Fluxzero.currentTime()), "Reservation has expired");
+        var reservation = Fluxzero.loadModel(payment.reservationId()).get();
+        require(reservation.holdsAt(Fluxzero.currentTime()), "Reservation has expired");
+        require(!Fluxzero.loadModel(reservation.performanceId()).get().cancelled(),
+                "Performance is cancelled");
         var account = new ProviderAccount("stripe", ApplicationProperties.requireProperty("ticketing.stripe.accountId"),
                 ApplicationProperties.getProperty("ticketing.stripe.environment", "test"));
         Fluxzero.get().eventGateway().publish(Guarantee.STORED,
