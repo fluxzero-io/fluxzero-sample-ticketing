@@ -11,6 +11,7 @@ import io.fluxzero.ticketing.common.web.IntegrationFailure;
 import io.fluxzero.ticketing.payment.api.StartPayment;
 import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
 import io.fluxzero.ticketing.payment.stripe.api.*;
+import io.fluxzero.ticketing.payment.stripe.privateapi.*;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Faults occur at real dispatch boundaries, after external execution or the core commit. */
 class StripeEffectRecoveryTest extends StripeTestSupport {
-    @ParameterizedTest @ValueSource(strings = {"IntentObserved", "CaptureRecorded", "RefundObserved", "RefundRecorded"})
+    @ParameterizedTest @ValueSource(strings = {"IntentObserved", "CaptureRecorded", "RefundAuthorized", "RefundObserved", "RefundRecorded"})
     void lostAcknowledgementRetriesTheSameLogicalEffect(String failedEvent) {
         var interrupted = new AtomicBoolean();
         var remote = new RemoteStripe();
@@ -30,7 +31,7 @@ class StripeEffectRecoveryTest extends StripeTestSupport {
             }
             return message;
         }, MessageType.EVENT);
-        var fixture = TestFixture.createAsync(configured, StripePaymentProcess.class, new StripePaymentEffects(), remote,
+        var fixture = TestFixture.createAsync(configured, StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), remote,
                         new ReservationDeadlines()).consumerTimeout(Duration.ofSeconds(30))
                 .withProperty("ticketing.stripe.accountId", "acct_fixture")
                 .withProperty("ticketing.stripe.secretKey", "sk_test_fixture").atFixedTime(NOW)
@@ -56,7 +57,7 @@ class StripeEffectRecoveryTest extends StripeTestSupport {
                     assertEquals(1, remote.refundKeys.size());
                     assertEquals(failedEvent.equals("RefundObserved") ? 2 : 1, remote.refundCreates);
                     assertEquals(PaymentStatus.REFUNDED, payment().status());
-                    assertTrue(binding().refund("refund").recorded());
+                    assertTrue(refund("refund").recorded());
                 });
     }
 }

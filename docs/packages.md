@@ -6,7 +6,8 @@ query results and value objects live in `api.model`. Self-handling commands and 
 their Fluxzero handlers. Outgoing Stripe HTTP messages live in `payment.stripe.request`,
 separate from commands and queries intended for UI or endpoint adapters. They retain local
 Fluxzero dispatch and are not public application actions. Package names alone do not grant
-or enforce endpoint access. Separate observers and domain rules sit beside the domain's API.
+or enforce endpoint access. Internal workflow events and refund identities live in
+`payment.stripe.privateapi`; retained refund values live in its `model` subpackage. Separate observers and domain rules sit beside the domain's API.
 
 | Domain | Responsibility |
 | --- | --- |
@@ -70,10 +71,22 @@ src/main/java/io/fluxzero/ticketing/
 │       ├── StripeProtocol.java
 │       ├── StripePaymentProcess.java
 │       ├── StripePaymentEffects.java
+│       ├── StripeRefundProcess.java
+│       ├── StripeRefundEffects.java
 │       ├── api/
 │       │   ├── BeginStripePayment.java
+│       │   ├── BeginStripeRefund.java
+│       │   ├── RetryStripeRefund.java
 │       │   └── model/Checkout.java
+│       ├── privateapi/
+│       │   ├── StripePaymentRequested.java
+│       │   ├── StripeProcessEvents.java
+│       │   ├── StripeWebhookReceived.java
+│       │   ├── StripeRefundEvents.java
+│       │   ├── StripeRefundId.java
+│       │   └── model/StripeRefund.java
 │       └── request/
+│           ├── SendToStripe.java
 │           ├── CreateStripeIntent.java
 │           ├── CreateStripeRefund.java
 │           ├── FetchStripePaymentIntent.java

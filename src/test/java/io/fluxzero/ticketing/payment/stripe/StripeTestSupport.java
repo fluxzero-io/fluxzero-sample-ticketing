@@ -26,8 +26,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 abstract class StripeTestSupport extends TicketingTestSupport {
     TestFixture stripe(boolean async, RemoteStripe remote) {
-        return (async ? TestFixture.createAsync(builder(), StripePaymentProcess.class, new StripePaymentEffects(), new ReservationDeadlines(), remote)
-                : TestFixture.create(builder(), StripePaymentProcess.class, new StripePaymentEffects(), new ReservationDeadlines(), remote)).atFixedTime(NOW)
+        return (async ? TestFixture.createAsync(builder(), StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), new ReservationDeadlines(), remote)
+                : TestFixture.create(builder(), StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), new ReservationDeadlines(), remote)).atFixedTime(NOW)
                 .withProperty("ticketing.stripe.secretKey", "sk_test_fixture")
                 .withProperty("ticketing.stripe.accountId", "acct_fixture")
                 .withProperty("ticketing.stripe.webhookSecret", "whsec_fixture")
@@ -35,6 +35,14 @@ abstract class StripeTestSupport extends TicketingTestSupport {
                 .givenCommandsByUser(ALICE, seats(R, "A1", "A2"), new StartPayment(P, R));
     }
     static StripePaymentProcess binding() { return Fluxzero.getDocument(P, StripePaymentProcess.class).orElseThrow(); }
+
+    static StripeRefundProcess refundProcess(String attemptId) {
+        return Fluxzero.getDocument(io.fluxzero.ticketing.payment.stripe.privateapi.StripeRefundId.of(P, attemptId),
+                StripeRefundProcess.class).orElseThrow();
+    }
+    static io.fluxzero.ticketing.payment.stripe.privateapi.model.StripeRefund refund(String attemptId) {
+        return refundProcess(attemptId).refund();
+    }
 
     static Map<String, String> decode(String body) {
         var result = new HashMap<String,String>();

@@ -134,8 +134,10 @@ themselves, so delayed timer delivery never extends a hold.
 
 ## Integration transactions
 
-`StripePaymentProcess` uses `@Stateful` execution memory outside this graph. It retains
-provider correlation, pending work and refund attempts. Verified webhooks become durable
+`StripePaymentProcess` and `StripeRefundProcess` use `@Stateful` execution memory outside this graph.
+The payment process retains payment correlation, pending work and one refund authorization.
+Each refund attempt has its own document, correlation and recovery status; old attempts never
+accumulate inside the payment document. Verified webhooks become durable
 internal events. A document observer executes committed intent through local HTTP commands
 and applies provider-independent core facts, then acknowledges their durable completion.
 Repeated delivery is expected; external idempotency and core duplicate checks protect it.

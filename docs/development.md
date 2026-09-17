@@ -36,6 +36,7 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 | `ConcurrencyTest` | Simultaneous seat/group requests, competing payment attempts and capture/cancellation |
 | `ExpiryRaceTest` | Deterministically pause an actual SDK commit before expiry, commit a replacement hold through another application, then release and verify retry/refund |
 | `StripeIntegrationTest`, `StripeProviderValidationTest` | Exact outgoing contract, uncertain outcomes, stable keys, retry-window cutoff, provider/mode isolation, capture after expiry |
+| `StripeRefundIsolationTest` | Old attempts cannot restart or release their replacement; payment notifications cannot resume a paused refund |
 | `StripeRefundProcessTest` | Competing requests permit one unresolved provider attempt; mismatches cannot settle core refunds |
 | `StripeEffectRecoveryTest`, `StripeWebhookTest` | Pending/failed/refunded separation, retained attempts, terminal-state protection, signature verification, duplicate and out-of-order callbacks |
 | `LumaIntegrationTest` | Current API contract, scoped calendar, safe mapping, validated direct acceptance, atomic rollback and idempotent import |

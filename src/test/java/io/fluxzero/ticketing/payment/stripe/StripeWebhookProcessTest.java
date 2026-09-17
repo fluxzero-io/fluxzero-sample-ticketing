@@ -10,7 +10,7 @@ import io.fluxzero.ticketing.payment.api.StartPayment;
 import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
 import io.fluxzero.ticketing.payment.stripe.api.BeginStripePayment;
 import io.fluxzero.ticketing.payment.stripe.api.ReceiveStripeWebhook;
-import io.fluxzero.ticketing.payment.stripe.api.StripeWebhookReceived;
+import io.fluxzero.ticketing.payment.stripe.privateapi.StripeWebhookReceived;
 import io.fluxzero.ticketing.support.TicketingTestSupport;
 import java.time.Duration;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -21,8 +21,8 @@ class StripeWebhookProcessTest extends TicketingTestSupport {
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void verifiedNotificationFinishesTheCoreWithoutProviderChildren(boolean async) throws Exception {
         var remote = new StripeProcessBoundaryTest.ProcessRemote();
-        var fixture = (async ? TestFixture.createAsync(builder(), StripePaymentProcess.class, new StripePaymentEffects(), remote, new ReservationDeadlines())
-                : TestFixture.create(builder(), StripePaymentProcess.class, new StripePaymentEffects(), remote, new ReservationDeadlines()))
+        var fixture = (async ? TestFixture.createAsync(builder(), StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), remote, new ReservationDeadlines())
+                : TestFixture.create(builder(), StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), remote, new ReservationDeadlines()))
                 .withProperty("ticketing.stripe.accountId", "acct_fixture")
                 .withProperty("ticketing.stripe.secretKey", "sk_test_fixture")
                 .withProperty("ticketing.stripe.webhookSecret", "whsec_fixture").atFixedTime(NOW)

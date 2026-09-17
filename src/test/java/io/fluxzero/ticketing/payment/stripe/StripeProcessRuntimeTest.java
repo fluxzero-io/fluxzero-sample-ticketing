@@ -30,7 +30,7 @@ class StripeProcessRuntimeTest extends TicketingTestSupport {
         var fixture = TestFixture.createAsync(builder().replaceIdentityProvider(ignored -> new UuidFactory()),
                         WebSocketClient.newInstance(WebSocketClient.ClientConfig.builder().runtimeBaseUrl(runtime)
                                 .namespace("stripe-process-" + UUID.randomUUID()).name("stripe-process-test").build()),
-                        StripePaymentProcess.class, new StripePaymentEffects(), remote, new ReservationDeadlines())
+                        StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), remote, new ReservationDeadlines())
                 .withProperty("ticketing.stripe.accountId", "acct_fixture")
                 .withProperty("ticketing.stripe.secretKey", "sk_test_fixture").atFixedTime(now)
                 .givenCommandsByUser(OPERATOR, DemoCatalog.commands(now.plus(Duration.ofDays(1))).toArray())

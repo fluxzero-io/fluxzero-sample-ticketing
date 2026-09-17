@@ -1,7 +1,5 @@
 package io.fluxzero.ticketing.payment.stripe.api;
 
-import io.fluxzero.ticketing.payment.stripe.request.FetchStripePaymentIntent;
-
 import io.fluxzero.common.Guarantee;
 import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.sdk.publishing.LocalOnly;
@@ -10,7 +8,8 @@ import io.fluxzero.sdk.tracking.handling.authentication.RequiresAnyRole;
 import io.fluxzero.ticketing.payment.api.PaymentId;
 import io.fluxzero.ticketing.payment.stripe.StripePaymentProcess;
 import io.fluxzero.ticketing.payment.stripe.StripeProtocol;
-import io.fluxzero.ticketing.payment.stripe.api.StripeProcessEvents.Notification;
+import io.fluxzero.ticketing.payment.stripe.privateapi.StripeProcessEvents.Notification;
+import io.fluxzero.ticketing.payment.stripe.request.FetchStripePaymentIntent;
 import jakarta.validation.constraints.NotNull;
 
 import static io.fluxzero.ticketing.common.Checks.require;

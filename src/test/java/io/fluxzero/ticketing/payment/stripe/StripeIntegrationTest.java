@@ -10,6 +10,7 @@ import io.fluxzero.ticketing.booking.api.model.ReservationStatus;
 import io.fluxzero.ticketing.booking.api.model.Ticket;
 import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
 import io.fluxzero.ticketing.payment.stripe.api.*;
+import io.fluxzero.ticketing.payment.stripe.privateapi.*;
 import io.fluxzero.ticketing.payment.stripe.api.model.Checkout;
 import java.time.Duration;
 import java.util.Map;
@@ -81,9 +82,9 @@ class StripeIntegrationTest extends StripeTestSupport {
         var remote = new RemoteStripe();
         // Stripe can answer GET while delivering a callback for POST. Model those independent request lanes explicitly.
         var fixture = (async ? io.fluxzero.sdk.test.TestFixture.createAsync(builder(), StripePaymentProcess.class,
-                new StripePaymentEffects(), new EarlyPost(remote), new EarlyGet(remote), new io.fluxzero.ticketing.booking.ReservationDeadlines())
+                new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), new EarlyPost(remote), new EarlyGet(remote), new io.fluxzero.ticketing.booking.ReservationDeadlines())
                 : io.fluxzero.sdk.test.TestFixture.create(builder(), StripePaymentProcess.class,
-                new StripePaymentEffects(), new EarlyPost(remote), new EarlyGet(remote), new io.fluxzero.ticketing.booking.ReservationDeadlines()))
+                new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), new EarlyPost(remote), new EarlyGet(remote), new io.fluxzero.ticketing.booking.ReservationDeadlines()))
                 .withProperty("ticketing.stripe.accountId", "acct_fixture")
                 .withProperty("ticketing.stripe.secretKey", "sk_test_fixture").atFixedTime(NOW)
                 .givenCommandsByUser(OPERATOR, io.fluxzero.ticketing.catalog.DemoCatalog.commands(NOW.plus(Duration.ofDays(1))).toArray())
@@ -103,7 +104,7 @@ class StripeIntegrationTest extends StripeTestSupport {
             remote.create(request);
             remote.intent.put("status", "succeeded").put("latest_charge", "ch_fixture").put("amount_received", 7000);
             Fluxzero.get().eventGateway().publish(io.fluxzero.common.Guarantee.STORED,
-                    new StripeWebhookReceived(P, binding().account(), "evt_early", binding().operationKey(), "pi_fixture", null)).join();
+                    new StripeWebhookReceived(P, binding().account(), "evt_early", binding().operationKey(), "pi_fixture")).join();
             return WebResponse.builder().status(200).contentType("application/json").payload(remote.intent).build();
         }
     }

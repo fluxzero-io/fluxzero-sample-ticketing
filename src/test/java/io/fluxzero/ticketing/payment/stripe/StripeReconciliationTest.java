@@ -2,6 +2,7 @@ package io.fluxzero.ticketing.payment.stripe;
 
 import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.ticketing.payment.stripe.api.*;
+import io.fluxzero.ticketing.payment.stripe.privateapi.*;
 import io.fluxzero.ticketing.payment.api.model.Money;
 import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
 import io.fluxzero.ticketing.payment.stripe.api.model.ProviderAccount;
@@ -74,7 +75,7 @@ class StripeReconciliationTest extends StripeTestSupport {
         var uncertain = paid.whenCommandByUser(PAYMENTS, new BeginStripeRefund(P, "refund"))
                 .expectSuccessfulResult().expectError(io.fluxzero.ticketing.common.web.IntegrationFailure.class);
         var rejected = uncertain.andThen().whenCommandByUser(PAYMENTS, new RefreshStripeRefund(P, "refund", "re_wrong"))
-                .expectExceptionalResult().expectThat(f -> assertNull(binding().refund("refund").externalId()));
+                .expectExceptionalResult().expectThat(f -> assertNull(refund("refund").externalId()));
         remote.refund.put("status", "succeeded");
         rejected.andThen().whenCommandByUser(PAYMENTS, new RefreshStripeRefund(P, "refund", "re_fixture1"))
                 .expectSuccessfulResult().expectNoErrors().expectThat(f -> assertEquals(PaymentStatus.REFUNDED, payment().status()))

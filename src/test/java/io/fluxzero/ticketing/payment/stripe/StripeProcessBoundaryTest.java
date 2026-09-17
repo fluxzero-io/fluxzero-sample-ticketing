@@ -30,8 +30,8 @@ class StripeProcessBoundaryTest extends TicketingTestSupport {
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void recoverableDeclineKeepsTheCorePaymentPendingAndLaterCaptureIssuesTickets(boolean async) {
         var remote = new ProcessRemote();
-        var fixture = (async ? TestFixture.createAsync(builder(), StripePaymentProcess.class, new StripePaymentEffects(), remote, new ReservationDeadlines())
-                : TestFixture.create(builder(), StripePaymentProcess.class, new StripePaymentEffects(), remote, new ReservationDeadlines()))
+        var fixture = (async ? TestFixture.createAsync(builder(), StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), remote, new ReservationDeadlines())
+                : TestFixture.create(builder(), StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), remote, new ReservationDeadlines()))
                 .withProperty("ticketing.stripe.accountId", "acct_fixture")
                 .withProperty("ticketing.stripe.secretKey", "sk_test_fixture").atFixedTime(NOW)
                 .givenCommandsByUser(OPERATOR, DemoCatalog.commands(NOW.plus(Duration.ofDays(1))).toArray())

@@ -1,4 +1,4 @@
-package io.fluxzero.ticketing.payment.stripe.api;
+package io.fluxzero.ticketing.payment.stripe.privateapi;
 
 import io.fluxzero.sdk.publishing.routing.RoutingKey;
 import io.fluxzero.ticketing.payment.api.PaymentId;

@@ -2,6 +2,7 @@ package io.fluxzero.ticketing.payment.stripe.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fluxzero.common.Guarantee;
 import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.sdk.configuration.ApplicationProperties;
 import io.fluxzero.sdk.publishing.LocalOnly;
@@ -10,7 +11,9 @@ import io.fluxzero.sdk.tracking.handling.authentication.RequiresAnyRole;
 import io.fluxzero.sdk.tracking.handling.authentication.UnauthorizedException;
 import io.fluxzero.ticketing.payment.api.PaymentId;
 import io.fluxzero.ticketing.payment.stripe.api.model.ProviderAccount;
-import io.fluxzero.common.Guarantee;
+import io.fluxzero.ticketing.payment.stripe.privateapi.StripeRefundEvents.RefundWebhookReceived;
+import io.fluxzero.ticketing.payment.stripe.privateapi.StripeRefundId;
+import io.fluxzero.ticketing.payment.stripe.privateapi.StripeWebhookReceived;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.nio.charset.StandardCharsets;
@@ -46,10 +49,13 @@ public record ReceiveStripeWebhook(@NotBlank @Size(max = 1048576) String rawBody
         if (!payment && !refund) return;
         var metadata = object.path("metadata");
         var account = new ProviderAccount("stripe", ApplicationProperties.requireProperty("ticketing.stripe.accountId"), environment);
-        Fluxzero.get().eventGateway().publish(Guarantee.STORED, new StripeWebhookReceived(
-                new PaymentId(text(metadata, "payment_id")), account, text(event, "id"), text(metadata, "operation_key"),
-                io.fluxzero.ticketing.payment.stripe.StripeProtocol.id(text(object, "id"), refund ? "re_" : "pi_"),
-                refund ? text(metadata, "refund_attempt_id") : null)).join();
+        var paymentId = new PaymentId(text(metadata, "payment_id"));
+        String objectId = io.fluxzero.ticketing.payment.stripe.StripeProtocol.id(text(object, "id"), refund ? "re_" : "pi_");
+        Object notification = refund
+                ? new RefundWebhookReceived(paymentId, StripeRefundId.of(paymentId, text(metadata, "refund_attempt_id")),
+                        account, text(event, "id"), text(metadata, "operation_key"), objectId)
+                : new StripeWebhookReceived(paymentId, account, text(event, "id"), text(metadata, "operation_key"), objectId);
+        Fluxzero.get().eventGateway().publish(Guarantee.STORED, notification).join();
     }
 
     private void verify() {

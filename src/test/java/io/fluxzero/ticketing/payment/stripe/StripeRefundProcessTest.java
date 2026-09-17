@@ -14,7 +14,8 @@ import io.fluxzero.ticketing.catalog.DemoCatalog;
 import io.fluxzero.ticketing.payment.api.StartPayment;
 import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
 import io.fluxzero.ticketing.payment.stripe.api.*;
-import io.fluxzero.ticketing.payment.stripe.api.model.StripeRefund;
+import io.fluxzero.ticketing.payment.stripe.privateapi.*;
+import io.fluxzero.ticketing.payment.stripe.privateapi.model.StripeRefund;
 import io.fluxzero.ticketing.support.TicketingTestSupport;
 import java.time.Duration;
 import java.util.HashSet;
@@ -25,8 +26,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class StripeRefundProcessTest extends TicketingTestSupport {
     TestFixture refundable(boolean async, Remote remote) {
-        var fixture = (async ? TestFixture.createAsync(builder(), StripePaymentProcess.class, new StripePaymentEffects(), remote, new ReservationDeadlines())
-                : TestFixture.create(builder(), StripePaymentProcess.class, new StripePaymentEffects(), remote, new ReservationDeadlines()))
+        var fixture = (async ? TestFixture.createAsync(builder(), StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), remote, new ReservationDeadlines())
+                : TestFixture.create(builder(), StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), remote, new ReservationDeadlines()))
                 .withProperty("ticketing.stripe.accountId", "acct_fixture")
                 .withProperty("ticketing.stripe.secretKey", "sk_test_fixture").atFixedTime(NOW)
                 .givenCommandsByUser(OPERATOR, DemoCatalog.commands(NOW.plus(Duration.ofDays(1))).toArray())
@@ -41,14 +42,14 @@ class StripeRefundProcessTest extends TicketingTestSupport {
         var phase = refundable(async, remote).whenCommandByUser(PAYMENTS, new BeginStripeRefund(P, "first"))
                 .expectSuccessfulResult().expectThat(f -> {
                     assertEquals(PaymentStatus.REFUND_REQUIRED, payment().status());
-                    assertEquals(StripeRefund.Status.PENDING, StripeProcessBoundaryTest.process().refund("first").status());
+                    assertEquals(StripeRefund.Status.PENDING, StripeTestSupport.refund("first").status());
                     assertTrue(Fluxzero.loadGraph(P).children().isEmpty());
                 }).expectNoErrors();
         remote.refund.put("status", "succeeded");
         phase.andThen().whenCommandByUser(PAYMENTS, new RefreshStripeRefund(P, "first", null))
                 .expectSuccessfulResult().expectThat(f -> {
                     assertEquals(PaymentStatus.REFUNDED, payment().status());
-                    assertTrue(StripeProcessBoundaryTest.process().refund("first").recorded());
+                    assertTrue(StripeTestSupport.refund("first").recorded());
                     assertEquals(1, remote.keys.size());
                 }).expectNoErrors();
     }
@@ -63,7 +64,7 @@ class StripeRefundProcessTest extends TicketingTestSupport {
         phase.andThen().givenCommandsByUser(PAYMENTS, new RefreshStripeRefund(P, "first", null))
                 .whenCommandByUser(PAYMENTS, new BeginStripeRefund(P, "second"))
                 .expectSuccessfulResult().expectThat(f -> {
-                    assertEquals(StripeRefund.Status.FAILED, StripeProcessBoundaryTest.process().refund("first").status());
+                    assertEquals(StripeRefund.Status.FAILED, StripeTestSupport.refund("first").status());
                     assertEquals(2, remote.keys.size());
                     assertEquals(PaymentStatus.REFUND_REQUIRED, payment().status());
                 }).expectNoErrors();
@@ -90,7 +91,7 @@ class StripeRefundProcessTest extends TicketingTestSupport {
             }
         }).expectSuccessfulResult().expectError(io.fluxzero.sdk.tracking.handling.IllegalCommandException.class)
                 .expectThat(f -> {
-                    assertEquals(1, StripeProcessBoundaryTest.process().refunds().size());
+                    assertNotNull(StripeProcessBoundaryTest.process().refundAuthorization());
                     assertEquals(1, remote.keys.size());
                     assertEquals(PaymentStatus.REFUND_REQUIRED, payment().status());
                 });
@@ -110,7 +111,7 @@ class StripeRefundProcessTest extends TicketingTestSupport {
             case "metadata" -> ((ObjectNode) remote.refund.get(field)).put("operation_key", "other");
         }
         fixture.whenCommandByUser(PAYMENTS, new RefreshStripeRefund(P, "first", null)).expectSuccessfulResult()
-                .expectNoErrors().expectThat(f -> assertNotNull(StripeProcessBoundaryTest.process().problem()))
+                .expectNoErrors().expectThat(f -> assertNotNull(StripeTestSupport.refundProcess("first").problem()))
                 .expectThat(f -> assertEquals(PaymentStatus.REFUND_REQUIRED, payment().status()));
     }
 
@@ -142,7 +143,7 @@ class StripeRefundProcessTest extends TicketingTestSupport {
         phase.andThen().whenCommandByUser(PAYMENTS, new RefreshStripeRefund(P, "first", null))
                 .expectSuccessfulResult().expectNoErrors().expectThat(f -> {
                     assertEquals(PaymentStatus.REFUNDED, payment().status());
-                    assertEquals(StripeRefund.Status.SUCCEEDED, StripeProcessBoundaryTest.process().refund("first").status());
+                    assertEquals(StripeRefund.Status.SUCCEEDED, StripeTestSupport.refund("first").status());
                 });
     }
 
@@ -153,7 +154,7 @@ class StripeRefundProcessTest extends TicketingTestSupport {
         JsonNode refund(WebRequest request) {
             var form = StripeTestSupport.decode(request.getPayloadAs(String.class));
             String key = request.getHeader("Idempotency-Key");
-            var stored = StripeProcessBoundaryTest.process().refund(form.get("metadata[refund_attempt_id]"));
+            var stored = StripeTestSupport.refund(form.get("metadata[refund_attempt_id]"));
             assertEquals(key, stored.operationKey());
             keys.add(key);
             refund = JsonNodeFactory.instance.objectNode().put("object", "refund").put("id", "re_process" + keys.size())

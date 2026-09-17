@@ -14,7 +14,8 @@ import io.fluxzero.ticketing.catalog.luma.api.model.LumaImport;
 import io.fluxzero.ticketing.payment.api.StartPayment;
 import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
 import io.fluxzero.ticketing.payment.stripe.api.*;
-import io.fluxzero.ticketing.payment.stripe.api.model.StripeRefund;
+import io.fluxzero.ticketing.payment.stripe.privateapi.*;
+import io.fluxzero.ticketing.payment.stripe.privateapi.model.StripeRefund;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -58,8 +59,8 @@ class IntegrationRecoveryTest extends StripeTestSupport {
                 .whenCommandByUser(PAYMENTS, new RefreshStripeRefund(P, "recover-me", null))
                 .expectSuccessfulResult().expectThat(f -> {
                     assertEquals(PaymentStatus.REFUNDED, payment().status());
-                    assertEquals(StripeRefund.Status.SUCCEEDED, binding().refund("recover-me").status());
-                    assertTrue(binding().refund("recover-me").recorded());
+                    assertEquals(StripeRefund.Status.SUCCEEDED, refund("recover-me").status());
+                    assertTrue(refund("recover-me").recorded());
                     assertEquals(1, stripe.refundCreates);
                     assertEquals(1, stripe.creates);
                     assertEquals(1, Fluxzero.loadGraph(LumaTestSupport.IMPORTED).childModels(LumaImport.class).size());
@@ -91,7 +92,7 @@ class IntegrationRecoveryTest extends StripeTestSupport {
                         .addPropertySource(properties::get),
                 WebSocketClient.newInstance(WebSocketClient.ClientConfig.builder().runtimeBaseUrl(url)
                         .namespace(namespace).name("stripe-autonomous-recovery").build()),
-                StripePaymentProcess.class, new StripePaymentEffects(), new ReservationDeadlines(), remote, observer)
+                StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), new ReservationDeadlines(), remote, observer)
                 .whenExecuting(f -> assertTrue(observer.completed.await(10, java.util.concurrent.TimeUnit.SECONDS),
                         () -> "Retained intent=" + binding().needsObservation() + ", HTTP creates=" + remote.creates
                                 + "; a new application must consume pending work without a recovery command"))
@@ -111,7 +112,7 @@ class IntegrationRecoveryTest extends StripeTestSupport {
     TestFixture connected(String url, String namespace, RemoteStripe stripe, LumaTestSupport.RemoteLuma luma) {
         return TestFixture.createAsync(builder().replaceIdentityProvider(ignored -> new UuidFactory()),
                 WebSocketClient.newInstance(WebSocketClient.ClientConfig.builder().runtimeBaseUrl(url).namespace(namespace)
-                        .name("stripe-recovery").build()), StripePaymentProcess.class, new StripePaymentEffects(), new ReservationDeadlines(), stripe, luma)
+                        .name("stripe-recovery").build()), StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), new ReservationDeadlines(), stripe, luma)
                 .withProperty("ticketing.stripe.secretKey", "sk_test_fixture")
                 .withProperty("ticketing.stripe.accountId", "acct_fixture")
                 .withProperty("ticketing.luma.apiKey", "luma_fixture_key")

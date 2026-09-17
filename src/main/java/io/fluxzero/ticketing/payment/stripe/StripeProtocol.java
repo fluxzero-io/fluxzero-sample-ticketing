@@ -5,7 +5,6 @@ import io.fluxzero.sdk.configuration.ApplicationProperties;
 import io.fluxzero.sdk.web.RedirectPolicy;
 import io.fluxzero.sdk.web.WebRequestSettings;
 import io.fluxzero.ticketing.payment.stripe.api.model.ProviderAccount;
-import io.fluxzero.ticketing.payment.stripe.api.model.StripeRefund;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -36,7 +35,10 @@ public final class StripeProtocol {
                 ApplicationProperties.getProperty("ticketing.stripe.environment", "test"));
     }
     public static void validateAccount(StripePaymentProcess process) {
-        require(configuredAccount().equals(process.account()), "Configured Stripe account differs from process account");
+        validateAccount(process.account());
+    }
+    public static void validateAccount(ProviderAccount account) {
+        require(configuredAccount().equals(account), "Configured Stripe account differs from process account");
     }
     public static String validateIntent(JsonNode intent, StripePaymentProcess process) {
         require("payment_intent".equals(text(intent, "object")), "Expected a Stripe PaymentIntent");
@@ -51,8 +53,8 @@ public final class StripeProtocol {
                 "Stripe environment mismatch");
         return intentId;
     }
-    public static String validateRefund(JsonNode response, StripePaymentProcess process,
-                                        StripeRefund refund) {
+    public static String validateRefund(JsonNode response, StripeRefundProcess process) {
+        var refund = process.refund();
         require("refund".equals(text(response, "object")), "Expected a Stripe refund");
         String refundId = id(text(response, "id"), "re_");
         require(refund.externalId() == null || refund.externalId().equals(refundId), "Refund identity mismatch");

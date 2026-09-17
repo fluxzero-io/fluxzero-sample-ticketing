@@ -8,7 +8,8 @@ coordinates those local operations.
 `Payment`, reservation and invoice commands remain provider independent. Stripe translates
 external observations into `RecordPaymentSuccess`, `RecordPaymentFailure` and `ConfirmRefund`.
 Another provider can use those same core commands and own its execution state separately.
-`StripePaymentProcess` is `@Stateful` process memory, not a child of the payment Model.
+`StripePaymentProcess` and `StripeRefundProcess` are independent `@Stateful` workflows,
+not children of the payment Model.
 Stripe accounts, operation keys and refund attempts stay inside the adapter.
 Selecting a provider never changes who owns inventory or when a hold expires.
 
@@ -47,17 +48,31 @@ application operations, not public customer endpoints.
 | --- | --- | --- |
 | `BeginStripePayment(paymentId)` | None in the accepting handler | Stores a request event; the process later creates the intent |
 | `GetStripeCheckout(paymentId)` | `FetchStripePaymentIntent`: GET the known intent | Preparing, or a validated checkout capability while the hold remains active |
-| `RefreshStripePayment(paymentId, intentId)` | None in the accepting handler | Stores a reconciliation request; null ID uses the stored identity |
+| `RefreshStripePayment(paymentId, intentId)` | GET when verifying the first recovered identity | Stores a reconciliation request; null ID uses the stored identity |
 | `BeginStripeRefund(paymentId, attemptId)` | None in the accepting handler | Requests execution; the ordered process allows only one unresolved attempt |
-| `RefreshStripeRefund(paymentId, attemptId, refundId)` | None in the accepting handler | Requests reconciliation; null ID uses the stored identity |
-| `ReceiveStripeWebhook(rawBody, signature)` | None | Verifies input and stores `StripeWebhookReceived` before acknowledgement |
+| `RefreshStripeRefund(paymentId, attemptId, refundId)` | GET when verifying the first recovered identity | Requests reconciliation; null ID uses the stored identity |
+| `RetryStripePayment(paymentId)` | None | Resumes payment work after its cause is corrected |
+| `RetryStripeRefund(paymentId, attemptId)` | None | Resumes only the specified refund attempt |
+| `ReceiveStripeWebhook(rawBody, signature)` | None | Verifies input and stores a private payment or refund notification before acknowledgement |
 
 Acceptance means the request was stored, not that Stripe or the core transition has completed.
-The process consumes payment-routed events. `StripePaymentEffects` observes committed process
-documents, reloads current intent and invokes `CreateStripeIntent`, `FetchStripePaymentIntent`,
-`CreateStripeRefund` or `FetchStripeRefund`. These messages live in `payment.stripe.request`, outside the application API. Each specific
-local message owns its HTTP call; UI and endpoint adapters invoke application actions instead.
-Both workflow consumers use four threads; different payments can progress independently.
+The workflows consume payment-routed events in `payment.stripe.privateapi`. `StripePaymentEffects`
+observes committed payment-process documents; `StripeRefundEffects` observes committed individual
+refund documents. They reload current intent and invoke concrete local messages in
+`payment.stripe.request`: `CreateStripeIntent`, `FetchStripePaymentIntent`, `CreateStripeRefund`
+and `FetchStripeRefund`. `SendToStripe` supplies their common authentication, version header,
+idempotency header, response validation and Fluxzero webrequest execution. It is not a separate
+HTTP client. UI and endpoint adapters invoke application actions instead.
+Each workflow and effect consumer uses four threads; different payments can progress independently.
+
+The payment process retains only one refund authorization. Its effect observer publishes
+`RefundAuthorized` after that authorization is stored. The independent refund process retains
+the attempt's immutable operation key, provider correlation, observations and recovery status.
+Failed or cancelled attempts durably release their authorization; successful attempts keep it
+occupied. Redelivery cannot restart an earlier attempt or release its replacement. An exact
+lookup by the payment-scoped `StripeRefundId` handles old request duplicates, without scanning
+history. Refund observations are associated only with that refund identity, not every attempt
+belonging to the payment. Coordinator state and work per transition remain constant as history grows.
 
 External effects and process state are not one transaction. The effect observer publishes an
 observation after HTTP, and an acknowledgement only after the core command has committed.
@@ -164,7 +179,8 @@ still use the consumer's retry policy.
 The document observer schedules only persisted retry intent. `RetryDue` is guarded by the
 pending action identity and deadline, so stale deliveries cannot restart newer work. Operation
 keys and the original 23-hour create window survive retries. After correcting a cause, use
-`RetryStripePayment(paymentId)` to resume the same work. If an uncertain create is past its safe
+`RetryStripePayment(paymentId)` or `RetryStripeRefund(paymentId, attemptId)` to resume the
+affected workflow. Payment notifications and retries do not clear a refund problem. If an uncertain create is past its safe
 window, supply the existing provider ID through `RefreshStripePayment` or `RefreshStripeRefund`.
 The supplied object is fetched and validated before its first identity binding; a mistaken
 recovery ID therefore does not prevent a later correct recovery. Signed webhooks retain their

@@ -46,7 +46,7 @@ class StripeProviderValidationTest extends StripeTestSupport {
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void anOldUncertainCreateRequiresTheExistingProviderIdentity(boolean async) {
         var remote = new RemoteStripe();
-        var requested = new io.fluxzero.ticketing.payment.stripe.api.StripePaymentRequested(P,
+        var requested = new io.fluxzero.ticketing.payment.stripe.privateapi.StripePaymentRequested(P,
                 new io.fluxzero.ticketing.payment.api.model.Money(7000, "EUR"),
                 new io.fluxzero.ticketing.payment.stripe.api.model.ProviderAccount("stripe", "acct_fixture", "test"),
                 "durable-operation", NOW.minus(java.time.Duration.ofHours(24)));

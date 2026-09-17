@@ -7,7 +7,7 @@ rights and financial facts.
 
 **Core behavior and external integrations are implemented.** The core domain now has Stripe payment/refund adapters
 and safe Luma event import, with controlled external-response tests. Payments remain provider
-independent. HTTP endpoints, browser authentication and a frontend belong to phase 3.
+independent; refund attempts have their own durable workflows and recovery. HTTP endpoints, browser authentication and a frontend belong to phase 3.
 
 ## Get started
 

@@ -1,4 +1,4 @@
-package io.fluxzero.ticketing.payment.stripe.api.model;
+package io.fluxzero.ticketing.payment.stripe.privateapi.model;
 
 import io.fluxzero.ticketing.payment.api.model.Money;
 import java.time.Instant;
