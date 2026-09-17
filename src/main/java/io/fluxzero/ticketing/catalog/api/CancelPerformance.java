@@ -2,6 +2,7 @@ package io.fluxzero.ticketing.catalog.api;
 
 import io.fluxzero.sdk.modeling.Graph;
 import io.fluxzero.sdk.persisting.eventsourcing.Apply;
+import io.fluxzero.sdk.persisting.eventsourcing.InterceptApply;
 import io.fluxzero.sdk.tracking.handling.authentication.RequiresAnyRole;
 import io.fluxzero.ticketing.booking.api.model.Reservation;
 import io.fluxzero.ticketing.booking.api.model.ReservationStatus;
@@ -13,9 +14,14 @@ import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
-/** Cancel a performance and all admission rights atomically, preserving billing and payment history. */
+/** Close the performance immediately; retained cancellation intent settles purchases independently. */
 @RequiresAnyRole("OPERATOR")
 public record CancelPerformance(@NotNull PerformanceId performanceId) {
+    @InterceptApply
+    Object decide(Performance performance) {
+        return performance.cancelled() ? null : new PerformanceCancelled(performanceId);
+    }
+    // Historical event applies retain the original example's replay behavior.
     @Apply Performance apply(Performance performance) { return performance.withCancelled(true); }
     @Apply List<Reservation> reservations(Graph<Performance> performance) {
         return performance.childModels(Reservation.class).stream()

@@ -12,7 +12,6 @@ import io.fluxzero.ticketing.payment.api.model.Money;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 import static io.fluxzero.ticketing.catalog.CatalogRules.section;
@@ -24,26 +23,16 @@ public final class ReservationRules {
     public static void owner(Reservation reservation, User user) {
         if (!reservation.customerId().equals(user.id())) throw new UnauthorizedException("Reservation belongs to another customer");
     }
-    public static void available(Performance performance, List<Reservation> reservations,
-                                 List<Selection> selection, Instant now) {
+    public static void validSelection(Performance performance, List<Selection> selection, Instant now) {
         require(!performance.cancelled(), "Performance is cancelled");
         require(now.isBefore(performance.details().startsAt()), "Booking closes at performance start");
-        List<Admission> occupied = reservations.stream().filter(r -> r.occupiesAt(now))
-                .flatMap(r -> r.admissions().stream()).toList();
         Set<Selection> seats = new HashSet<>();
         for (Selection chosen : selection) {
             Section section = section(performance, chosen.sectionId());
             if (section.mode() == AdmissionMode.RESERVED_SEATING) {
                 require(section.seats().stream().anyMatch(s -> s.id().equals(chosen.seatId())), "Unknown seat");
                 require(seats.add(chosen), "The same seat cannot appear twice in a reservation");
-                require(occupied.stream().noneMatch(a -> a.sectionId().equals(chosen.sectionId())
-                        && Objects.equals(a.seatId(), chosen.seatId())), "Seat is unavailable");
-            } else {
-                require(chosen.seatId() == null, "General admission does not select a seat");
-            }
-            long requested = selection.stream().filter(s -> s.sectionId().equals(chosen.sectionId())).count();
-            long used = occupied.stream().filter(a -> a.sectionId().equals(chosen.sectionId())).count();
-            require(requested + used <= section.capacity(), "Section capacity exceeded");
+            } else require(chosen.seatId() == null, "General admission does not select a seat");
         }
     }
     public static List<Admission> admissions(Performance performance, List<Selection> selections) {

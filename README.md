@@ -5,7 +5,7 @@ seat and section availability, tickets, payments and invoicing. Inspired by
 [Product code](https://fluxzero.io/product-code/), with separate lifecycles for admission
 rights and financial facts.
 
-**Core behavior and external integrations are implemented; scalability work is in progress.** The core domain now has Stripe payment/refund adapters
+**Core behavior and external integrations are implemented.** The core domain now has Stripe payment/refund adapters
 and safe Luma event import, with controlled external-response tests. Payments remain provider
 independent. HTTP endpoints, browser authentication and a frontend belong to phase 3.
 
@@ -23,10 +23,13 @@ and affected tests. Agents use the installed Fluxzero plugin and its `fluxzero-d
 connection. There is no UI to open yet. The executable product scenarios are in
 [`TicketingTest`](src/test/java/io/fluxzero/ticketing/booking/TicketingTest.java).
 
-The release POM pins `2.0.0-rc.14`. The provider refactor is being qualified against the
-local build of SDK commit `f22aa0df867`, including its matching testserver, because it needs
-subsequent SDK fixes. This work branch is not yet a publishable release; adopt a published
-SDK containing those fixes before release. The CLI starter was generated with `fz 1.18.9`.
+This development branch pins **`2.0.0-f22aa0df867-SNAPSHOT`**, built locally from SDK commit
+`f22aa0df867`, with its matching testserver and proxy. It includes fixes required by the
+recovery and concurrency scenarios. The snapshot must be installed in the local Maven
+repository before `fz dev`; it is not a published dependency. Before publishing the example,
+replace it with a released SDK containing those fixes. The CLI starter was generated with
+`fz 1.18.9`. Use a fresh demo namespace for the new inventory and provider workflow; see
+[the storage transition](docs/model.md#storage-transition).
 
 For CI, or explicit verification with the development environment stopped:
 

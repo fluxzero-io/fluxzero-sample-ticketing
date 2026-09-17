@@ -54,7 +54,7 @@ public abstract class TicketingTestSupport {
     }
     @AfterEach void cleanup() { TestFixture.shutDownActiveFixtures(); }
     protected TestFixture fixture(boolean async) {
-        return (async ? TestFixture.createAsync(builder(), new ReservationDeadlines()) : TestFixture.create(builder(), new ReservationDeadlines()))
+        return (async ? TestFixture.createAsync(builder(), new ReservationDeadlines(), new io.fluxzero.ticketing.catalog.PerformanceCancellation()) : TestFixture.create(builder(), new ReservationDeadlines(), new io.fluxzero.ticketing.catalog.PerformanceCancellation()))
                 .atFixedTime(NOW).givenCommandsByUser(OPERATOR, DemoCatalog.commands(NOW.plus(Duration.ofDays(1))).toArray());
     }
     protected static ReserveTickets seats(ReservationId id, String... seatIds) {

@@ -8,15 +8,17 @@
 2. A reserved seat may occur once across active holds and confirmed purchases for that
    performance. General admission counts both against the section capacity. Different
    performances have independent inventory even when they use the same physical seats.
-3. Holds last 15 minutes from the incoming command's timestamp, capped at performance
-   start. Future-dated and already stale requests are rejected. At the exact deadline the
+3. Holds last at most 15 minutes from the incoming command's timestamp, capped at performance
+   start and rounded down to the nearest second. Future-dated and already stale requests are rejected. At the exact deadline the
    hold is no longer valid. Scheduler delays do not extend it.
 4. Reservations expire or cancel as complete groups. Their records remain available.
    A duplicate reservation ID is rejected, rather than treated as a fresh purchase.
 5. The example permits full customer cancellation of a held or confirmed purchase,
    including after the scheduled performance time. It voids every ticket and requires a
    full refund of captured funds. Expired reservations remain expired. An organizer can
-   cancel a whole performance. Partial cancellation, admission scanning and commercial
+   cancel a whole performance: its gate closes immediately and purchases are settled in
+   separate bounded transactions. The purchase view exposes that cancellation even before
+   its ticket statuses finish updating. Partial cancellation, admission scanning and commercial
    cancellation windows need explicit policies before launching a real service.
 6. Availability queries are advisory. They expose section names, remaining capacity,
    available seats, rows, numbers, prices and the demonstration-layout notice. They do not

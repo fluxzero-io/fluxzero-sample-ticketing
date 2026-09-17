@@ -27,6 +27,7 @@ public record GetReservation(@NotNull ReservationId reservationId) implements Re
         require(reservation != null, "Unknown reservation");
         owner(reservation, user);
         return new Purchase(reservation, graph.childModels(Ticket.class), graph.childModels(Payment.class),
-                graph.childModels(Invoice.class), graph.descendantModels(CreditNote.class));
+                graph.childModels(Invoice.class), graph.descendantModels(CreditNote.class),
+                Fluxzero.loadModel(reservation.performanceId()).get().cancelled());
     }
 }

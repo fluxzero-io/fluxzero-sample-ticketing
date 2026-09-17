@@ -25,13 +25,13 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ExpiryRaceTest extends TicketingTestSupport {
-    @Test
-    void captureEvaluatedBeforeExpiryRetriesAfterAReplacementHoldCommits() {
+    @org.junit.jupiter.params.ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void captureEvaluatedBeforeExpiryRetriesAfterAReplacementHoldCommits(boolean generalAdmission) {
         var client = new PausingClient();
         // Keep the supplied transport; switching a local fixture to sync creates a different LocalClient.
         var fixture = TestFixture.createAsync(builder(), client).atFixedTime(NOW)
                 .givenCommandsByUser(OPERATOR, DemoCatalog.commands(NOW.plus(Duration.ofDays(1))).toArray())
-                .givenCommandsByUser(ALICE, seats(R, "A1"), new StartPayment(P, R))
+                .givenCommandsByUser(ALICE, (generalAdmission ? floor(R, 3) : seats(R, "A1")), new StartPayment(P, R))
                 .givenElapsedTime(Duration.ofMinutes(15).minusMillis(1));
         fixture.whenExecuting(f -> {
             var otherApplication = builder().disableAutomaticTracking().build(client);
@@ -40,7 +40,7 @@ class ExpiryRaceTest extends TicketingTestSupport {
                 try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
                     client.armed.set(true);
                     Future<?> capture = executor.submit(() -> f.apply(fc -> PAYMENTS.apply(() -> Fluxzero.sendCommandAndWait(
-                            new RecordPaymentSuccess(P, "racing-capture", new Money(3500, "EUR"))))));
+                            new RecordPaymentSuccess(P, "racing-capture", new Money(generalAdmission ? 9000 : 3500, "EUR"))))));
                     try {
                         if (!client.evaluated.await(5, TimeUnit.SECONDS)) {
                             capture.get(10, TimeUnit.SECONDS); // Expose failures that occur before the commit probe.
@@ -48,7 +48,7 @@ class ExpiryRaceTest extends TicketingTestSupport {
                         }
                         f.withClock(Clock.fixed(NOW.plus(Duration.ofMinutes(15)), ZoneOffset.UTC));
                         otherApplication.apply(fc -> BOB.apply(() -> Fluxzero.sendCommandAndWait(
-                                seats(new ReservationId("replacement"), "A1"))));
+                                (generalAdmission ? floor(new ReservationId("replacement"), 6) : seats(new ReservationId("replacement"), "A1")))));
                     } finally { client.release.countDown(); }
                     capture.get(10, TimeUnit.SECONDS);
                 }

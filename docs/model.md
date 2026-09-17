@@ -6,6 +6,8 @@ erDiagram
     HALL ||--o{ PERFORMANCE : hosts
     EVENT ||--o{ PERFORMANCE : occurs_as
     PERFORMANCE ||--o{ RESERVATION : receives
+    PERFORMANCE ||--o{ SEAT_INVENTORY : allocates
+    PERFORMANCE ||--o{ SECTION_INVENTORY : allocates
     RESERVATION ||--o{ TICKET : issues
     RESERVATION ||--o{ PAYMENT : has_attempts
     RESERVATION ||--o{ INVOICE : bills
@@ -13,8 +15,9 @@ erDiagram
     PERFORMANCE ||--o| LUMA_IMPORT : originates_from
 ```
 
-Every box is an independent Fluxzero `@Model` with typed identity and event-sourced
-history. Every drawn edge is an owning child-side `@Parent` relation with an explicit
+Every box is an independent Fluxzero `@Model` with typed identity. Business records retain
+event-sourced history. Inventory Models retain current document state; their purpose is
+bounded allocation, while reservation and financial events retain the purchase history. Every drawn edge is an owning child-side `@Parent` relation with an explicit
 composition path and the default cascade policy. Independent identity and history do not
 require a child to remain active after its parent is deleted.
 
@@ -24,6 +27,8 @@ require a child to remain active after its parent is deleted.
 | Hall | `HallId`, belongs to a venue | Independently registered room and immutable layout |
 | Event | `EventId`, programme title and description | Shared by multiple performances |
 | Performance | `PerformanceId`, event + hall + instant + time zone | Bookable until start; may be cancelled |
+| SeatInventory | `(performance, section, seat)` | One current owner, deadline and sold flag |
+| SectionInventory | `(performance, section)` | Sold count and active deadline counts; at most 900 second buckets |
 | Reservation | `ReservationId`, authenticated customer and complete priced selection | Held → confirmed, expired or cancelled; confirmed → cancelled |
 | Ticket | `TicketId`, reservation, explicit performance, customer and admission | Issued only on accepted payment; valid → void |
 | Payment | `PaymentId`, reservation, expected and actual amounts | Pending → failed or captured; captured → refund required → refunded |
@@ -83,25 +88,41 @@ own lifecycle. It should not rewrite the layout of an already on-sale performanc
 
 ## Atomic business decisions
 
-`ReserveTickets` reads `Graph<Performance>` and its reservations, including an empty child
-set. The SDK validates that relationship read and the relevant model heads at commit using the
-configured conflict policy. A conflicting request cannot commit a stale admission decision. A rejected group produces no
-partial hold and no expiry schedule. No search index or advisory query decides the sale.
+`ReserveTickets` validates the frozen layout and performance gate, then returns a normalized
+`ReservationHeld` plus at most twelve inventory changes. Fluxzero commits the entire ordered
+set atomically. No retained reservation collection or search result decides the sale. A failed
+last selection rolls back every earlier selection. Different seats have independent inventory
+Models; free admission serializes only at its own section counter.
 
-`RecordPaymentSuccess` reads payment, reservation and, for a potentially accepted capture,
-the performance's current reservation set. That last dependency matters when a capture is
-evaluated before expiry but its commit races a replacement hold after expiry. The conflict
-restarts the decision at current processing time. One commit records the payment outcome,
-updates the reservation and creates all tickets, or records money that must be refunded.
+Seat ownership expires at the stored deadline. Section inventory counts sold admissions plus
+holds whose deadline is still in the future. Deadlines have second precision, rounded down
+from the fifteen-minute/start-time cap. This bounds the active deadline map to 900 entries;
+expired entries are removed on the next stock change and never contribute to availability.
+Time-based release therefore does not depend on timer delivery. Counters change in the same
+transaction as the reservation; they are not eventually consistent projections.
 
-The normalized `PaymentCaptured` event carries its reservation identity explicitly so a
-newly created ticket can be reconstructed before its own parent relationship exists.
-Its applies have automatic command handling disabled. It cannot be used as a direct
-command to supply a chosen acceptance decision or old timestamp.
+`RecordPaymentSuccess` checks the current reservation and performance gate at processing time.
+An accepted capture updates payment, reservation, tickets and inventory in one commit. If a
+replacement allocation commits after expiry, the shared inventory conflict forces reevaluation;
+the late capture becomes a refund obligation. A historical provider timestamp cannot revive it.
 
-`CancelReservation` changes the whole reservation, its tickets and successful payments in
-one commit. `CancelPerformance` does the same across its reservations. Issued invoices
-remain intact: crediting is a separate billing decision and creates a credit note.
+Normalized events have automatic command handling disabled. Customers cannot submit an
+acceptance decision or an inventory delta as a standalone command. Original event applies
+remain available to reconstruct earlier business history; that does not migrate old live holds
+into the new inventory. See the storage boundary below.
+
+`CancelReservation` releases at most twelve selections, voids at most twelve tickets and marks
+its one paying attempt for refund. It does not scan the history of failed payment attempts.
+`CancelPerformance` commits only the cancellation flag. That flag immediately blocks further
+booking and accepted capture. `Purchase.performanceCancelled` exposes the gate even before
+individual ticket statuses have been settled; future admission checks must enforce it too.
+
+`PerformanceCancellation` observes the retained performance document. It searches active
+reservations in pages of 100 and invokes one idempotent `CancelPerformanceReservation` per
+purchase, committing each before continuing. Each command rechecks the authoritative performance
+and reservation; search is discovery, not permission to mutate detached state. On interruption,
+the remaining active records are the recovery worklist. There is no unbounded Model transaction
+or all-performance reservation list. Issued invoices remain intact and crediting stays separate.
 
 `ReservationDeadlines` reconciles current committed intent. It installs the stable deadline
 for a held reservation and removes it on terminal state. Old event redelivery therefore
@@ -124,3 +145,11 @@ See [integration recovery](integrations.md) for failure boundaries and storage c
 `AcceptLumaImport` creates the programme, performance and source mapping in one transaction.
 Its deterministic source identity prevents duplicate local performances. The existing local
 hall layout and operator-supplied prices define inventory; remote capacity never does.
+
+## Storage transition
+
+This unpublished branch changes live inventory and provider execution storage. Use a fresh
+demo namespace. Existing financial event aliases and original booking/cancellation applies
+are retained, but an existing deployment needs an explicit inventory backfill and provider
+process migration before accepting new sales. Do not discard purchases or unresolved external
+operations to make that transition. No existing namespace is migrated or erased automatically.

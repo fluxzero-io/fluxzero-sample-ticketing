@@ -29,11 +29,13 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 | --- | --- |
 | `TicketingTest` | Core journeys in synchronous and asynchronous fixtures; time boundaries, roles, ownership, invoice history and schedule cleanup |
 | `BoundaryTest` | Cross-payment capture/refund uniqueness, refund redelivery, blocked direct internal-event dispatch and invalid selections |
+| `InventoryTest`, `InventoryScaleTest` | Atomic group rollback, expiry-safe ownership, exact section counts and bounded commit scope with retained history and concurrent load |
+| `PerformanceCancellationTest` | Immediate sale/capture gate and paged settlement through independent purchase commits |
 | `ConcurrencyTest` | Simultaneous seat/group requests, competing payment attempts and capture/cancellation |
 | `ExpiryRaceTest` | Deterministically pause an actual SDK commit before expiry, commit a replacement hold through another application, then release and verify retry/refund |
-| `StripeIntegrationTest`, `IntegrationBoundaryTest` | Exact outgoing contract, uncertain outcomes, stable keys, retry-window cutoff, provider/mode isolation, capture after expiry |
-| `RefundConcurrencyTest` | Competing refund preparations commit one unresolved attempt under contention |
-| `StripeRefundTest`, `StripeWebhookTest` | Pending/failed/refunded separation, retained attempts, terminal-state protection, signature verification, duplicate and out-of-order callbacks |
+| `StripeIntegrationTest`, `StripeProviderValidationTest` | Exact outgoing contract, uncertain outcomes, stable keys, retry-window cutoff, provider/mode isolation, capture after expiry |
+| `StripeRefundProcessTest` | Competing requests permit one unresolved provider attempt; mismatches cannot settle core refunds |
+| `StripeEffectRecoveryTest`, `StripeWebhookTest` | Pending/failed/refunded separation, retained attempts, terminal-state protection, signature verification, duplicate and out-of-order callbacks |
 | `LumaIntegrationTest` | Current API contract, scoped calendar, safe mapping, validated direct acceptance, atomic rollback and idempotent import |
 | `IntegrationRecoveryTest` | Fresh client recovers adapter intent and imported source, then completes a pending refund without another POST |
 | `PackageMigrationTest` | Historical names for messages, nested values and invoice state, plus synthetic payment-history reconstruction |
@@ -55,24 +57,26 @@ belong to deployment work.
 
 ## Capacity and performance boundary
 
-Models use plain `@Model` and the configured SDK defaults (`fluxzero.defaults.version=2026.09.10`).
-Update conflicts use `RETRY`, including graph membership reads. Routing is an
-optimization, not the uniqueness mechanism. Transactions do not use external search results.
-The performance inventory is derived from reservations, so there is no separately maintained
-availability counter that can drift.
+The app uses the configured SDK conflict defaults; it does not add explicit retry overrides.
+Reservation and performance Models additionally maintain public documents for cancellation
+discovery and recovery. Inventory uses current documents so a cold stock load does not replay
+its allocation history. Financial and reservation history remain event sourced.
 
-The provider refactor is qualified with a local SDK/testserver build from `f22aa0df867`.
-That build includes the fixes for creation conflicts, nested deletion, fixture document
-revision tracking and document replay before the first consumer. The autonomous application
-restart scenario now passes. A published SDK containing these fixes is required before release.
+The SDK/testserver pin is a local build from `f22aa0df867`. It contains the required fixes for
+creation conflicts, nested deletion, fixture document revisions and document replay before the
+first consumer. A published SDK containing these fixes is required before publishing this app.
 
-A reservation contains at most 12 admissions. Availability and reservation validation read
-the performance's retained reservations; cost therefore grows with that performance's booking
-history. Full-performance cancellation also touches its related reservations, payments and
-tickets. This is a readable correctness-first core, not a qualified stadium-scale throughput
-claim. Before large on-sales, measure representative contention, history and cancellation
-sizes, then introduce lifecycle-appropriate inventory partitioning if required. Do not weaken
-the atomic group boundary or substitute eventually consistent search for validation.
+A reservation touches at most twelve inventory selections. Seat claims are independent;
+a free-admission section has one exact capacity counter with at most 900 active deadline buckets.
+The counter is deliberately a contention boundary. Availability work depends on the requested
+layout and bounded current stock, not retained purchases; the current full-layout query still
+returns all seats. A paged section/seat API can be added for the later UI.
+
+Local qualification checks commit scope after 100 and 1,000 historical reservations, concurrent
+groups competing for capacity, expiry/capture races and cancellation over multiple search pages.
+These tests use real SDK stores and observe actual commit requests. They establish correctness
+and bounded application work, not a production-runtime throughput SLA. Qualify on-sale traffic,
+latency, backpressure and deployment sizing against the chosen production runtime before launch.
 
 Hall-calendar collision checks, programme rescheduling, waiting rooms, seat-plan editing,
 ticket transfer/resale and admission scanning are not implemented. Existing sold selections
@@ -93,3 +97,15 @@ Keep the demonstration-layout notice visible and distinguish a hold from a ticke
 refund request from completed repayment. Add routed transport tests for every public action.
 
 No frontend, public HTTP routes, deployment workflow or publication is implemented.
+
+## Local SDK prerequisite for this development branch
+
+Build SDK commit `f22aa0df867` in a separate checkout using Java 25. Set the root and
+module Maven versions to `2.0.0-f22aa0df867-SNAPSHOT`, then install the matching artifacts:
+
+```sh
+./mvnw -B -pl sdk,test-server,proxy,fluxzero-bom -am -DskipTests -Dmaven.javadoc.skip=true install
+```
+
+This prepares the dependency only. Return to this app and let `fz dev` own its build and
+behavior tests. A published SDK with the required fixes will remove this development prerequisite.

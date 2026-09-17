@@ -75,7 +75,7 @@ class RuntimeRecoveryTest extends TicketingTestSupport {
                 .atFixedTime(runtimeNow);
         reader.whenQueryByUser(ALICE, new GetReservation(R)).expectResult((Purchase purchase) -> {
             assertEquals(ReservationStatus.CONFIRMED, purchase.reservation().status());
-            assertEquals(runtimeNow.plus(Duration.ofMinutes(15)), purchase.reservation().expiresAt());
+            assertEquals(runtimeNow.plus(Duration.ofMinutes(15)).truncatedTo(java.time.temporal.ChronoUnit.SECONDS), purchase.reservation().expiresAt());
             assertEquals("alice", purchase.reservation().customerId());
             assertEquals(2, purchase.tickets().size());
             assertEquals(new Money(7000, "EUR"), purchase.payments().getFirst().captured());
@@ -84,12 +84,16 @@ class RuntimeRecoveryTest extends TicketingTestSupport {
             return true;
         }).expectThat(f -> {
             var schedule = f.messageScheduler().getSchedule(ScheduleId.of("expire-reservation", pendingReservation)).orElseThrow();
-            assertEquals(runtimeNow.plus(Duration.ofMinutes(15)), schedule.getDeadline());
+            assertEquals(runtimeNow.plus(Duration.ofMinutes(15)).truncatedTo(java.time.temporal.ChronoUnit.SECONDS), schedule.getDeadline());
             assertEquals(ReservationStatus.HELD, Fluxzero.loadModel(pendingReservation).get().status());
+            assertTrue(Fluxzero.loadModel(new io.fluxzero.ticketing.booking.api.SeatInventoryId(SHOW, "stalls", "A1")).get().sold());
+            assertEquals(pendingReservation, Fluxzero.loadModel(
+                    new io.fluxzero.ticketing.booking.api.SeatInventoryId(SHOW, "stalls", "B1")).get().reservationId());
         }).andThen().whenCommandByUser(PAYMENTS, success()).expectNoEvents()
                 .andThen().whenCommandByUser(ALICE, new CancelReservation(R)).expectSuccessfulResult()
                 .expectThat(f -> {
                     assertEquals(PaymentStatus.REFUND_REQUIRED, payment().status());
+                    assertNull(Fluxzero.loadModel(new io.fluxzero.ticketing.booking.api.SeatInventoryId(SHOW, "stalls", "A1")).get().reservationId());
                     assertTrue(Fluxzero.loadGraph(R).childModels(Ticket.class).stream().allMatch(t -> t.status() == TicketStatus.VOID));
                 });
         TestFixture.shutDownActiveFixtures();

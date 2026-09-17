@@ -25,9 +25,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Concurrent calls use the actual command gateway and the SDK's shared runtime store. */
 class ConcurrencyTest extends TicketingTestSupport {
-    @Test
-    void concurrentSeatRequestsHaveExactlyOneWinner() {
-        fixture(false).whenExecuting(f -> {
+    @org.junit.jupiter.params.ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void concurrentSeatRequestsHaveExactlyOneWinner(boolean async) {
+        fixture(async).whenExecuting(f -> {
             long wins = compete(12, i -> f.apply(fc -> ALICE.apply(() -> {
                 Fluxzero.sendCommandAndWait(seats(new ReservationId("racer-" + i), "A1"));
                 return true;
@@ -38,9 +38,9 @@ class ConcurrencyTest extends TicketingTestSupport {
                 .andThen().whenQuery(new GetAvailability(SHOW))
                 .expectResult((Availability a) -> a.sections().getFirst().remaining() == 3);
     }
-    @Test
-    void concurrentGeneralAdmissionGroupsNeverExceedCapacity() {
-        fixture(false).whenExecuting(f -> {
+    @org.junit.jupiter.params.ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void concurrentGeneralAdmissionGroupsNeverExceedCapacity(boolean async) {
+        fixture(async).whenExecuting(f -> {
             assertEquals(2, compete(8, i -> f.apply(fc -> ALICE.apply(() -> {
                 Fluxzero.sendCommandAndWait(floor(new ReservationId("ga-racer-" + i), 3));
                 return true;

@@ -8,7 +8,7 @@ their Fluxzero handlers. Separate observers and domain rules sit beside the doma
 | Domain | Responsibility |
 | --- | --- |
 | `catalog` | Venues, halls, programmes and dated performances, including frozen layouts and prices |
-| `booking` | Availability, atomic group reservations, expiry, ownership and issued tickets |
+| `booking` | Inventory, availability, atomic group reservations, expiry, ownership and issued tickets |
 | `payment` | Provider-independent payment, capture and refund facts |
 | `billing` | Invoices and retained credit notes |
 
@@ -43,11 +43,14 @@ src/main/java/io/fluxzero/ticketing/
 ├── booking/
 │   ├── ReservationDeadlines.java
 │   ├── ReservationRules.java
+│   ├── InventoryChanges.java
 │   └── api/
 │       ├── ReserveTickets.java
 │       ├── GetAvailability.java
 │       ├── ReservationId.java
 │       └── model/
+│           ├── SeatInventory.java
+│           ├── SectionInventory.java
 │           ├── Reservation.java
 │           ├── Ticket.java
 │           ├── Selection.java

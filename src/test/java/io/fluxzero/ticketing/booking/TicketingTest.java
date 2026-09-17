@@ -234,7 +234,7 @@ class TicketingTest extends TicketingTestSupport {
                 .expectExceptionalResult(IllegalCommandException.class).expectNoEvents();
     }
     @ParameterizedTest @ValueSource(booleans = {false, true})
-    void performanceCancellationClosesAllHoldsAndTicketsAtomically(boolean async) {
+    void performanceCancellationClosesTheGateAndSettlesEveryPurchase(boolean async) {
         paid(async).givenCommandsByUser(BOB, seats(new ReservationId("other"), "B1"))
                 .whenCommandByUser(OPERATOR, new CancelPerformance(SHOW)).expectSuccessfulResult().expectNoSchedules()
                 .expectThat(f -> {
