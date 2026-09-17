@@ -3,7 +3,6 @@ package io.fluxzero.ticketing.payment.stripe;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fluxzero.common.Guarantee;
 import io.fluxzero.sdk.Fluxzero;
-import io.fluxzero.sdk.configuration.ApplicationProperties;
 import io.fluxzero.sdk.tracking.Consumer;
 import io.fluxzero.sdk.tracking.ForeverRetryingErrorHandler;
 import io.fluxzero.sdk.tracking.handling.HandleDocument;
@@ -14,7 +13,6 @@ import io.fluxzero.ticketing.payment.stripe.api.FetchStripeRefund;
 import io.fluxzero.ticketing.payment.stripe.api.model.StripeRefund;
 import io.fluxzero.ticketing.payment.api.RecordPaymentSuccess;
 import io.fluxzero.ticketing.payment.api.model.Money;
-import io.fluxzero.ticketing.payment.stripe.api.model.ProviderAccount;
 import io.fluxzero.ticketing.payment.stripe.api.CreateStripeIntent;
 import io.fluxzero.ticketing.payment.stripe.api.FetchStripePaymentIntent;
 import io.fluxzero.ticketing.payment.stripe.api.StripeProcessEvents.*;
@@ -30,9 +28,8 @@ import static io.fluxzero.ticketing.payment.stripe.StripeProtocol.*;
 public class StripePaymentEffects {
     @HandleDocument void reconcile(StripePaymentProcess observed) {
         var process = Fluxzero.getDocument(observed.paymentId(), StripePaymentProcess.class).orElseThrow();
-        var account = new ProviderAccount("stripe", ApplicationProperties.requireProperty("ticketing.stripe.accountId"),
-                ApplicationProperties.getProperty("ticketing.stripe.environment", "test"));
-        require(account.equals(process.account()), "Configured Stripe account differs from process account");
+        validateAccount(process);
+        var account = process.account();
         if (process.needsObservation()) {
             JsonNode intent;
             if (process.intentId() == null) {
@@ -41,15 +38,7 @@ public class StripePaymentEffects {
             } else {
                 intent = Fluxzero.queryAndWait(new FetchStripePaymentIntent(process.intentId()));
             }
-            require("payment_intent".equals(text(intent, "object")), "Expected a Stripe PaymentIntent");
-            String intentId = id(text(intent, "id"), "pi_");
-            require(process.intentId() == null || process.intentId().equals(intentId), "PaymentIntent identity mismatch");
-            require(process.paymentId().getFunctionalId().equals(text(intent.path("metadata"), "payment_id"))
-                    && process.operationKey().equals(text(intent.path("metadata"), "operation_key")), "PaymentIntent correlation mismatch");
-            require("eur".equals(text(intent, "currency")) && positiveAmount(intent, "amount") == process.amount().minorUnits(),
-                    "PaymentIntent amount or currency mismatch");
-            require(intent.path("livemode").isBoolean()
-                    && account.environment().equals(intent.path("livemode").booleanValue() ? "live" : "test"), "Stripe environment mismatch");
+            String intentId = validateIntent(intent, process);
             String status = text(intent, "status");
             String chargeId = status.equals("succeeded") ? id(text(intent, "latest_charge"), "ch_") : null;
             Money captured = chargeId == null ? null : new Money(positiveAmount(intent, "amount_received"), "EUR");

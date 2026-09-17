@@ -2,11 +2,14 @@
 
 Phase 2 implements provider adapters with local commands and queries. All HTTP calls run
 through Fluxzero's webrequest gateway in the handler for that specific operation. There is
-no custom HTTP client, injected service facade, external-consumer workflow or provider SDK.
+no custom HTTP client, injected service facade or provider SDK. A durable Stripe workflow
+coordinates those local operations.
 
 `Payment`, reservation and invoice commands remain provider independent. Stripe translates
 external observations into `RecordPaymentSuccess`, `RecordPaymentFailure` and `ConfirmRefund`.
-Another provider can use those same facts and the `ProviderPayment` / `RefundAttempt` models.
+Another provider can use those same core commands and own its execution state separately.
+`StripePaymentProcess` is `@Stateful` process memory, not a child of the payment Model.
+Stripe accounts, operation keys and refund attempts stay inside the adapter.
 Selecting a provider never changes who owns inventory or when a hold expires.
 
 ## Configuration
@@ -42,14 +45,27 @@ application operations, not public customer endpoints.
 
 | Operation | External interaction | Local outcome |
 | --- | --- | --- |
-| `CreateStripePaymentIntent(paymentId)` | POST `/v1/payment_intents`, or GET an already bound intent | Durable provider binding and checkout capability |
-| `ReconcileStripePayment(paymentId, intentId)` | `FetchStripePaymentIntent`: GET current intent | Correlated capture/failure; null intent ID uses the stored ID |
-| `RequestStripeRefund(paymentId, refundAttemptId)` | POST `/v1/refunds`, or GET an already known refund | Retained refund execution attempt |
-| `ReconcileStripeRefund(refundAttemptId, refundId)` | `FetchStripeRefund`: GET current refund | Pending/failure/success observation; null ID uses stored identity |
-| `ProcessStripeWebhook(rawBody, signature)` | Verifies the signed input, then the corresponding GET above | Reconciles current provider facts |
+| `BeginStripePayment(paymentId)` | None in the accepting handler | Stores a request event; the process later creates the intent |
+| `GetStripeCheckout(paymentId)` | `FetchStripePaymentIntent`: GET the known intent | Preparing, or a validated checkout capability while the hold remains active |
+| `RefreshStripePayment(paymentId, intentId)` | None in the accepting handler | Stores a reconciliation request; null ID uses the stored identity |
+| `BeginStripeRefund(paymentId, attemptId)` | None in the accepting handler | Requests execution; the ordered process allows only one unresolved attempt |
+| `RefreshStripeRefund(paymentId, attemptId, refundId)` | None in the accepting handler | Requests reconciliation; null ID uses the stored identity |
+| `ReceiveStripeWebhook(rawBody, signature)` | None | Verifies input and stores `StripeWebhookReceived` before acknowledgement |
+
+Acceptance means the request was stored, not that Stripe or the core transition has completed.
+The process consumes payment-routed events. `StripePaymentEffects` observes committed process
+documents, reloads current intent and invokes `CreateStripeIntent`, `FetchStripePaymentIntent`,
+`CreateStripeRefund` or `FetchStripeRefund`. Those specific local messages own their HTTP calls.
+Both workflow consumers use four threads; different payments can progress independently.
+
+External effects and process state are not one transaction. The effect observer publishes an
+observation after HTTP, and an acknowledgement only after the core command has committed.
+A crash between these steps causes repetition with the same provider key or idempotent core
+fact. There is no exactly-once external-effect claim. A newly started observer reads retained
+process documents, so accepted work survives an application restart without a recovery scan.
 
 Every Stripe request pins API version **`2026-08-26.dahlia`**, uses a 15-second timeout and
-refuses redirects. There are no automatic transport retries. POST bodies are form encoded;
+refuses redirects. The transport does not retry; the workflow retries technical failures. POST bodies are form encoded;
 metadata carries local identities and the durable operation key. Returned IDs, metadata,
 amounts, currency and environment are checked before money is recorded. Capture and refund
 references include `provider:account:environment:externalId`, preventing accidental collisions
@@ -58,7 +74,7 @@ refund from satisfying several payments.
 
 A provider operation is committed **before** its POST. A timeout, malformed response, 401,
 429 or 5xx is a technical failure, not evidence that no external operation happened. The
-binding/attempt and original idempotency key survive. Retrying that same command reuses the
+process/attempt and original idempotency key survive. Repeating its execution reuses the
 same key. Once its external ID is known, retries retrieve the object rather than issue a new
 POST. An unresolved refund attempt blocks a second attempt for the same payment.
 
@@ -69,8 +85,8 @@ the original local operation. Do not delete the local attempt or start a replace
 work around an uncertain outcome.
 
 A refund remains an outstanding obligation while its attempt is `REQUESTED`, `PENDING` or
-`REQUIRES_ACTION`. Only `SUCCEEDED` atomically completes that attempt and confirms the domain
-refund. A failed or cancelled attempt remains in history and permits a new attempt with a
+`REQUIRES_ACTION`. Only `SUCCEEDED` permits the idempotent core refund confirmation; its durable acknowledgement
+then closes the workflow step. A failed or cancelled attempt remains in history and permits a new attempt with a
 new ID/key. Delayed nonterminal observations cannot reopen a finished attempt. Contradictory
 terminal observations are rejected for explicit reconciliation; they never erase history.
 
@@ -82,9 +98,9 @@ current provider state. They do not create duplicate tickets or count pending re
 completed. A successful payment after expiry records captured funds as `REFUND_REQUIRED`;
 resold seats remain with their new owner.
 
-No background refund executor or polling consumer is started. Call the local command to
-execute a refund and use verified notifications or explicit reconciliation to observe its
-completion. Refund-required state is retained until then. A refund does not automatically
+Refund execution starts only after `BeginStripeRefund`; the process does not automatically
+authorize refunds merely because the core requires one. Verified notifications or explicit
+reconciliation refresh pending outcomes; there is no polling loop. Refund-required state is retained until then. A refund does not automatically
 rewrite an issued invoice; the billing commands still own credit notes.
 
 ## Luma import
@@ -128,3 +144,12 @@ Public HTTP routes, trusted account provisioning and a checkout UI belong to pha
 public operation, connect the raw-body webhook route, customer ownership checks and provider
 credentials, then qualify the flow against the chosen accounts. Nothing is published or
 deployed by this repository's development setup.
+
+## Storage compatibility
+
+This unpublished refactor replaces the earlier demo's provider Models with workflow documents.
+Core payment, reservation and invoice history types remain supported. Old provider bindings and
+refund attempts have no automatic migration into the new workflow. Use a fresh demo namespace;
+do not run the new adapter over unresolved old provider operations or delete their records.
+An existing deployment needs an explicit migration that retains external identities and
+idempotency keys before enabling this workflow.

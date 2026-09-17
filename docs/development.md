@@ -8,7 +8,7 @@
   time-based release, ticket issuance/voiding, payment attempts/capture/refund recording,
   invoice drafting/issuance/voiding and credit notes.
 - Availability and owner-only purchase queries, without HTTP adapters.
-- Provider-independent payment execution records, Stripe checkout/refund/reconciliation and
+- Provider-independent payment facts, stateful Stripe checkout/refund/reconciliation and
   verified callback handling, plus atomic Luma event import with local inventory ownership.
 - Operator, payments and billing permissions plus customer ownership at message boundaries.
   The customer identity is injected from `User`, not accepted as a reservation field.
@@ -61,17 +61,10 @@ optimization, not the uniqueness mechanism. Transactions do not use external sea
 The performance inventory is derived from reservations, so there is no separately maintained
 availability counter that can drift.
 
-The pinned `2.0.0-rc.14` still applies a separate fail-on-conflict default to Model creation.
-A competing command that creates a reservation, ticket or refund attempt can therefore fail
-instead of retrying. The concurrency tests require the intended retry behavior and report this
-SDK limitation; they do not suppress unexpected command failures. Adopt the corrected SDK
-release before treating these scenarios as qualified. Explicit `RETRY` annotations have been
-removed as agreed; this package refactor does not reintroduce an override.
-
-The parent-deletion scenarios also expose a separate SDK issue on the qualification build from
-commit `cad64c70973`: a hard-deletion plan made after logical cascade omits nested descendants.
-The two corresponding `ModelDeletionTest` cases intentionally remain failing. Soft cascade and
-direct hard deletion pass; see [deletion semantics](model.md#deletion-history-and-cancellation).
+The provider refactor is qualified with a local SDK/testserver build from `f22aa0df867`.
+That build includes the fixes for creation conflicts, nested deletion, fixture document
+revision tracking and document replay before the first consumer. The autonomous application
+restart scenario now passes. A published SDK containing these fixes is required before release.
 
 A reservation contains at most 12 admissions. Availability and reservation validation read
 the performance's retained reservations; cost therefore grows with that performance's booking

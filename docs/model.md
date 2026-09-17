@@ -10,8 +10,6 @@ erDiagram
     RESERVATION ||--o{ PAYMENT : has_attempts
     RESERVATION ||--o{ INVOICE : bills
     INVOICE ||--o| CREDIT_NOTE : corrects
-    PAYMENT ||--o| PROVIDER_PAYMENT : executes_through
-    PAYMENT ||--o{ REFUND_ATTEMPT : repays_through
     PERFORMANCE ||--o| LUMA_IMPORT : originates_from
 ```
 
@@ -31,8 +29,6 @@ require a child to remain active after its parent is deleted.
 | Payment | `PaymentId`, reservation, expected and actual amounts | Pending → failed or captured; captured → refund required → refunded |
 | Invoice | `InvoiceId`, reservation and paying attempt, frozen lines and total | Draft → issued or void; issued → credited |
 | CreditNote | `CreditNoteId`, original invoice, full amount and reason | Issued correction with its own retained history |
-| ProviderPayment | `ProviderPaymentId` derived from `PaymentId`, provider/account/environment and durable operation key | Prepared before external I/O, then bound to an external object |
-| RefundAttempt | `RefundAttemptId`, payment, full captured amount, account and operation key | Requested → pending/requires action → succeeded, failed or cancelled |
 | LumaImport | Calendar/event-derived `LumaImportId`, performance and source snapshot | Retained import provenance; identical reimport is a no-op |
 
 `Ticket.performanceId` is an explicit typed reference. Its graph path to the performance
@@ -46,8 +42,7 @@ Logical deletion makes the current Model empty and recursively does the same for
 children in one atomic commit. Their event-sourced history remains available, including the
 last financial facts through `previous()`. For example, deleting a venue also logically
 deletes its halls, performances and their reservation, ticket, payment, billing and adapter
-records. Deleting a reservation reaches its tickets, payments, invoices, credit notes,
-provider bindings and refund attempts. Cascade follows descendants, not parents or siblings.
+records. Deleting a reservation reaches its tickets, payments, invoices and credit notes. Cascade follows descendants, not parents or siblings.
 
 A performance has two owning parents: its programme and its hall. Deleting **either** logically
 deletes that performance and its descendants. Deleting a hall does not delete the programme
@@ -62,12 +57,6 @@ state. The SDK treats descendant erasure separately: inspect `planDeletion(id, D
 and execute that exact plan with `deleteModel(plan)`. Globally published events remain outside
 this Model-stream erasure boundary, so this is not a claim that all copies or all audit events
 disappear.
-
-Qualification currently exposes an SDK defect in erasure **after** logical cascade: the build
-from SDK commit `cad64c70973` selects a reservation and its direct children but misses nested
-credit notes, provider bindings and refund attempts. Direct hard deletion of the current tree
-passes. `ModelDeletionTest` keeps both cases explicit and rejects an incomplete plan; later
-hard erasure after logical cascade is not qualified until that SDK defect is fixed.
 
 Cancellation is a business transition: `CancelReservation` and `CancelPerformance` keep
 current records, void tickets and record refund obligations. Invoice crediting and completed
@@ -124,15 +113,13 @@ themselves, so delayed timer delivery never extends a hold.
 
 ## Integration transactions
 
-`PrepareProviderPayment` records the chosen provider account and stable operation key without
-changing `Payment`. One binding belongs to one payment attempt. `PrepareRefund` reads the
-payment's refund-attempt graph with transactional conflict validation, so competing requests cannot create two
-unresolved attempts. Both preparation commands commit before an adapter sends HTTP.
-
-`ObserveRefund` records the attempt outcome and, on success, applies `ConfirmRefund` in the
-same commit. External calls do not run inside a retrying model decision. Each adapter
-interprets its protocol while reservation, payment and invoice commands retain business
-ownership. See [integration recovery](integrations.md) for uncertain outcomes and late callbacks.
+`StripePaymentProcess` uses `@Stateful` execution memory outside this graph. It retains
+provider correlation, pending work and refund attempts. Verified webhooks become durable
+internal events. A document observer executes committed intent through local HTTP commands
+and applies provider-independent core facts, then acknowledges their durable completion.
+Repeated delivery is expected; external idempotency and core duplicate checks protect it.
+Neither Model cascade nor payment status silently deletes this workflow's retained intent.
+See [integration recovery](integrations.md) for failure boundaries and storage compatibility.
 
 `AcceptLumaImport` creates the programme, performance and source mapping in one transaction.
 Its deterministic source identity prevents duplicate local performances. The existing local

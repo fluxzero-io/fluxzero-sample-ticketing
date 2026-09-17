@@ -9,7 +9,7 @@ their Fluxzero handlers. Separate observers and domain rules sit beside the doma
 | --- | --- |
 | `catalog` | Venues, halls, programmes and dated performances, including frozen layouts and prices |
 | `booking` | Availability, atomic group reservations, expiry, ownership and issued tickets |
-| `payment` | Payment facts, money, provider bindings and refund attempts |
+| `payment` | Provider-independent payment, capture and refund facts |
 | `billing` | Invoices and retained credit notes |
 
 Selected paths illustrate the layout; each listed directory also contains its other domain types:
@@ -56,17 +56,16 @@ src/main/java/io/fluxzero/ticketing/
 │   ├── api/
 │   │   ├── StartPayment.java
 │   │   ├── RecordPaymentSuccess.java
-│   │   ├── PrepareProviderPayment.java
 │   │   ├── PaymentId.java
 │   │   └── model/
 │   │       ├── Payment.java
-│   │       ├── Money.java
-│   │       ├── ProviderPayment.java
-│   │       └── RefundAttempt.java
+│   │       └── Money.java
 │   └── stripe/
 │       ├── StripeProtocol.java
+│       ├── StripePaymentProcess.java
+│       ├── StripePaymentEffects.java
 │       └── api/
-│           ├── CreateStripePaymentIntent.java
+│           ├── BeginStripePayment.java
 │           ├── FetchStripePaymentIntent.java
 │           └── model/Checkout.java
 ├── billing/api/
@@ -105,9 +104,9 @@ standalone classes. The property is shared by application startup and standalone
 If deployment supplies `FLUXZERO_SERIALIZATION_TYPE_ALIASES`, it replaces the complete list;
 preserve these entries when adding environment-specific mappings.
 
-This is a package refactor: Model simple names, ID prefixes, parent paths, JSON field names,
-status values, schema revisions and financial history remain unchanged. No upcaster, Model
-rename or data rewrite is needed. The root `@RegisterType` and application component scan
-still cover the whole tree. `PackageMigrationTest` checks old reservation/provider messages,
+Core package aliases retain the financial history format. The later provider workflow refactor
+is a separate storage change: removed provider Models are not migrated automatically. See
+[storage compatibility](integrations.md#storage-compatibility) before reusing an existing namespace. The root `@RegisterType` and application component scan
+still cover the whole tree. `PackageMigrationTest` checks old reservation messages,
 synthetic reconstruction of payment history and an issued invoice with old nested values.
 It does not claim an old-binary/new-binary production storage upgrade or an overlapping rollout.

@@ -5,7 +5,7 @@ seat and section availability, tickets, payments and invoicing. Inspired by
 [Product code](https://fluxzero.io/product-code/), with separate lifecycles for admission
 rights and financial facts.
 
-**Phases 1 and 2 are implemented.** The core domain now has Stripe payment/refund adapters
+**Core behavior and external integrations are implemented; scalability work is in progress.** The core domain now has Stripe payment/refund adapters
 and safe Luma event import, with controlled external-response tests. Payments remain provider
 independent. HTTP endpoints, browser authentication and a frontend belong to phase 3.
 
@@ -23,9 +23,10 @@ and affected tests. Agents use the installed Fluxzero plugin and its `fluxzero-d
 connection. There is no UI to open yet. The executable product scenarios are in
 [`TicketingTest`](src/test/java/io/fluxzero/ticketing/booking/TicketingTest.java).
 
-The Maven BOM pins **`2.0.0-rc.14`**, the latest published 2.0 release candidate verified
-on 16 September 2026. The CLI starter was generated with `fz 1.18.9`; SDK/runtime and
-versioned documentation must agree. This is a release candidate, not a final 2.0 release.
+The release POM pins `2.0.0-rc.14`. The provider refactor is being qualified against the
+local build of SDK commit `f22aa0df867`, including its matching testserver, because it needs
+subsequent SDK fixes. This work branch is not yet a publishable release; adopt a published
+SDK containing those fixes before release. The CLI starter was generated with `fz 1.18.9`.
 
 For CI, or explicit verification with the development environment stopped:
 

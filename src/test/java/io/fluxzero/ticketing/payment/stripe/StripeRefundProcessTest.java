@@ -95,6 +95,57 @@ class StripeRefundProcessTest extends TicketingTestSupport {
                     assertEquals(PaymentStatus.REFUND_REQUIRED, payment().status());
                 });
     }
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"false, amount", "true, amount", "false, currency", "true, currency",
+            "false, charge", "true, charge", "false, payment_intent", "true, payment_intent", "false, metadata", "true, metadata"})
+    void mismatchedRefundNeverClosesTheCore(boolean async, String field) {
+        var remote = new Remote();
+        var fixture = refundable(async, remote).givenCommandsByUser(PAYMENTS, new BeginStripeRefund(P, "first"));
+        remote.refund.put("status", "succeeded");
+        switch (field) {
+            case "amount" -> remote.refund.put(field, 1);
+            case "currency" -> remote.refund.put(field, "usd");
+            case "charge" -> remote.refund.put(field, "ch_other");
+            case "payment_intent" -> remote.refund.put(field, "pi_other");
+            case "metadata" -> ((ObjectNode) remote.refund.get(field)).put("operation_key", "other");
+        }
+        fixture.whenCommandByUser(PAYMENTS, new RefreshStripeRefund(P, "first", null)).expectSuccessfulResult()
+                .expectError(io.fluxzero.sdk.tracking.handling.IllegalCommandException.class)
+                .expectThat(f -> assertEquals(PaymentStatus.REFUND_REQUIRED, payment().status()));
+    }
+
+    @ParameterizedTest @ValueSource(booleans = {false, true})
+    void signedRefundNotificationReadsCurrentProviderStateAndDuplicatesAreHarmless(boolean async) throws Exception {
+        var remote = new Remote();
+        var fixture = refundable(async, remote).withProperty("ticketing.stripe.webhookSecret", "whsec_fixture")
+                .givenCommandsByUser(PAYMENTS, new BeginStripeRefund(P, "first"));
+        var event = JsonNodeFactory.instance.objectNode().put("object", "event").put("id", "evt_refund")
+                .put("livemode", false).put("type", "refund.updated");
+        event.putObject("data").set("object", remote.refund.deepCopy());
+        String body = event.toString();
+        remote.refund.put("status", "succeeded");
+        var callback = new ReceiveStripeWebhook(body, StripeWebhookTest.signature(body, NOW.getEpochSecond()));
+        fixture.whenCommandByUser(PAYMENTS, callback).expectSuccessfulResult().expectNoErrors()
+                .expectThat(f -> assertEquals(PaymentStatus.REFUNDED, payment().status()))
+                .andThen().whenCommandByUser(PAYMENTS, callback).expectSuccessfulResult().expectNoErrors()
+                .expectThat(f -> assertEquals(1, remote.keys.size()));
+    }
+
+    @ParameterizedTest @ValueSource(booleans = {false, true})
+    void aStaleNonterminalRefundObservationCannotUndoARecordedRefund(boolean async) {
+        var remote = new Remote();
+        var fixture = refundable(async, remote).givenCommandsByUser(PAYMENTS, new BeginStripeRefund(P, "first"));
+        remote.refund.put("status", "succeeded");
+        var phase = fixture.whenCommandByUser(PAYMENTS, new RefreshStripeRefund(P, "first", null))
+                .expectSuccessfulResult().expectNoErrors();
+        remote.refund.put("status", "pending");
+        phase.andThen().whenCommandByUser(PAYMENTS, new RefreshStripeRefund(P, "first", null))
+                .expectSuccessfulResult().expectNoErrors().expectThat(f -> {
+                    assertEquals(PaymentStatus.REFUNDED, payment().status());
+                    assertEquals(StripeRefund.Status.SUCCEEDED, StripeProcessBoundaryTest.process().refund("first").status());
+                });
+    }
+
     static class Remote extends StripeProcessBoundaryTest.ProcessRemote {
         final Set<String> keys = new HashSet<>();
         ObjectNode refund;
