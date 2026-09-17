@@ -1,4 +1,4 @@
-package io.fluxzero.ticketing.payment.api.model;
+package io.fluxzero.ticketing.payment.stripe.api.model;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

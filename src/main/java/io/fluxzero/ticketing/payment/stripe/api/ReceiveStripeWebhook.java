@@ -9,7 +9,8 @@ import io.fluxzero.sdk.tracking.handling.HandleCommand;
 import io.fluxzero.sdk.tracking.handling.authentication.RequiresAnyRole;
 import io.fluxzero.sdk.tracking.handling.authentication.UnauthorizedException;
 import io.fluxzero.ticketing.payment.api.PaymentId;
-import io.fluxzero.ticketing.payment.api.RefundAttemptId;
+import io.fluxzero.ticketing.payment.stripe.api.model.ProviderAccount;
+import io.fluxzero.common.Guarantee;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.nio.charset.StandardCharsets;
@@ -24,12 +25,12 @@ import javax.crypto.spec.SecretKeySpec;
 import static io.fluxzero.ticketing.common.Checks.require;
 import static io.fluxzero.ticketing.common.web.ExternalResponse.text;
 
-/** Local raw webhook boundary for a future HTTP adapter. Verify first, then reconcile current provider state. */
+/** Local raw webhook boundary for a future HTTP adapter. Verify first, then durably accept a notification; no external I/O before acknowledgement. */
 @LocalOnly @RequiresAnyRole("PAYMENTS")
-public record ProcessStripeWebhook(@NotBlank @Size(max = 1048576) String rawBody,
+public record ReceiveStripeWebhook(@NotBlank @Size(max = 1048576) String rawBody,
                                     @NotBlank @Size(max = 8192) String signature) {
     private static final ObjectMapper JSON = new ObjectMapper();
-    @Override public String toString() { return "ProcessStripeWebhook[redacted]"; }
+    @Override public String toString() { return "ReceiveStripeWebhook[redacted]"; }
     @HandleCommand void handle() throws Exception {
         verify();
         JsonNode event = JSON.readTree(rawBody);
@@ -39,14 +40,18 @@ public record ProcessStripeWebhook(@NotBlank @Size(max = 1048576) String rawBody
         require(event.path("livemode").isBoolean() && environment.equals(event.path("livemode").booleanValue() ? "live" : "test"),
                 "Stripe webhook environment mismatch");
         JsonNode object = event.path("data").path("object");
-        switch (text(event, "type")) {
-            case "payment_intent.succeeded", "payment_intent.payment_failed", "payment_intent.canceled" ->
-                    Fluxzero.sendCommandAndWait(new ReconcileStripePayment(new PaymentId(text(object.path("metadata"), "payment_id")), text(object, "id")));
-            case "refund.created", "refund.updated", "refund.failed" ->
-                    Fluxzero.sendCommandAndWait(new ReconcileStripeRefund(new RefundAttemptId(text(object.path("metadata"), "refund_attempt_id")), text(object, "id")));
-            default -> { /* Unrelated event types have no business effect. */ }
-        }
+        String type = text(event, "type");
+        boolean payment = java.util.Set.of("payment_intent.succeeded", "payment_intent.payment_failed", "payment_intent.canceled").contains(type);
+        boolean refund = java.util.Set.of("refund.created", "refund.updated", "refund.failed").contains(type);
+        if (!payment && !refund) return;
+        var metadata = object.path("metadata");
+        var account = new ProviderAccount("stripe", ApplicationProperties.requireProperty("ticketing.stripe.accountId"), environment);
+        Fluxzero.get().eventGateway().publish(Guarantee.STORED, new StripeWebhookReceived(
+                new PaymentId(text(metadata, "payment_id")), account, text(event, "id"), text(metadata, "operation_key"),
+                io.fluxzero.ticketing.payment.stripe.StripeProtocol.id(text(object, "id"), refund ? "re_" : "pi_"),
+                refund ? text(metadata, "refund_attempt_id") : null)).join();
     }
+
     private void verify() {
         String secret = ApplicationProperties.requireProperty("ticketing.stripe.webhookSecret");
         try {

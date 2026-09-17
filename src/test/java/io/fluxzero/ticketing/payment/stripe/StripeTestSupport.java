@@ -10,9 +10,9 @@ import io.fluxzero.sdk.web.WebRequest;
 import io.fluxzero.sdk.web.WebResponse;
 import io.fluxzero.ticketing.booking.ReservationDeadlines;
 import io.fluxzero.ticketing.catalog.DemoCatalog;
-import io.fluxzero.ticketing.payment.api.ProviderPaymentId;
+
 import io.fluxzero.ticketing.payment.api.StartPayment;
-import io.fluxzero.ticketing.payment.api.model.ProviderPayment;
+
 import io.fluxzero.ticketing.support.TicketingTestSupport;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -26,15 +26,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 abstract class StripeTestSupport extends TicketingTestSupport {
     TestFixture stripe(boolean async, RemoteStripe remote) {
-        return (async ? TestFixture.createAsync(builder(), new ReservationDeadlines(), remote)
-                : TestFixture.create(builder(), new ReservationDeadlines(), remote)).atFixedTime(NOW)
+        return (async ? TestFixture.createAsync(builder(), StripePaymentProcess.class, new StripePaymentEffects(), new ReservationDeadlines(), remote)
+                : TestFixture.create(builder(), StripePaymentProcess.class, new StripePaymentEffects(), new ReservationDeadlines(), remote)).atFixedTime(NOW)
                 .withProperty("ticketing.stripe.secretKey", "sk_test_fixture")
                 .withProperty("ticketing.stripe.accountId", "acct_fixture")
                 .withProperty("ticketing.stripe.webhookSecret", "whsec_fixture")
                 .givenCommandsByUser(OPERATOR, DemoCatalog.commands(NOW.plus(Duration.ofDays(1))).toArray())
                 .givenCommandsByUser(ALICE, seats(R, "A1", "A2"), new StartPayment(P, R));
     }
-    static ProviderPayment binding() { return Fluxzero.loadModel(ProviderPaymentId.of(P)).get(); }
+    static StripePaymentProcess binding() { return Fluxzero.getDocument(P, StripePaymentProcess.class).orElseThrow(); }
 
     static Map<String, String> decode(String body) {
         var result = new HashMap<String,String>();

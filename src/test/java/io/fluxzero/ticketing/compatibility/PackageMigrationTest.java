@@ -6,11 +6,9 @@ import io.fluxzero.ticketing.billing.api.model.InvoiceStatus;
 import io.fluxzero.ticketing.booking.api.ExpireReservation;
 import io.fluxzero.ticketing.booking.api.GetAvailability;
 import io.fluxzero.ticketing.booking.api.model.Availability;
-import io.fluxzero.ticketing.payment.api.ProviderPaymentId;
 import io.fluxzero.ticketing.payment.api.model.Money;
 import io.fluxzero.ticketing.payment.api.model.Payment;
 import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
-import io.fluxzero.ticketing.payment.api.model.ProviderAccount;
 import io.fluxzero.ticketing.support.TicketingTestSupport;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -43,18 +41,6 @@ class PackageMigrationTest extends TicketingTestSupport {
                     assertEquals(PaymentStatus.PENDING, model.previous().get().status());
                     assertEquals(P, Fluxzero.loadGraph(R).childModels(Payment.class).getFirst().paymentId());
                 }).expectSuccessfulResult().expectNoEvents().expectNoErrors();
-    }
-
-    @ParameterizedTest @ValueSource(booleans = {false, true})
-    void legacyNestedProviderCommandKeepsItsBindingAndOperationKey(boolean async) {
-        pending(async).whenCommandByUser(PAYMENTS, "/payment/legacy-prepare-provider-payment.json")
-                .expectSuccessfulResult().expectNoErrors().expectNoWebRequests()
-                .expectThat(f -> {
-                    var binding = Fluxzero.loadModel(ProviderPaymentId.of(P)).get();
-                    assertEquals(P, binding.paymentId());
-                    assertEquals("legacy-operation", binding.operationKey());
-                    assertEquals(new ProviderAccount("stripe", "acct_fixture", "test"), binding.account());
-                });
     }
 
     @ParameterizedTest @ValueSource(booleans = {false, true})

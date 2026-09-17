@@ -3,7 +3,7 @@ package io.fluxzero.ticketing.payment.stripe;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fluxzero.sdk.web.RedirectPolicy;
 import io.fluxzero.sdk.web.WebRequestSettings;
-import io.fluxzero.ticketing.payment.api.model.ProviderPayment;
+
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -27,16 +27,6 @@ public final class StripeProtocol {
     public static String id(String value, String prefix) {
         require(value != null && value.matches(prefix + "[A-Za-z0-9]+"), "Invalid Stripe object identity");
         return value;
-    }
-    public static void validateIntent(JsonNode intent, ProviderPayment binding) {
-        require("payment_intent".equals(text(intent, "object")), "Expected a Stripe PaymentIntent");
-        id(text(intent, "id"), "pi_");
-        require(binding.externalId() == null || binding.externalId().equals(text(intent, "id")), "Unexpected PaymentIntent identity");
-        require(binding.account().environment().equals(intent.path("livemode").isBoolean()
-                        ? (intent.path("livemode").booleanValue() ? "live" : "test") : "unknown"), "Stripe environment mismatch");
-        require(binding.paymentId().getFunctionalId().equals(text(intent.path("metadata"), "payment_id"))
-                && binding.operationKey().equals(text(intent.path("metadata"), "operation_key")), "PaymentIntent correlation mismatch");
-        require("eur".equals(text(intent, "currency")), "Unsupported capture currency; reconciliation required");
     }
     public static void safeToRepeat(java.time.Instant requestedAt, java.time.Instant now) {
         require(!now.isBefore(requestedAt) && now.isBefore(requestedAt.plus(Duration.ofHours(23))),

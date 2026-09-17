@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.ticketing.booking.api.model.Ticket;
 import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
-import io.fluxzero.ticketing.payment.stripe.api.CreateStripePaymentIntent;
-import io.fluxzero.ticketing.payment.stripe.api.ProcessStripeWebhook;
+import io.fluxzero.ticketing.payment.stripe.api.BeginStripePayment;
+import io.fluxzero.ticketing.payment.stripe.api.ReceiveStripeWebhook;
 import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
 import javax.crypto.Mac;
@@ -30,34 +30,34 @@ class StripeWebhookTest extends StripeTestSupport {
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void verifiedDuplicatesAndOutOfOrderNotificationsReadCurrentPaymentState(boolean async) throws Exception {
         var remote = new RemoteStripe();
-        var fixture = stripe(async, remote).givenCommandsByUser(PAYMENTS, new CreateStripePaymentIntent(P));
+        var fixture = stripe(async, remote).givenCommandsByUser(PAYMENTS, new BeginStripePayment(P));
         String staleFailure = event(remote, "payment_intent.payment_failed");
         remote.intent.put("status", "succeeded").put("amount_received", 7000).put("latest_charge", "ch_fixture");
-        var command = new ProcessStripeWebhook(staleFailure, signature(staleFailure, NOW.getEpochSecond()));
+        var command = new ReceiveStripeWebhook(staleFailure, signature(staleFailure, NOW.getEpochSecond()));
         fixture.whenCommandByUser(PAYMENTS, command).expectSuccessfulResult().expectThat(f -> {
                     assertEquals(PaymentStatus.SUCCEEDED, payment().status());
                     assertEquals(2, Fluxzero.loadGraph(R).childModels(Ticket.class).size());
-                }).andThen().whenCommandByUser(PAYMENTS, command).expectSuccessfulResult().expectNoEvents()
+                }).andThen().whenCommandByUser(PAYMENTS, command).expectSuccessfulResult()
                 .expectThat(f -> assertEquals(2, Fluxzero.loadGraph(R).childModels(Ticket.class).size()));
     }
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void rejectsTamperedExpiredAndFutureSignaturesBeforeAnyProviderRequest(boolean async) throws Exception {
         var remote = new RemoteStripe();
-        var fixture = stripe(async, remote).givenCommandsByUser(PAYMENTS, new CreateStripePaymentIntent(P));
+        var fixture = stripe(async, remote).givenCommandsByUser(PAYMENTS, new BeginStripePayment(P));
         String body = event(remote, "payment_intent.succeeded");
-        fixture.whenCommandByUser(PAYMENTS, new ProcessStripeWebhook(body + " ", signature(body, NOW.getEpochSecond())))
+        fixture.whenCommandByUser(PAYMENTS, new ReceiveStripeWebhook(body + " ", signature(body, NOW.getEpochSecond())))
                 .expectExceptionalResult().expectNoWebRequests().expectNoEvents()
-                .andThen().whenCommandByUser(PAYMENTS, new ProcessStripeWebhook(body, signature(body, NOW.minusSeconds(301).getEpochSecond())))
+                .andThen().whenCommandByUser(PAYMENTS, new ReceiveStripeWebhook(body, signature(body, NOW.minusSeconds(301).getEpochSecond())))
                 .expectExceptionalResult().expectNoWebRequests().expectNoEvents()
-                .andThen().whenCommandByUser(PAYMENTS, new ProcessStripeWebhook(body, signature(body, NOW.plusSeconds(301).getEpochSecond())))
+                .andThen().whenCommandByUser(PAYMENTS, new ReceiveStripeWebhook(body, signature(body, NOW.plusSeconds(301).getEpochSecond())))
                 .expectExceptionalResult().expectNoWebRequests().expectNoEvents();
     }
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void aValidSignatureStillRequiresTheTrustedPaymentsRole(boolean async) throws Exception {
         var remote = new RemoteStripe();
-        var fixture = stripe(async, remote).givenCommandsByUser(PAYMENTS, new CreateStripePaymentIntent(P));
+        var fixture = stripe(async, remote).givenCommandsByUser(PAYMENTS, new BeginStripePayment(P));
         String body = event(remote, "payment_intent.succeeded");
-        fixture.whenCommandByUser(ALICE, new ProcessStripeWebhook(body, signature(body, NOW.getEpochSecond())))
+        fixture.whenCommandByUser(ALICE, new ReceiveStripeWebhook(body, signature(body, NOW.getEpochSecond())))
                 .expectExceptionalResult().expectNoWebRequests().expectNoEvents();
     }
 }

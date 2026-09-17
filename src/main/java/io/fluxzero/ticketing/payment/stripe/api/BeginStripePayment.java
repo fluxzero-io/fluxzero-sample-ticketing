@@ -8,7 +8,7 @@ import io.fluxzero.sdk.tracking.handling.HandleCommand;
 import io.fluxzero.sdk.tracking.handling.authentication.RequiresAnyRole;
 import io.fluxzero.ticketing.payment.api.PaymentId;
 import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
-import io.fluxzero.ticketing.payment.api.model.ProviderAccount;
+import io.fluxzero.ticketing.payment.stripe.api.model.ProviderAccount;
 import jakarta.validation.constraints.NotNull;
 
 import static io.fluxzero.ticketing.common.Checks.require;

@@ -26,14 +26,8 @@ import io.fluxzero.ticketing.catalog.api.model.Venue;
 import io.fluxzero.ticketing.catalog.luma.api.AcceptLumaImport;
 import io.fluxzero.ticketing.catalog.luma.api.LumaImportId;
 import io.fluxzero.ticketing.catalog.luma.api.model.LumaEvent;
-import io.fluxzero.ticketing.payment.api.BindProviderPayment;
-import io.fluxzero.ticketing.payment.api.PrepareProviderPayment;
-import io.fluxzero.ticketing.payment.api.PrepareRefund;
-import io.fluxzero.ticketing.payment.api.ProviderPaymentId;
 import io.fluxzero.ticketing.payment.api.RecordPaymentSuccess;
-import io.fluxzero.ticketing.payment.api.RefundAttemptId;
 import io.fluxzero.ticketing.payment.api.model.Money;
-import io.fluxzero.ticketing.payment.api.model.ProviderAccount;
 import io.fluxzero.ticketing.support.TicketingTestSupport;
 import java.time.Duration;
 import java.time.ZoneId;
@@ -53,9 +47,7 @@ class ModelDeletionTest extends TicketingTestSupport {
     private static final HallId HALL = new HallId("concertgebouw-main");
     private static final EventId EVENT = new EventId("night-lights");
     private static final ReservationId HOLD = new ReservationId("pending-deadline");
-    private static final RefundAttemptId REFUND = new RefundAttemptId("deletion-refund");
     private static final String SOURCE_ID = "luma-cal_fixture:evt-deletion";
-    private static final ProviderAccount ACCOUNT = new ProviderAccount("stripe", "acct_fixture", "test");
 
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void deletingVenueCascadesThroughItsHallsAndPurchasesWhileKeepingEveryPriorValue(boolean async) {
@@ -149,20 +141,17 @@ class ModelDeletionTest extends TicketingTestSupport {
                 .givenCommandsByUser(OPERATOR, new AcceptLumaImport(new LumaImportId(SOURCE_ID), new EventId(SOURCE_ID),
                         new PerformanceId(SOURCE_ID), HALL, source, Map.of("stalls", new Money(3500, "EUR"))))
                 .givenCommandsByUser(PAYMENTS,
-                        new PrepareProviderPayment(ProviderPaymentId.of(P), P, ACCOUNT, "deletion-operation"),
-                        new BindProviderPayment(ProviderPaymentId.of(P), "pi_deletion"),
-                        new RecordPaymentSuccess(P, ACCOUNT.reference("capture-deletion"), new Money(7000, "EUR")))
+                        new RecordPaymentSuccess(P, "capture-deletion", new Money(7000, "EUR")))
                 .givenCommandsByUser(BILLING, new DraftInvoice(I, R), new IssueInvoice(I))
                 .givenCommandsByUser(ALICE, new CancelReservation(R))
                 .givenCommandsByUser(BILLING, new CreditInvoice(I, "Customer cancellation"))
-                .givenCommandsByUser(PAYMENTS, new PrepareRefund(REFUND, P, ProviderPaymentId.of(P), "refund-operation"))
                 .givenCommandsByUser(BOB, seats(HOLD, "B1"));
     }
 
     private static Map<Id<?>, Object> purchaseValues() {
-        var ids = new ArrayList<Id<?>>(List.of(R, P, I, new CreditNoteId(I.getFunctionalId()), ProviderPaymentId.of(P), REFUND));
+        var ids = new ArrayList<Id<?>>(List.of(R, P, I, new CreditNoteId(I.getFunctionalId())));
         Fluxzero.loadGraph(R).childModels(Ticket.class).forEach(ticket -> ids.add(ticket.ticketId()));
-        assertEquals(8, ids.size());
+        assertEquals(6, ids.size());
         Map<Id<?>, Object> result = new LinkedHashMap<>();
         ids.forEach(id -> {
             Object value = Fluxzero.loadModel(id).get();
