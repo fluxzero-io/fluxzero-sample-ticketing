@@ -1,0 +1,64 @@
+package io.fluxzero.ticketing.payment.stripe;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import io.fluxzero.common.Guarantee;
+import io.fluxzero.sdk.Fluxzero;
+import io.fluxzero.sdk.configuration.ApplicationProperties;
+import io.fluxzero.sdk.tracking.Consumer;
+import io.fluxzero.sdk.tracking.ForeverRetryingErrorHandler;
+import io.fluxzero.sdk.tracking.handling.HandleDocument;
+import io.fluxzero.ticketing.payment.api.RecordPaymentFailure;
+import io.fluxzero.ticketing.payment.api.RecordPaymentSuccess;
+import io.fluxzero.ticketing.payment.api.model.Money;
+import io.fluxzero.ticketing.payment.api.model.ProviderAccount;
+import io.fluxzero.ticketing.payment.stripe.api.CreateStripeIntent;
+import io.fluxzero.ticketing.payment.stripe.api.FetchStripePaymentIntent;
+import io.fluxzero.ticketing.payment.stripe.api.StripeProcessEvents.*;
+import org.springframework.stereotype.Component;
+
+import static io.fluxzero.ticketing.common.Checks.require;
+import static io.fluxzero.ticketing.common.web.ExternalResponse.*;
+import static io.fluxzero.ticketing.payment.stripe.StripeProtocol.*;
+
+/** Execute only committed process intent. Repeated delivery uses the same external and core identities. */
+@Component
+@Consumer(name = "stripe-payment-effects", errorHandler = ForeverRetryingErrorHandler.class)
+public class StripePaymentEffects {
+    @HandleDocument void reconcile(StripePaymentProcess observed) {
+        var process = Fluxzero.getDocument(observed.paymentId(), StripePaymentProcess.class).orElseThrow();
+        var account = new ProviderAccount("stripe", ApplicationProperties.requireProperty("ticketing.stripe.accountId"),
+                ApplicationProperties.getProperty("ticketing.stripe.environment", "test"));
+        require(account.equals(process.account()), "Configured Stripe account differs from process account");
+        if (process.needsObservation()) {
+            JsonNode intent;
+            if (process.intentId() == null) {
+                safeToRepeat(process.requestedAt(), Fluxzero.currentTime());
+                intent = Fluxzero.sendCommandAndWait(new CreateStripeIntent(process.paymentId(), process.amount(), process.operationKey()));
+            } else {
+                intent = Fluxzero.queryAndWait(new FetchStripePaymentIntent(process.intentId()));
+            }
+            require("payment_intent".equals(text(intent, "object")), "Expected a Stripe PaymentIntent");
+            String intentId = id(text(intent, "id"), "pi_");
+            require(process.intentId() == null || process.intentId().equals(intentId), "PaymentIntent identity mismatch");
+            require(process.paymentId().getFunctionalId().equals(text(intent.path("metadata"), "payment_id"))
+                    && process.operationKey().equals(text(intent.path("metadata"), "operation_key")), "PaymentIntent correlation mismatch");
+            require("eur".equals(text(intent, "currency")) && positiveAmount(intent, "amount") == process.amount().minorUnits(),
+                    "PaymentIntent amount or currency mismatch");
+            require(intent.path("livemode").isBoolean()
+                    && account.environment().equals(intent.path("livemode").booleanValue() ? "live" : "test"), "Stripe environment mismatch");
+            String status = text(intent, "status");
+            String chargeId = status.equals("succeeded") ? id(text(intent, "latest_charge"), "ch_") : null;
+            Money captured = chargeId == null ? null : new Money(positiveAmount(intent, "amount_received"), "EUR");
+            publish(new IntentObserved(process.paymentId(), process.requestedObservation(), intentId, status, chargeId, captured));
+        } else if (process.chargeId() != null && !process.captureRecorded()) {
+            Fluxzero.sendCommandAndWait(new RecordPaymentSuccess(process.paymentId(), account.reference(process.chargeId()), process.captured()));
+            Fluxzero.commit().join();
+            publish(new CaptureRecorded(process.paymentId(), process.chargeId()));
+        } else if ("canceled".equals(process.providerStatus()) && !process.cancellationRecorded()) {
+            Fluxzero.sendCommandAndWait(new RecordPaymentFailure(process.paymentId(), "Payment cancelled by provider"));
+            Fluxzero.commit().join();
+            publish(new CancellationRecorded(process.paymentId()));
+        }
+    }
+    private static void publish(Object event) { Fluxzero.get().eventGateway().publish(Guarantee.STORED, event).join(); }
+}
