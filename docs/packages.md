@@ -3,7 +3,10 @@
 The root package is `io.fluxzero.ticketing`. Business domains own their messages, identities,
 state and behavior. Commands, queries and typed IDs live in each domain's `api`; Models,
 query results and value objects live in `api.model`. Self-handling commands and queries keep
-their Fluxzero handlers. Separate observers and domain rules sit beside the domain's API.
+their Fluxzero handlers. Outgoing Stripe HTTP messages live in `payment.stripe.request`,
+separate from commands and queries intended for UI or endpoint adapters. They retain local
+Fluxzero dispatch and are not public application actions. Package names alone do not grant
+or enforce endpoint access. Separate observers and domain rules sit beside the domain's API.
 
 | Domain | Responsibility |
 | --- | --- |
@@ -67,10 +70,14 @@ src/main/java/io/fluxzero/ticketing/
 │       ├── StripeProtocol.java
 │       ├── StripePaymentProcess.java
 │       ├── StripePaymentEffects.java
-│       └── api/
-│           ├── BeginStripePayment.java
+│       ├── api/
+│       │   ├── BeginStripePayment.java
+│       │   └── model/Checkout.java
+│       └── request/
+│           ├── CreateStripeIntent.java
+│           ├── CreateStripeRefund.java
 │           ├── FetchStripePaymentIntent.java
-│           └── model/Checkout.java
+│           └── FetchStripeRefund.java
 ├── billing/api/
 │   ├── DraftInvoice.java
 │   ├── InvoiceId.java

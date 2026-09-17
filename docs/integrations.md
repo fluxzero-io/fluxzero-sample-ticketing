@@ -55,7 +55,8 @@ application operations, not public customer endpoints.
 Acceptance means the request was stored, not that Stripe or the core transition has completed.
 The process consumes payment-routed events. `StripePaymentEffects` observes committed process
 documents, reloads current intent and invokes `CreateStripeIntent`, `FetchStripePaymentIntent`,
-`CreateStripeRefund` or `FetchStripeRefund`. Those specific local messages own their HTTP calls.
+`CreateStripeRefund` or `FetchStripeRefund`. These messages live in `payment.stripe.request`, outside the application API. Each specific
+local message owns its HTTP call; UI and endpoint adapters invoke application actions instead.
 Both workflow consumers use four threads; different payments can progress independently.
 
 External effects and process state are not one transaction. The effect observer publishes an

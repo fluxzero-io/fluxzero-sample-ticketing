@@ -1,5 +1,7 @@
 package io.fluxzero.ticketing.payment.stripe.api;
 
+import io.fluxzero.ticketing.payment.stripe.request.FetchStripePaymentIntent;
+
 import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.sdk.publishing.LocalOnly;
 import io.fluxzero.sdk.tracking.handling.HandleQuery;

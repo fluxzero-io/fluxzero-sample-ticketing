@@ -1,4 +1,4 @@
-package io.fluxzero.ticketing.payment.stripe.api;
+package io.fluxzero.ticketing.payment.stripe.request;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fluxzero.sdk.Fluxzero;
@@ -15,11 +15,11 @@ import static io.fluxzero.ticketing.payment.stripe.StripeProtocol.API_VERSION;
 import static io.fluxzero.ticketing.payment.stripe.StripeProtocol.REQUEST_SETTINGS;
 import static io.fluxzero.ticketing.payment.stripe.StripeProtocol.id;
 
-/** Read authoritative refund state; a successful HTTP exchange is not itself a completed refund. */
+/** Retrieve authoritative current payment state using the configured Stripe merchant credentials. */
 @LocalOnly @RequiresAnyRole("PAYMENTS")
-public record FetchStripeRefund(@NotBlank String refundId) implements Request<JsonNode> {
+public record FetchStripePaymentIntent(@NotBlank String intentId) implements Request<JsonNode> {
     @HandleQuery JsonNode handle() {
-        var request = WebRequest.get("https://api.stripe.com/v1/refunds/" + id(refundId, "re_"))
+        var request = WebRequest.get("https://api.stripe.com/v1/payment_intents/" + id(intentId, "pi_"))
                 .header("Authorization", "Bearer " + ApplicationProperties.requireProperty("ticketing.stripe.secretKey"))
                 .header("Stripe-Version", API_VERSION).build();
         return json(Fluxzero.get().webRequestGateway().sendAndWait(request, REQUEST_SETTINGS));

@@ -1,5 +1,7 @@
 package io.fluxzero.ticketing.payment.stripe.api;
 
+import io.fluxzero.ticketing.payment.stripe.request.FetchStripeRefund;
+
 import io.fluxzero.common.Guarantee;
 import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.sdk.publishing.LocalOnly;

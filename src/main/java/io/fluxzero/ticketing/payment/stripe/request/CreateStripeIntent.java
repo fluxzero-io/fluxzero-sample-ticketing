@@ -1,4 +1,4 @@
-package io.fluxzero.ticketing.payment.stripe.api;
+package io.fluxzero.ticketing.payment.stripe.request;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.fluxzero.sdk.Fluxzero;
