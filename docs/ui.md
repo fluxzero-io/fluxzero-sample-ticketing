@@ -86,8 +86,10 @@ Supported browser operations are documented at `/api/docs` and `/api/openapi.jso
 cookie authentication and request constraints. Operational provider commands are not public
 browser actions. The signed Stripe webhook is deliberately excluded from interactive discovery.
 The tests exercise real domain behavior through HTTP `TestFixture` boundaries with controlled
-external responses; live Stripe account/Payment Element qualification still requires merchant
-configuration. No live payment has been performed.
+external responses. For browser verification against Stripe, use the separate
+[sandbox development profile](integrations.md#stripe-sandbox-development-profile). It supports
+real Payment Element and webhook interactions using simulated payments. Production merchant
+configuration and real-money payments remain outside the local example.
 
 ## Remaining product work
 

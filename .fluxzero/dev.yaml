@@ -1,15 +1,52 @@
 version: 1
-environment: local
-fastCompiler: true
-idp: managed
-backendPaths:
-  - /app
-  - /login
-frontend:
-  directory: frontend
-  setupCommand: "npm install --prefer-offline --no-audit --no-fund && npm run build"
-  command: "npm run dev -- --host 127.0.0.1 --port {frontendPort}"
-commands:
-  - demo-programme:
-      type: io.fluxzero.ticketing.catalog.api.SeedDemoProgramme
-      payload: {}
+defaultProfile: local
+profiles:
+  local:
+    environment: local
+    fastCompiler: true
+    idp: managed
+    backendPaths: [/app, /login]
+    frontend:
+      directory: frontend
+      setupCommand: "npm install --prefer-offline --no-audit --no-fund && npm run build"
+      command: "npm run dev -- --host 127.0.0.1 --port {frontendPort}"
+    commands:
+      - demo-programme:
+          type: io.fluxzero.ticketing.catalog.api.SeedDemoProgramme
+          payload: {}
+  stripe:
+    environment: local
+    port: 4242
+    fastCompiler: true
+    idp: managed
+    backendPaths: [/app, /login]
+    apps: [stripe]
+    applicationConfig:
+      stripe:
+        application: fluxzero-ticketing
+        env:
+          FLUXZERO_CONFIG_LOCATIONS: file:.fluxzero/stripe/sandbox.properties
+    services:
+      stripe-webhooks:
+        command: >-
+          stripe listen --skip-update --color off
+          --config .fluxzero/stripe/config.toml
+          --device-name fluxzero-ticketing
+          --events-from @self
+          --events payment_intent.succeeded,payment_intent.payment_failed,payment_intent.canceled,refund.created,refund.updated,refund.failed
+          --forward-to http://localhost:4242/api/checkout/webhook
+        env:
+          STRIPE_API_KEY: ""
+        readiness:
+          log: 'Ready!'
+          timeout: 30s
+        output:
+          redact: ['whsec_[A-Za-z0-9]+']
+    frontend:
+      directory: frontend
+      setupCommand: "npm install --prefer-offline --no-audit --no-fund && npm run build"
+      command: "npm run dev -- --host 127.0.0.1 --port {frontendPort}"
+    commands:
+      - demo-programme:
+          type: io.fluxzero.ticketing.catalog.api.SeedDemoProgramme
+          payload: {}

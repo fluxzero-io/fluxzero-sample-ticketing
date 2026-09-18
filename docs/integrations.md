@@ -22,6 +22,7 @@ fake values and intercept the actual Fluxzero web requests; no live account is n
 | Property | Environment variable | Purpose |
 | --- | --- | --- |
 | `ticketing.stripe.secretKey` | `TICKETING_STRIPE_SECRETKEY` | Stripe server API key |
+| `ticketing.stripe.publishableKey` | `TICKETING_STRIPE_PUBLISHABLEKEY` | Stripe browser key for Payment Element |
 | `ticketing.stripe.accountId` | `TICKETING_STRIPE_ACCOUNTID` | Stable identity of the merchant account owning that key |
 | `ticketing.stripe.environment` | `TICKETING_STRIPE_ENVIRONMENT` | `test` (default) or `live`; must match returned objects |
 | `ticketing.stripe.webhookSecret` | `TICKETING_STRIPE_WEBHOOKSECRET` | Signing secret for this endpoint/account/environment |
@@ -36,8 +37,67 @@ this example. Luma currently requires a Plus subscription to create an API key.
 Fluxzero's outbound request transport includes authentication headers. Treat its namespace,
 request history and administrative tools as privileged. `Checkout.clientSecret` is returned
 only for an active hold and is never a model field; raw webhook commands are local only and
-redact their `toString`. The future HTTP adapter must return a checkout secret only to its
-owner, avoid caching/logging it and preserve the webhook's raw body.
+redact their `toString`. The HTTP adapter returns a checkout secret only to its owner,
+disables caching and preserves the webhook's raw body.
+
+## Stripe sandbox development profile
+
+Use dev-server **1.11.0 or newer** and the official [Stripe CLI](https://docs.stripe.com/stripe-cli).
+The `local` profile remains the default. The `stripe` profile uses the same application and
+domain with test credentials; it adds a managed `stripe listen` service and fixes the public
+URL to `http://localhost:4242` so webhook forwarding has a stable destination.
+
+For a temporary sandbox without an existing Stripe account, create an isolated CLI profile:
+
+```sh
+mkdir -p .fluxzero/stripe
+chmod 700 .fluxzero/stripe
+env -u STRIPE_API_KEY stripe sandbox create --email you@example.com --non-interactive \
+  --config .fluxzero/stripe/config.toml
+```
+
+Use your own email address. Keep the returned credentials, expiry and claim link private.
+Create `.fluxzero/stripe/sandbox.properties` using the returned test key, publishable key
+and account ID. The server key may be a sandbox-restricted key rather than an `sk_test_` key.
+Retrieve the webhook secret for the same CLI profile and device name:
+
+```sh
+env -u STRIPE_API_KEY stripe listen --print-secret --skip-update --color off \
+  --config .fluxzero/stripe/config.toml --device-name fluxzero-ticketing
+```
+
+```properties
+ticketing.stripe.secretKey=<sandbox server key>
+ticketing.stripe.publishableKey=<sandbox publishable key>
+ticketing.stripe.accountId=<sandbox account ID>
+ticketing.stripe.environment=test
+ticketing.stripe.webhookSecret=<listener signing secret>
+```
+
+```sh
+chmod 600 .fluxzero/stripe/config.toml .fluxzero/stripe/sandbox.properties
+fz dev restart --profile stripe --dev-server-version 1.11.0
+```
+
+The entire `.fluxzero/stripe/` directory is ignored by Git. Fluxzero loads the properties
+through `FLUXZERO_CONFIG_LOCATIONS`; there is no application-specific secret loader.
+Environment variables override property files, so do not inherit unrelated
+`TICKETING_STRIPE_*` values. The managed listener explicitly clears `STRIPE_API_KEY` to use
+its isolated CLI profile. Its Ready message supplies startup readiness, and the dev-server
+redacts signing secrets before publishing service output. Stopping the environment stops
+the listener too. Sandbox credentials expire; provision a replacement when needed and
+update both local files before restarting.
+
+Sign in with a local demo identity, reserve tickets and continue to payment. Use Stripe's
+[test cards](https://docs.stripe.com/testing): `4242 4242 4242 4242` for success or
+`4000 0000 0000 0002` for a decline, any future expiry and any three-digit CVC. Leave the
+optional Link account fields empty. These are simulated payments, without real funds.
+On success the signed webhook must produce a succeeded payment and valid tickets; the
+browser returning from Stripe alone is not proof of ticket issuance. After a decline,
+the reservation can be released without issuing admission rights.
+
+Return to the ordinary environment with `fz dev restart --profile local`.
+Keep load tests on controlled provider responses rather than Stripe's sandbox API.
 
 ## Stripe commands and recovery
 

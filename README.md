@@ -67,6 +67,7 @@ and [`GetAvailability`](src/main/java/io/fluxzero/ticketing/booking/api/GetAvail
 pages stable seat identities for the selection UI. The reservation command
 always checks availability again before committing.
 
-Without configured Stripe credentials the checkout shows that online payment is unavailable.
-Provider credentials, deployment and a GitHub remote are not configured.
-See [integration setup](docs/integrations.md) before connecting real accounts.
+The default `local` profile runs without provider credentials. For test payments, use the
+separate [`stripe` profile](docs/integrations.md#stripe-sandbox-development-profile), which
+manages webhook forwarding and reads ignored local sandbox credentials. It requires dev-server
+1.11.0 or newer. Deployment and a GitHub remote are not configured.
