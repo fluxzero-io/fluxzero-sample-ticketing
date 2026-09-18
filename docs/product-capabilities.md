@@ -6,23 +6,81 @@ and releasing unpaid holds. Inventory and financial lifecycles are separate. A s
 Recital Hall configuration complements the small illustrative venues.
 
 The following boundaries matter before presenting this as an operational ticketing product.
+The comparison below uses official product/help pages checked on 18 September 2026.
+It is a scope recommendation for this example, not a promise to reproduce every platform feature.
+
+## Market reference points
+
+- Ticketmaster documents mobile ticket access, wallet storage and transfer, plus event-specific
+  accessible-ticket filtering and assisted booking. Those highlight the difference between
+  displaying a purchase and delivering usable admission rights.
+  [Mobile tickets](https://www.ticketmaster.com/mobile-tickets),
+  [accessible tickets](https://help.ticketmaster.com/hc/en-us/articles/14912917926161-Accessible-Tickets-Everything-you-need-to-know).
+- Eventbrite documents organizer permissions for check-in and waitlists, inventory holds with
+  access codes, and time-limited offers to people on a waitlist. Operator allocations therefore
+  have a different lifecycle from the short customer checkout hold already implemented here.
+  [Permissions](https://www.eventbrite.com/help/en-us/articles/362073/),
+  [inventory holds](https://www.eventbrite.com/help/en-us/articles/779653/),
+  [waitlist offers](https://www.eventbrite.com/help/en-us/articles/817355/).
+- ticket.io describes quotas shared by ticket types, vouchers, dashboards, mobile/print ticket
+  formats and scanner support. Its box-office product shares inventory with online sales and
+  gives cashiers separate permissions. These are useful references for venue operations.
+  [Ticket sales](https://www.ticket.io/en/ticket-sales/),
+  [box office](https://www.ticket.io/en/box-office),
+  [entry management](https://www.ticket.io/en/entry-management/).
+
+## Gap inventory
 
 | Capability | Current behavior | Missing product behavior |
 | --- | --- | --- |
-| Venue and programme management | Domain commands; seeded fictional performances | Operator UI, publishing/unpublishing, sales windows, multiple configurations and scheduling collision checks |
+| Venue and programme management | Domain commands, independent immutable seating-plan revisions and seeded fictional performances | Operator UI, publishing/unpublishing, sales windows, configuration editing/retirement and scheduling collision checks |
 | Luma | Operator command imports one managed calendar event atomically; identical imports are idempotent | Live-calendar qualification, operator import screen and explicit reconciliation of changed/cancelled source events |
 | Accessible seating | Wheelchair and companion positions are identifiable | Event-specific access guidance, paired selection policy and assisted booking workflow |
 | Seat selection | Source-backed map, section selection, row list, grouped holds | Automatic adjacent-seat suggestions, sightline warnings, price categories within a section and optional single-seat-gap rules |
+| Ticket products and pricing | One price per section per performance | Adult/child/student or early-bird types sharing the same physical stock; promotional codes, fees and explicit price breakdown |
+| Organizer allocations | Only temporary customer holds | Production/artist/partner blocks, invitations, complimentary tickets and controlled release into public sale |
 | Checkout | EUR card payments, retries and retained provider state | Buyer/contact details, clear fee/tax breakdown, production merchant configuration and payment-method expansion |
 | Fulfilment | Owner-only ticket view and browser printing | Confirmation email, recoverable delivery, downloadable branded tickets and QR/barcode credentials |
-| Admission | Tickets have valid/void domain state | Staff scanner, atomic check-in, duplicate-scan handling and door permissions |
-| Cancellation and refunds | Performance cancellation and full-refund workflows exist in the core | Operator/customer support UI, refund policy display, customer cancellation requests and practical refund qualification |
+| Admission | Tickets have valid/void domain state | Staff scanner, atomic check-in, duplicate-scan handling, door permissions and explicit re-entry policy; offline scanning requires a separate conflict policy |
+| Cancellation and refunds | Performance cancellation and full-refund workflows exist in the core | Operator/customer support UI, refund policy display, customer cancellation requests, ticket-level partial refunds and practical refund qualification |
 | Invoicing | Independent invoice and credit-note lifecycle in the core | Billing details, issue/delivery workflow, invoice download and jurisdiction-specific tax/numbering configuration |
+| Organizer access | Global operational roles and customer ownership | Organizer/venue-scoped staff permissions, invitations and separation between unrelated organizers |
+| Box office and reporting | Online customer checkout only | Assisted sales using the same inventory, cash/card recording, guest lists, sales/admission reports and exports |
 | Customer support | Customers see their own bookings | Staff search, reconciliation actions, explanations of pending/late payments and auditable support actions |
 | Demand management | Exact bounded inventory transactions | Purchase limits across accounts, queue/waitlist policy, abuse controls and fair high-demand admission |
+| Event information and communication | Title, description, venue, date and artwork | Doors/end time, age and entry restrictions, accessibility guidance, reminders, change notices and delivery preferences |
 | Rescheduling | Existing reservations cannot silently move | Explicit reschedule workflow, notifications and refund/acceptance choices |
 | Transfers and resale | Not implemented | Explicit ownership transfer, cancellation of old admission credentials and resale policy |
 
+## Suggested order for this example
+
+1. **Complete the admission journey.** Capture buyer contact details, deliver tickets reliably,
+   add downloadable credentials and an online staff check-in flow. A second scan must report
+   the original admission instead of admitting twice; cancelled/refunded admission must fail.
+   Keep ticket status, credential validity and check-in facts distinct. Start online; wallet
+   passes, rotating barcodes and offline door reconciliation can follow when justified.
+2. **Make the product operable.** Provide a small organizer interface for programme setup,
+   plan selection, sales opening/closing, order lookup, cancellation and refund progress.
+   Establish organizer-scoped authorization before supporting independent sellers. Include
+   confirmation/change communications and issue/download workflows for invoices and credit notes.
+3. **Make seat and ticket choice realistic.** Add adjacent-seat suggestions, price categories,
+   companion rules and sightline information. Ticket types must draw from the same physical
+   inventory; introducing an adult/child price must never multiply section capacity. Artist and
+   production blocks need explicit release rules, not long-lived customer holds.
+4. **Extend sales and after-sales deliberately.** Consider presales/codes, waitlists, box-office
+   sales, partial refunds, rescheduling and transfers. Transfers need recipient acceptance and
+   revocation of the previous admission credential. Bundles, season passes, resale, dynamic
+   pricing and a cross-event cart are optional product expansions, not baseline requirements
+   for this reference app. A multi-seller marketplace would additionally need seller onboarding,
+   settlement and dispute operations; multiple venue records alone do not provide that product.
+
+A sale queue and a sold-out waitlist solve different problems: the former limits access during
+an on-sale peak; the latter offers newly released inventory with an acceptance deadline.
+Neither replaces the core capacity checks. Before promising fair high-demand sales, specify
+purchase limits and queue behavior in addition to measuring throughput.
+
+This inventory does not authorize implementing every row. The next load test can qualify the
+current browse/hold/pay/cancel flow while later product slices are chosen explicitly.
 Live provider qualification and these functional decisions are distinct from throughput testing.
 The later load test should exercise the intended purchase workflow with controlled provider
 latency and failures, not spend provider API quotas or simulate real charges.
