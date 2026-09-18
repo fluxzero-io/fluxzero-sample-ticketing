@@ -12,6 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import { api, post, money, date, artwork, navigate, signIn } from "./api";
 import { Icon, ErrorMessage, Spinner, useRemote } from "./ui";
+import { SeatMap, seatDescription } from "./SeatMap";
 
 export function Performance({ id, session }) {
   const [draft] = useState(() => {
@@ -33,13 +34,13 @@ export function Performance({ id, session }) {
   const [availability, setAvailability] = useState(null),
     [section, setSection] = useState(draft.section),
     [seats, setSeats] = useState([]),
-    [hasMoreSeats, setHasMoreSeats] = useState(false),
     [selected, setSelected] = useState(draft.seats),
     [quantity, setQuantity] = useState(draft.quantity),
     [seatsLoading, setSeatsLoading] = useState(false),
     [problem, setProblem] = useState(null),
     [busy, setBusy] = useState(false),
-    [view, setView] = useState("map");
+    [view, setView] = useState(() => window.matchMedia("(max-width: 640px)").matches ? "list" : "map"),
+    [rowFilter, setRowFilter] = useState("");
   const attempt = useRef(crypto.randomUUID());
   const [seatOffset, setSeatOffset] = useState(0);
   useEffect(() => {
@@ -87,38 +88,56 @@ export function Performance({ id, session }) {
     setQuantity(1);
     attempt.current = crypto.randomUUID();
     setSeatOffset(0);
+    setRowFilter("");
   }
   useEffect(() => {
     setSeats([]);
-    setHasMoreSeats(false);
     if (choice?.mode !== "RESERVED_SEATING") return;
     setSeatsLoading(true);
     let active = true;
+    let timer;
+    const controller = new AbortController();
     async function refresh() {
       try {
-        const p = await api(
-          `/api/programme/${id}/seats?section=${encodeURIComponent(section)}&offset=${seatOffset}`,
-        );
+        const choices = [];
+        let offset = 0;
+        // Each request stays bounded to 100 seats. Fetch only the selected section, with no overlapping polls.
+        do {
+          const p = await api(
+            `/api/programme/${id}/seats?section=${encodeURIComponent(section)}&offset=${offset}`,
+            { signal: controller.signal },
+          );
+          if (!active) return;
+          choices.push(...p.seats);
+          if (!p.hasMore) break;
+          offset += p.seats.length;
+        } while (active);
         if (active) {
-          setSeats(p.seats);
-          setHasMoreSeats(p.hasMore);
+          setSeats(choices);
         }
       } catch (e) {
         if (active) setProblem(e);
       } finally {
-        if (active) setSeatsLoading(false);
+        if (active) {
+          setSeatsLoading(false);
+          timer = setTimeout(refresh, 10000);
+        }
       }
     }
     refresh();
-    const timer = setInterval(refresh, 10000);
     return () => {
       active = false;
-      clearInterval(timer);
+      controller.abort();
+      clearTimeout(timer);
     };
-  }, [id, section, choice?.mode, seatOffset]);
+  }, [id, section, choice?.mode]);
   const seated = choice?.mode === "RESERVED_SEATING",
     count = seated ? selected.length : quantity;
-  const rows = Object.groupBy(seats, ({ seat }) => seat.row);
+  const rowNames = [...new Set(seats.map(({ seat }) => seat.row))];
+  const filteredSeats = rowFilter ? seats.filter(({ seat }) => seat.row === rowFilter) : seats;
+  const visibleSeats = filteredSeats.slice(seatOffset, seatOffset + 100);
+  const rows = Object.groupBy(visibleSeats, ({ seat }) => seat.row);
+  const spatial = seats.length > 0 && seats.every(({ seat }) => seat.position);
   const unavailableSelection = seats.some(
     ({ seat, available }) => !available && selected.includes(seat.id),
   );
@@ -268,6 +287,18 @@ export function Performance({ id, session }) {
                       <div className={"seat-selector " + view}>
                         <div className="stage">STAGE</div>
                         {seatsLoading && <Spinner>Loading seats…</Spinner>}
+                        {view === "map" && spatial ? (
+                          <SeatMap key={section} seats={seats} selected={selected} busy={busy} toggle={toggle} />
+                        ) : (
+                        <>
+                        {rowNames.length > 1 && (
+                          <label className="row-filter">Row
+                            <select value={rowFilter} onChange={(e) => { setRowFilter(e.target.value); setSeatOffset(0); }}>
+                              <option value="">All rows</option>
+                              {rowNames.map((row) => <option key={row} value={row}>{row === "Side" ? "Side seats" : row}</option>)}
+                            </select>
+                          </label>
+                        )}
                         <div
                           className="seats"
                           role="group"
@@ -295,11 +326,11 @@ export function Performance({ id, session }) {
                                         : ""
                                     }
                                     aria-pressed={selected.includes(seat.id)}
-                                    aria-label={`Row ${seat.row}, seat ${seat.number}${!available ? ", unavailable" : ""}`}
+                                    aria-label={`${seatDescription(seat)}${!available ? ", unavailable" : ""}`}
                                     onClick={() => toggle(seat.id)}
                                   >
                                     {view === "list"
-                                      ? `Row ${seat.row} · Seat ${seat.number}`
+                                      ? seatDescription(seat)
                                       : seat.number}
                                     {selected.includes(seat.id) &&
                                       view === "list" && (
@@ -321,13 +352,15 @@ export function Performance({ id, session }) {
                             Previous seats
                           </button>
                         )}
-                        {hasMoreSeats && (
+                        {seatOffset + 100 < filteredSeats.length && (
                           <button
                             className="text-button"
                             onClick={() => setSeatOffset((o) => o + 100)}
                           >
                             More seats
                           </button>
+                        )}
+                        </>
                         )}
                         <div className="legend">
                           <span>Available</span>
@@ -373,6 +406,11 @@ export function Performance({ id, session }) {
                     </div>
                   )}
                   <p className="layout-note">{availability.layoutNotice}</p>
+                  {show.performance.layout.source && (
+                    <p className="layout-note"><a href={show.performance.layout.source.url} target="_blank" rel="noreferrer">
+                      Venue seating plan · {show.performance.layout.source.revision}
+                    </a></p>
+                  )}
                   {seated && selected.length > 0 && (
                     <div
                       className="selected-seats"

@@ -33,6 +33,7 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 | `WebResponseCompressionTest` | Typed HTTP responses with identity/gzip in synchronous and asynchronous fixtures |
 | `PerformanceCancellationTest` | Multiple bounded pages and recovery after losing a continuation publication |
 | `StripeObservationConflictTest` | Durable conflicting-fact reconciliation and provider-free checkout status reads |
+| `ConcertgebouwSeatingTest` | Source numbering, physical gaps, accessibility metadata, paged seats and independent inventory across real sections in synchronous/asynchronous fixtures |
 | `LayoutValidationTest` | Input constraints and immutable stored layouts through direct and serialized commands |
 | `TicketingTest` | Core journeys in synchronous and asynchronous fixtures; time boundaries, roles, ownership, invoice history and schedule cleanup |
 | `BoundaryTest` | Cross-payment capture/refund uniqueness, refund redelivery, blocked direct internal-event dispatch and invalid selections |
@@ -99,8 +100,10 @@ are never silently moved by catalogue updates; there is no layout-editing comman
 
 Implemented. See [integration setup and recovery](integrations.md) for configuration,
 local command names, supported API contracts and boundaries. Controlled HTTP handlers are
-fixture-only and never replace domain behavior. Live merchant/calendar account qualification
-has not been performed.
+fixture-only and never replace domain behavior. The managed Stripe sandbox has been exercised
+through the browser, including successful and declined payments and signed callbacks. Luma
+live-calendar qualification is deferred because its API requires a paid Plus calendar; no
+subscription is active. Controlled Luma contract tests remain available.
 
 ## Phase 3: access and UI
 
@@ -110,8 +113,9 @@ responsive customer interface. Holds, tickets and payment/refund status remain d
 See [UI setup and boundaries](ui.md). Billing documents display when issued through the billing
 API; the customer UI does not create or rewrite invoices.
 
-Live merchant account qualification, deployment, operator screens, admission scanning and
-production load qualification remain future work. Nothing is published or deployed.
+Production merchant qualification, deployment, operator screens, admission scanning and
+production load qualification remain future work. See the [functional capability inventory](product-capabilities.md)
+for the remaining customer and operator workflows. Nothing is published or deployed.
 
 ## Local SDK prerequisite for this development branch
 

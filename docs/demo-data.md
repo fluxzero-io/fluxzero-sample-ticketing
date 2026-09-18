@@ -15,16 +15,21 @@ The venue names, cities and addresses are real. Official sources checked on **16
 The Concertgebouw's Main Hall and Recital Hall and TivoliVredenburg's Ronda are real room
 names. **Demo Forum is a fictional room at the real DeFabrique venue.**
 
-All section names, seat identifiers, rows, capacities, layouts and ticket prices are
-invented for the example. Every hall carries the visible notice:
+The Recital Hall now uses the [source-backed July 2023 seating configuration](seating.md):
+378 stalls positions and 62 balcony positions, including the published row/seat numbers,
+physical gaps and accessibility positions. Prices, ranks and availability remain fictional.
+
+The other halls use invented section names, seat identifiers, rows, capacities and layouts.
+These illustrative halls carry the visible notice:
 
 > Demonstration layout and capacity; not an official floor plan.
 
 The small capacities make boundary scenarios readable: four seats in the demonstration Main
-Hall, two in the Recital Hall, six standing admissions in Ronda and eight in Demo Forum.
+Hall, six standing admissions in Ronda and eight in Demo Forum.
 These numbers do not describe the real venues' capacity or accessibility arrangements.
 
 “Night Lights” and “Future Makers”, their schedules and prices are fictional. The caller
 supplies the first performance instant; later performances use successive dates. The stored
 `Europe/Amsterdam` zone supports local display without losing the absolute instant.
-The example has no affiliation with these venues and uses no venue artwork or floor plans.
+The example has no affiliation with these venues. It uses its own event artwork and seating
+schematic; the Recital Hall's factual seat data is transcribed from the linked venue plan.

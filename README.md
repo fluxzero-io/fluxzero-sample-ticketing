@@ -57,6 +57,8 @@ external-runtime tests are skipped. The remaining tests use the real SDK through
 - [Model graph and transaction boundaries](docs/model.md)
 - [Product rules and example scenarios](docs/product-rules.md)
 - [Real venue sources and demonstration data](docs/demo-data.md)
+- [Source-backed seating configuration](docs/seating.md)
+- [Product capabilities and remaining gaps](docs/product-capabilities.md)
 - [Stripe and Luma setup, commands and recovery](docs/integrations.md)
 - [Testing and next phases](docs/development.md)
 

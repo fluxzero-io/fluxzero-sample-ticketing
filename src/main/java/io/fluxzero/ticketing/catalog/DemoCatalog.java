@@ -22,7 +22,7 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
-/** Real venue names and addresses, with explicitly fictional capacity, layouts, prices and programmes. */
+/** Real venues, one source-backed layout, and explicitly fictional prices and programmes. */
 public final class DemoCatalog {
     public static final String NOTICE = "Demonstration layout and capacity; not an official floor plan.";
     private DemoCatalog() {}
@@ -48,9 +48,7 @@ public final class DemoCatalog {
                         new Section("stalls", "Demo stalls", AdmissionMode.RESERVED_SEATING, 4,
                                 List.of(new Seat("A1", "A", "1"), new Seat("A2", "A", "2"),
                                         new Seat("B1", "B", "1"), new Seat("B2", "B", "2")))))),
-                new CreateHall(recital, concertgebouw, new HallDetails("Recital Hall", NOTICE, List.of(
-                        new Section("stalls", "Demo stalls", AdmissionMode.RESERVED_SEATING, 2,
-                                List.of(new Seat("A1", "A", "1"), new Seat("A2", "A", "2")))))),
+                new CreateHall(recital, concertgebouw, ConcertgebouwRecitalHall.LAYOUT),
                 new CreateHall(ronda, tivoli, new HallDetails("Ronda", NOTICE, List.of(
                         new Section("floor", "Demo floor", AdmissionMode.GENERAL_ADMISSION, 6, List.of())))),
                 new CreateHall(forum, fabrique, new HallDetails("Demo Forum (fictional room)", NOTICE, List.of(
@@ -58,7 +56,9 @@ public final class DemoCatalog {
                 new CreateEvent(concert, new EventDetails("Night Lights", "Fictional concert for this example.")),
                 new CreateEvent(conference, new EventDetails("Future Makers", "Fictional technology conference.")),
                 performance("night-lights-amsterdam", concert, main, firstPerformance, "stalls", 3500),
-                performance("night-lights-matinee", concert, recital, firstPerformance.plus(Duration.ofDays(1)), "stalls", 2500),
+                new SchedulePerformance(new PerformanceId("night-lights-matinee"), concert, recital,
+                        new PerformanceDetails(firstPerformance.plus(Duration.ofDays(1)), ZoneId.of("Europe/Amsterdam"),
+                                Map.of("stalls", new Money(2500, "EUR"), "balcony", new Money(2000, "EUR")))),
                 performance("night-lights-utrecht", concert, ronda, firstPerformance.plus(Duration.ofDays(2)), "floor", 3000),
                 performance("future-makers", conference, forum, firstPerformance.plus(Duration.ofDays(3)), "floor", 4500));
     }

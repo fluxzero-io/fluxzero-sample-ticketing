@@ -2,7 +2,8 @@
 
 The React/Vite frontend implements the selected dark concert-agenda design: restrained copy,
 chartreuse actions, large condensed headlines and illustrative artwork. All events are fictional;
-venue details link to their real sources. The tiny seat layouts are explicitly demonstrations.
+venue details link to their real sources. The Recital Hall uses a [source-backed seating configuration](seating.md);
+the other small layouts are explicitly demonstrations.
 
 ## Run and package
 
@@ -25,9 +26,11 @@ The Fluxzero HTTP stack owns compression; the app adds no gzip handler.
   the month filter uses Europe/Amsterdam, matching this example's venues. Filters stay selected
   when returning from a performance during the current visit.
 - Select a section and up to twelve seats or general-admission places. Seat pages are bounded
-  at one hundred, with a list alternative to the demonstration map. Availability refreshes
+  at one hundred; the selected section is assembled for the map. List mode has row filtering
+  and pagination and is the default on narrow screens. Availability refreshes approximately
   every ten seconds; the reservation command makes the authoritative decision.
-- The demonstration map groups seats by their actual row labels. Selected-seat buttons allow
+- The Recital Hall map preserves source positions and supports zoom and scrolling. Other
+  illustrative maps group seats by row. Selected-seat buttons allow
   removal without returning to a previous seat page. A changed-availability notice retains the
   selection for review or retry; it never silently replaces seats or creates a new hold.
 - Sign in, then reserve the complete selection atomically. One client-generated reservation

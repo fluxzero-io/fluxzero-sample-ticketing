@@ -188,6 +188,10 @@ rewrite an issued invoice; the billing commands still own credit notes.
 
 ## Luma import
 
+Live-calendar qualification is deferred: Luma requires Plus for API keys, and this example
+has not qualified against a paid calendar. The fixture suite verifies controlled HTTP
+contracts, mapping and domain behavior; it is not evidence of a successful live API import.
+
 `ImportLumaEvent(externalId, hallId, prices)` requires `OPERATOR`. Its `FetchLumaEvent` query
 calls `GET https://public-api.luma.com/v1/events/get?event_id=...` with `x-luma-api-key`.
 This is the current flat event response, not the older singular endpoint/envelope.

@@ -42,12 +42,12 @@ public record GetProgramme(@PositiveOrZero int offset, @Min(1) @Max(100) int lim
     public record Page(List<Show> items, int offset, boolean hasMore) {}
     private static LayoutSummary layout(HallDetails details) {
         return new LayoutSummary(details.name(), details.layoutNotice(), details.sections().stream()
-                .map(s -> new SectionSummary(s.id(), s.name(), s.mode())).toList());
+                .map(s -> new SectionSummary(s.id(), s.name(), s.mode())).toList(), details.source());
     }
     public record Show(PerformanceSummary performance, Event event, HallSummary hall, Venue venue) {}
     public record PerformanceSummary(PerformanceId performanceId, PerformanceDetails details,
                                      Performance.Cancellation cancellation, LayoutSummary layout) {}
     public record HallSummary(HallId hallId, LayoutSummary details) {}
-    public record LayoutSummary(String name, String layoutNotice, List<SectionSummary> sections) {}
+    public record LayoutSummary(String name, String layoutNotice, List<SectionSummary> sections, LayoutSource source) {}
     public record SectionSummary(String id, String name, AdmissionMode mode) {}
 }

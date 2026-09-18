@@ -9,7 +9,11 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public record HallDetails(@NotBlank String name, @NotBlank String layoutNotice,
-                          @NotEmpty List<@NotNull @Valid Section> sections) {
+                          @NotEmpty List<@NotNull @Valid Section> sections, @Valid LayoutSource source) {
+    /** An illustrative layout without an external source. */
+    public HallDetails(String name, String layoutNotice, List<Section> sections) {
+        this(name, layoutNotice, sections, null);
+    }
     public HallDetails {
         sections = sections == null ? null : java.util.Collections.unmodifiableList(
                 new java.util.ArrayList<>(sections));

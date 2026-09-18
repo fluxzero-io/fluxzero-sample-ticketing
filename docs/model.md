@@ -74,6 +74,9 @@ first handle any outstanding commercial work rather than use deletion as cancell
 
 A hall's `HallDetails` holds immutable `Section` and `Seat` values. Sections have stable
 keys within a hall; seats have stable keys within a section plus readable row and number.
+Optional section-local coordinates and a standard/wheelchair/companion kind describe the
+physical position. `HallDetails.source` records the source title, URL, revision and check date;
+see the [source-backed configuration](seating.md).
 These values have no independently editable lifecycle in this phase. A performance freezes
 that layout and section prices. A selection is consequently unambiguous as
 `(performanceId, sectionId, seatId)`; general admission uses `seatId = null`.
