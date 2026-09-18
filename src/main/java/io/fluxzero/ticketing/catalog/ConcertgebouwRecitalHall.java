@@ -12,9 +12,9 @@ import java.util.List;
 public final class ConcertgebouwRecitalHall {
     private ConcertgebouwRecitalHall() {}
 
-    public static final HallDetails LAYOUT = readLayout();
+    public static final SeatingPlanDetails LAYOUT = readLayout();
 
-    private static HallDetails readLayout() {
+    private static SeatingPlanDetails readLayout() {
         var stalls = new ArrayList<Seat>();
         var balcony = new ArrayList<Seat>();
         try (var reader = new BufferedReader(new InputStreamReader(java.util.Objects.requireNonNull(
@@ -35,7 +35,7 @@ public final class ConcertgebouwRecitalHall {
         } catch (java.io.IOException e) {
             throw new IllegalStateException("Could not read the Recital Hall seating configuration", e);
         }
-        return new HallDetails("Recital Hall (Kleine Zaal)",
+        return new SeatingPlanDetails("Recital Hall seated", "2023-07",
                 "Based on the venue's July 2023 seating plan. Fictional event, prices and availability.",
                 List.of(new Section("stalls", "Stalls · Zaal", AdmissionMode.RESERVED_SEATING, stalls.size(), stalls),
                         new Section("balcony", "Balcony · Balkon", AdmissionMode.RESERVED_SEATING, balcony.size(), balcony)),

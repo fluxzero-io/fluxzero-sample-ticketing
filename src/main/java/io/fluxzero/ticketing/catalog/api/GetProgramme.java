@@ -33,21 +33,22 @@ public record GetProgramme(@PositiveOrZero int offset, @Min(1) @Max(100) int lim
                 items.size() > limit);
     }
     public static Show describe(Performance performance) {
-        var hall = Fluxzero.loadModel(performance.hallId()).get();
-        return new Show(new PerformanceSummary(performance.performanceId(), performance.details(), performance.cancellation(),
-                layout(performance.layout())), Fluxzero.loadModel(performance.eventId()).get(),
-                new HallSummary(hall.hallId(), layout(hall.details())),
+        var plan = io.fluxzero.ticketing.catalog.CatalogRules.plan(performance);
+        var hall = Fluxzero.loadModel(plan.hallId()).get();
+        return new Show(new PerformanceSummary(performance.performanceId(), performance.seatingPlanId(), performance.details(), performance.cancellation(),
+                layout(plan.details())), Fluxzero.loadModel(performance.eventId()).get(),
+                new HallSummary(hall.hallId(), hall.details()),
                 Fluxzero.loadModel(hall.venueId()).get());
     }
     public record Page(List<Show> items, int offset, boolean hasMore) {}
-    private static LayoutSummary layout(HallDetails details) {
-        return new LayoutSummary(details.name(), details.layoutNotice(), details.sections().stream()
+    private static LayoutSummary layout(SeatingPlanDetails details) {
+        return new LayoutSummary(details.name(), details.version(), details.layoutNotice(), details.sections().stream()
                 .map(s -> new SectionSummary(s.id(), s.name(), s.mode())).toList(), details.source());
     }
     public record Show(PerformanceSummary performance, Event event, HallSummary hall, Venue venue) {}
-    public record PerformanceSummary(PerformanceId performanceId, PerformanceDetails details,
+    public record PerformanceSummary(PerformanceId performanceId, SeatingPlanId seatingPlanId, PerformanceDetails details,
                                      Performance.Cancellation cancellation, LayoutSummary layout) {}
-    public record HallSummary(HallId hallId, LayoutSummary details) {}
-    public record LayoutSummary(String name, String layoutNotice, List<SectionSummary> sections, LayoutSource source) {}
+    public record HallSummary(HallId hallId, HallDetails details) {}
+    public record LayoutSummary(String name, String version, String layoutNotice, List<SectionSummary> sections, LayoutSource source) {}
     public record SectionSummary(String id, String name, AdmissionMode mode) {}
 }

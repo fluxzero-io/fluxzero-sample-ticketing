@@ -56,9 +56,10 @@ class PerformanceCancellationTest extends TicketingTestSupport {
                 .consumerTimeout(Duration.ofSeconds(30)).atFixedTime(NOW)
                 .givenCommandsByUser(OPERATOR, DemoCatalog.commands(NOW.plus(Duration.ofDays(1))).toArray())
                 .givenCommandsByUser(OPERATOR,
-                        new CreateHall(hallId, new VenueId("concertgebouw"), new HallDetails("Capacity test", DemoCatalog.NOTICE,
+                        new CreateHall(hallId, new VenueId("concertgebouw"), new HallDetails("Capacity test")),
+                        new RegisterSeatingPlan(new SeatingPlanId("large-demo-v1"), hallId, new SeatingPlanDetails("Standing", "1", DemoCatalog.NOTICE,
                                 List.of(new Section("floor", "Floor", AdmissionMode.GENERAL_ADMISSION, 1000, List.of())))),
-                        new SchedulePerformance(performanceId, new EventId("night-lights"), hallId,
+                        new SchedulePerformance(performanceId, new EventId("night-lights"), new SeatingPlanId("large-demo-v1"),
                                 new PerformanceDetails(NOW.plus(Duration.ofDays(1)), ZoneId.of("Europe/Amsterdam"),
                                         Map.of("floor", new Money(1000, "EUR")))));
         fixture = fixture.givenCommandsByUser(ALICE, java.util.stream.IntStream.range(0, 205)

@@ -3,7 +3,8 @@
 ```mermaid
 erDiagram
     VENUE ||--o{ HALL : contains
-    HALL ||--o{ PERFORMANCE : hosts
+    HALL ||--o{ SEATING_PLAN : configures
+    SEATING_PLAN ||--o{ PERFORMANCE : stages
     EVENT ||--o{ PERFORMANCE : occurs_as
     PERFORMANCE ||--o{ RESERVATION : receives
     PERFORMANCE ||--o{ SEAT_INVENTORY : allocates
@@ -24,9 +25,10 @@ require a child to remain active after its parent is deleted.
 | Model | Identity and purpose | Lifecycle |
 | --- | --- | --- |
 | Venue | `VenueId`, sourced name and address | Registered independently of programmes |
-| Hall | `HallId`, belongs to a venue | Independently registered room and immutable layout |
+| Hall | `HallId`, belongs to a venue | Independently registered room |
+| SeatingPlan | `SeatingPlanId`, hall + immutable configuration revision | Registered independently; changed geometry/capacity requires a new ID |
 | Event | `EventId`, programme title and description | Shared by multiple performances |
-| Performance | `PerformanceId`, event + hall + instant + time zone | Bookable until start; may be cancelled |
+| Performance | `PerformanceId`, event + seating plan + instant + time zone | Bookable until start; may be cancelled |
 | SeatInventory | `(performance, section, seat)` | One current owner, deadline and sold flag |
 | SectionInventory | `(performance, section)` | Sold count and active deadline counts; at most 900 second buckets |
 | Reservation | `ReservationId`, authenticated customer and complete priced selection | Held → confirmed, expired or cancelled; confirmed → cancelled |
@@ -46,10 +48,10 @@ own the invoice.
 Logical deletion makes the current Model empty and recursively does the same for its owned
 children in one atomic commit. Their event-sourced history remains available, including the
 last financial facts through `previous()`. For example, deleting a venue also logically
-deletes its halls, performances and their reservation, ticket, payment, billing and adapter
+deletes its halls, seating plans, performances and their reservation, ticket, payment, billing and adapter
 records. Deleting a reservation reaches its tickets, payments, invoices and credit notes. Cascade follows descendants, not parents or siblings.
 
-A performance has two owning parents: its programme and its hall. Deleting **either** logically
+A performance has two owning parents: its programme and its seating plan. Deleting **either** logically
 deletes that performance and its descendants. Deleting a hall does not delete the programme
 or performances hosted in other halls. The Luma source mapping belongs to its performance.
 Plain references such as `Ticket.performanceId` and `Invoice.paymentId` add no deletion edge.
@@ -72,13 +74,16 @@ first handle any outstanding commercial work rather than use deletion as cancell
 
 ## Selection identity
 
-A hall's `HallDetails` holds immutable `Section` and `Seat` values. Sections have stable
-keys within a hall; seats have stable keys within a section plus readable row and number.
+A hall has one or more independent `SeatingPlan` Models. `HallDetails` describes only the
+room; `SeatingPlanDetails` holds a configuration name, version label, immutable `Section`
+and `Seat` values and optional source provenance. Sections have stable keys within a plan; seats have stable keys within a section plus readable row and number.
 Optional section-local coordinates and a standard/wheelchair/companion kind describe the
-physical position. `HallDetails.source` records the source title, URL, revision and check date;
+physical position. `SeatingPlanDetails.source` records the source title, URL, revision and check date;
 see the [source-backed configuration](seating.md).
-These values have no independently editable lifecycle in this phase. A performance freezes
-that layout and section prices. A selection is consequently unambiguous as
+Section and seat values share the plan lifecycle. `RegisterSeatingPlan` creates a complete
+immutable revision under an existing hall; an existing plan identity cannot be overwritten,
+even before use. `SchedulePerformance` explicitly chooses a `SeatingPlanId` and prices every
+section of that plan. It cannot replace an existing performance or rebind its plan. A selection is consequently unambiguous as
 `(performanceId, sectionId, seatId)`; general admission uses `seatId = null`.
 
 Each `Selection` is one admission. Repeating a general admission selection requests several
@@ -86,12 +91,17 @@ admissions; repeating a numbered seat is illegal. A reservation freezes the indi
 prices and total. Tickets copy those admissions rather than inventing physical places for
 general admission. Their deterministic IDs are derived from reservation ID and line number.
 
-A future independently managed or versioned seating plan should become a model with its
-own lifecycle. It should not rewrite the layout of an already on-sale performance.
+A changed configuration is registered as a new plan ID with an explicit version label.
+Existing performances continue to reference their original plan; they do not follow a
+mutable default or copy the entire plan into every performance. Reads load that immutable
+Model by ID and participate in the SDK transaction readset. No sibling-plan scan or
+shared mutable hall counter is added to booking. Reusing the same plan across performances
+never shares their inventory. An operator editor, retirement policy and collision checks
+remain separate future work.
 
 ## Atomic business decisions
 
-`ReserveTickets` validates the frozen layout and performance gate, then returns a normalized
+`ReserveTickets` validates the selected immutable plan and performance gate, then returns a normalized
 `ReservationHeld` plus at most twelve inventory changes. Fluxzero commits the entire ordered
 set atomically. No retained reservation collection or search result decides the sale. A failed
 last selection rolls back every earlier selection. Different seats have independent inventory
@@ -165,7 +175,7 @@ See [integration recovery](integrations.md) for failure boundaries and storage c
 
 `AcceptLumaImport` creates the programme, performance and source mapping in one transaction.
 Its deterministic source identity prevents duplicate local performances. The existing local
-hall layout and operator-supplied prices define inventory; remote capacity never does.
+chosen local seating plan and operator-supplied prices define inventory; remote capacity never does.
 
 ## Storage transition
 

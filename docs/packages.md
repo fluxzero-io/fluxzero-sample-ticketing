@@ -11,7 +11,7 @@ or enforce endpoint access. Internal workflow events and refund identities live 
 
 | Domain | Responsibility |
 | --- | --- |
-| `catalog` | Venues, halls, programmes and dated performances, including frozen layouts and prices |
+| `catalog` | Venues, halls, immutable seating-plan revisions, programmes and dated performances with fixed plan selection and prices |
 | `booking` | Inventory, availability, atomic group reservations, expiry, ownership and issued tickets |
 | `payment` | Provider-independent payment, capture and refund facts |
 | `billing` | Invoices and retained credit notes |

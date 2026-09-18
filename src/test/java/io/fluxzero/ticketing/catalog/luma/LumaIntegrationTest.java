@@ -33,12 +33,27 @@ class LumaIntegrationTest extends LumaTestSupport {
                         && "luma_fixture_key".equals(r.getHeader("x-luma-api-key")))
                 .expectThat(f -> {
                     Performance show = Fluxzero.loadModel(IMPORTED).get();
-                    assertEquals(HALL, show.hallId());
-                    assertEquals(4, show.layout().sections().getFirst().capacity());
+                    assertEquals(PLAN, show.seatingPlanId());
+                    assertEquals(4, Fluxzero.loadModel(show.seatingPlanId()).get().details().sections().getFirst().capacity());
                     assertEquals("Imported concert", Fluxzero.loadModel(PROGRAMME).get().details().title());
                     assertEquals(PRICES, show.details().sectionPrices());
                     assertEquals(1, Fluxzero.loadGraph(IMPORTED).childModels(LumaImport.class).size());
                 }).andThen().whenCommandByUser(OPERATOR, importEvent()).expectSuccessfulResult().expectNoEvents();
+    }
+    @ParameterizedTest @ValueSource(booleans = {false, true})
+    void reimportCannotSelectAnotherLocalPlanWithTheSamePrices(boolean async) {
+        var alternative = new io.fluxzero.ticketing.catalog.api.SeatingPlanId("alternative-plan");
+        luma(async, new RemoteLuma()).givenCommandsByUser(OPERATOR, importEvent(),
+                        new io.fluxzero.ticketing.catalog.api.RegisterSeatingPlan(alternative,
+                                new io.fluxzero.ticketing.catalog.api.HallId("concertgebouw-main"),
+                                new io.fluxzero.ticketing.catalog.api.model.SeatingPlanDetails("Alternative", "2",
+                                        io.fluxzero.ticketing.catalog.DemoCatalog.NOTICE,
+                                        List.of(new io.fluxzero.ticketing.catalog.api.model.Section("stalls", "Stalls",
+                                                io.fluxzero.ticketing.catalog.api.model.AdmissionMode.RESERVED_SEATING, 1,
+                                                List.of(new io.fluxzero.ticketing.catalog.api.model.Seat("C1", "C", "1")))))))
+                .whenCommandByUser(OPERATOR, new ImportLumaEvent("evt-fixture", alternative, PRICES))
+                .expectExceptionalResult().expectNoEvents()
+                .expectThat(f -> assertEquals(PLAN, Fluxzero.loadModel(IMPORTED).get().seatingPlanId()));
     }
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void laterImportCannotMoveAnExistingReservation(boolean async) {
@@ -52,7 +67,7 @@ class LumaIntegrationTest extends LumaTestSupport {
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void anInvalidLocalMappingRollsBackProgrammePerformanceAndSourceLink(boolean async) {
         luma(async, new RemoteLuma()).whenCommandByUser(OPERATOR,
-                        new ImportLumaEvent("evt-fixture", HALL, Map.of("missing", new Money(1, "EUR"))))
+                        new ImportLumaEvent("evt-fixture", PLAN, Map.of("missing", new Money(1, "EUR"))))
                 .expectExceptionalResult().expectNoEvents().expectThat(f -> {
                     assertNull(Fluxzero.loadModel(PROGRAMME).get());
                     assertNull(Fluxzero.loadModel(IMPORTED).get());
@@ -81,9 +96,9 @@ class LumaIntegrationTest extends LumaTestSupport {
                 NOW.plus(Duration.ofDays(2)), java.time.ZoneId.of("Europe/Amsterdam"), "https://luma.com/fixture");
         var id = new LumaImportId(IMPORTED.getFunctionalId());
         luma(async, new RemoteLuma()).whenCommandByUser(OPERATOR,
-                        new AcceptLumaImport(id, PROGRAMME, IMPORTED, HALL, source, Map.of("stalls", new Money(-100, "USD"))))
+                        new AcceptLumaImport(id, PROGRAMME, IMPORTED, PLAN, source, Map.of("stalls", new Money(-100, "USD"))))
                 .expectExceptionalResult().expectNoEvents().andThen().whenCommandByUser(OPERATOR,
-                        new AcceptLumaImport(id, new EventId("unrelated"), IMPORTED, HALL, source, PRICES))
+                        new AcceptLumaImport(id, new EventId("unrelated"), IMPORTED, PLAN, source, PRICES))
                 .expectExceptionalResult().expectNoEvents().expectThat(f -> {
                     assertNull(Fluxzero.loadModel(IMPORTED).get());
                     assertNull(Fluxzero.loadModel(PROGRAMME).get());

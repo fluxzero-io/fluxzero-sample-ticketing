@@ -20,7 +20,7 @@ class ConcertgebouwSeatingTest extends TicketingTestSupport {
         fixture(async).whenQuery(new GetSeats(RECITAL, "stalls", 0, 100))
                 .expectResult((SeatPage page) -> page.total() == 378 && page.seats().size() == 100 && page.hasMore())
                 .expectThat(f -> {
-                    var layout = Fluxzero.loadModel(RECITAL).get().layout();
+                    var layout = Fluxzero.loadModel(DemoCatalog.RECITAL_PLAN).get().details();
                     assertEquals("July 2023", layout.source().revision());
                     var stalls = layout.sections().getFirst();
                     var balcony = layout.sections().getLast();
@@ -60,8 +60,8 @@ class ConcertgebouwSeatingTest extends TicketingTestSupport {
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void invalidCoordinatesAreRejectedThroughTheDomainCommand(boolean async) {
         var invalid = new Seat("1-1", "1", "1", new SeatPosition(101, 50), Seat.Kind.STANDARD);
-        fixture(async).whenCommandByUser(OPERATOR, new CreateHall(new HallId("invalid-coordinates"),
-                        new VenueId("concertgebouw"), new HallDetails("Invalid", DemoCatalog.NOTICE,
+        fixture(async).whenCommandByUser(OPERATOR, new RegisterSeatingPlan(new SeatingPlanId("invalid-coordinates"),
+                        new HallId("concertgebouw-main"), new SeatingPlanDetails("Invalid", "1", DemoCatalog.NOTICE,
                         List.of(new Section("stalls", "Stalls", AdmissionMode.RESERVED_SEATING, 1, List.of(invalid))))))
                 .expectExceptionalResult().expectNoEvents();
     }

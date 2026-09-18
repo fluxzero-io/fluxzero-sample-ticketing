@@ -9,7 +9,7 @@ import io.fluxzero.sdk.web.WebResponse;
 import io.fluxzero.ticketing.booking.ReservationDeadlines;
 import io.fluxzero.ticketing.catalog.DemoCatalog;
 import io.fluxzero.ticketing.catalog.api.EventId;
-import io.fluxzero.ticketing.catalog.api.HallId;
+import io.fluxzero.ticketing.catalog.api.SeatingPlanId;
 import io.fluxzero.ticketing.catalog.api.PerformanceId;
 import io.fluxzero.ticketing.catalog.luma.api.ImportLumaEvent;
 import io.fluxzero.ticketing.payment.api.model.Money;
@@ -20,7 +20,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class LumaTestSupport extends TicketingTestSupport {
-    public static final HallId HALL = new HallId("concertgebouw-main");
+    public static final SeatingPlanId PLAN = DemoCatalog.MAIN_PLAN;
     public static final PerformanceId IMPORTED = new PerformanceId("luma-cal_fixture:evt-fixture");
     public static final EventId PROGRAMME = new EventId("luma-cal_fixture:evt-fixture");
     public static final Map<String, Money> PRICES = Map.of("stalls", new Money(4000, "EUR"));
@@ -31,7 +31,7 @@ public abstract class LumaTestSupport extends TicketingTestSupport {
                 .withProperty("ticketing.luma.calendarId", "cal_fixture")
                 .givenCommandsByUser(OPERATOR, DemoCatalog.commands(NOW.plus(Duration.ofDays(1))).toArray());
     }
-    public static ImportLumaEvent importEvent() { return new ImportLumaEvent("evt-fixture", HALL, PRICES); }
+    public static ImportLumaEvent importEvent() { return new ImportLumaEvent("evt-fixture", PLAN, PRICES); }
 
     public static class RemoteLuma {
         int status = 200;

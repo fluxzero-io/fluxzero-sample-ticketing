@@ -7,7 +7,7 @@ import io.fluxzero.ticketing.catalog.api.HallId;
 import io.fluxzero.ticketing.catalog.api.VenueId;
 import lombok.With;
 
-/** An independently identified room with an immutable demonstrator layout. */
+/** An independently identified room with separately registered seating configurations. */
 @Model
 @With
 public record Hall(@EntityId HallId hallId,

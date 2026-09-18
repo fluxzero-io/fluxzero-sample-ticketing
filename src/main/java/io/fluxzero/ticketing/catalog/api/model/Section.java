@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
 
-/** A section of the hall's immutable layout; provenance belongs to the enclosing hall details. */
+/** A section of the immutable seating plan; provenance belongs to the enclosing plan details. */
 public record Section(@NotBlank String id, @NotBlank String name, @NotNull AdmissionMode mode,
                       @Positive int capacity, @NotNull List<@NotNull @Valid Seat> seats) {
     public Section {

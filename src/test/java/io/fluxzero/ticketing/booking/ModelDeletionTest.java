@@ -67,7 +67,8 @@ class ModelDeletionTest extends TicketingTestSupport {
         Map<Id<?>, Object> before = new LinkedHashMap<>();
         completeGraph(async).whenExecuting(f -> {
             before.putAll(purchaseValues());
-            for (Id<?> id : List.of(VENUE, HALL, new HallId("concertgebouw-recital"), SHOW,
+            for (Id<?> id : List.of(VENUE, HALL, new HallId("concertgebouw-recital"),
+                    io.fluxzero.ticketing.catalog.DemoCatalog.MAIN_PLAN, io.fluxzero.ticketing.catalog.DemoCatalog.RECITAL_PLAN, SHOW,
                     new PerformanceId("night-lights-matinee"), HOLD,
                     new PerformanceId(SOURCE_ID), new LumaImportId(SOURCE_ID))) {
                 before.put(id, Fluxzero.loadModel(id).get());
@@ -152,7 +153,7 @@ class ModelDeletionTest extends TicketingTestSupport {
                 NOW.plus(Duration.ofDays(2)), ZoneId.of("Europe/Amsterdam"), "https://luma.com/deletion-fixture");
         return pending(async)
                 .givenCommandsByUser(OPERATOR, new AcceptLumaImport(new LumaImportId(SOURCE_ID), new EventId(SOURCE_ID),
-                        new PerformanceId(SOURCE_ID), HALL, source, Map.of("stalls", new Money(3500, "EUR"))))
+                        new PerformanceId(SOURCE_ID), io.fluxzero.ticketing.catalog.DemoCatalog.MAIN_PLAN, source, Map.of("stalls", new Money(3500, "EUR"))))
                 .givenCommandsByUser(PAYMENTS,
                         new RecordPaymentSuccess(P, "capture-deletion", new Money(7000, "EUR")))
                 .givenCommandsByUser(BILLING, new DraftInvoice(I, R), new IssueInvoice(I))

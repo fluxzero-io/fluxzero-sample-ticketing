@@ -28,9 +28,10 @@ public record GetAvailability(@NotNull PerformanceId performanceId) implements R
         var graph = Fluxzero.loadGraph(performanceId);
         Performance performance = graph.get();
         require(performance != null, "Unknown performance");
+        var plan = io.fluxzero.ticketing.catalog.CatalogRules.plan(performance);
         Instant now = Fluxzero.currentTime();
         boolean bookable = !performance.cancelled() && now.isBefore(performance.details().startsAt());
-        List<SectionAvailability> sections = performance.layout().sections().stream().map(s -> {
+        List<SectionAvailability> sections = plan.details().sections().stream().map(s -> {
             int remaining = 0;
             if (bookable) {
                 if (s.mode() == AdmissionMode.RESERVED_SEATING) {
@@ -49,7 +50,7 @@ public record GetAvailability(@NotNull PerformanceId performanceId) implements R
             }
             return new SectionAvailability(s.id(), s.name(), s.mode(), performance.details().sectionPrices().get(s.id()), remaining);
         }).toList();
-        return new Availability(performanceId, performance.hallId(), performance.details(),
-                performance.layout().layoutNotice(), bookable, sections);
+        return new Availability(performanceId, plan.hallId(), performance.details(),
+                plan.details().layoutNotice(), bookable, sections);
     }
 }

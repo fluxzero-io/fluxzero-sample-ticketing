@@ -192,7 +192,7 @@ Live-calendar qualification is deferred: Luma requires Plus for API keys, and th
 has not qualified against a paid calendar. The fixture suite verifies controlled HTTP
 contracts, mapping and domain behavior; it is not evidence of a successful live API import.
 
-`ImportLumaEvent(externalId, hallId, prices)` requires `OPERATOR`. Its `FetchLumaEvent` query
+`ImportLumaEvent(externalId, seatingPlanId, prices)` requires `OPERATOR`. Its `FetchLumaEvent` query
 calls `GET https://public-api.luma.com/v1/events/get?event_id=...` with `x-luma-api-key`.
 This is the current flat event response, not the older singular endpoint/envelope.
 Only managed, in-person Luma events in the configured calendar are accepted.
@@ -203,8 +203,8 @@ calendar/event identity determines stable local programme, performance and impor
 atomically. Bad prices, missing sections or an invalid hall produce no partial catalogue.
 Source metadata is retained without guest/contact records.
 
-An identical import is a no-op. A changed snapshot, hall mapping or price set is rejected for
-explicit reconciliation; no existing reservation moves silently. Luma's capacity and remaining
+An identical import is a no-op. A changed snapshot, seating-plan mapping or price set is rejected for
+explicit reconciliation; no existing reservation moves silently. A reimport selecting another plan is rejected even when its section names match. Luma's capacity and remaining
 spots never determine local inventory. Demo layouts continue to carry their demonstration
 notice. This phase does not publish events back to Luma, synchronize guests or edit imported
 performances automatically.

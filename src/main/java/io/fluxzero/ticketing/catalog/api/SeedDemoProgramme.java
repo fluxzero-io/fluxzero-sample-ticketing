@@ -21,7 +21,7 @@ public record SeedDemoProgramme() {
         var event = new EventId("after-hours");
         commands.add(new CreateEvent(event, new EventDetails("After Hours", "Fictional electronic live set.")));
         commands.add(new SchedulePerformance(new PerformanceId("after-hours"), event,
-                new HallId("tivoli-ronda"), new PerformanceDetails(first.plus(Duration.ofDays(6)).plusSeconds(7200),
+                DemoCatalog.RONDA_PLAN, new PerformanceDetails(first.plus(Duration.ofDays(6)).plusSeconds(7200),
                 ZoneId.of("Europe/Amsterdam"), Map.of("floor", new Money(2800, "EUR")))));
         return commands;
     }

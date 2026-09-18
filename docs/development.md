@@ -33,6 +33,7 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 | `WebResponseCompressionTest` | Typed HTTP responses with identity/gzip in synchronous and asynchronous fixtures |
 | `PerformanceCancellationTest` | Multiple bounded pages and recovery after losing a continuation publication |
 | `StripeObservationConflictTest` | Durable conflicting-fact reconciliation and provider-free checkout status reads |
+| `SeatingPlanTest` | Independent immutable plan revisions, graph relations, stable existing sales, required plan/section pricing and operator access |
 | `ConcertgebouwSeatingTest` | Source numbering, physical gaps, accessibility metadata, paged seats and independent inventory across real sections in synchronous/asynchronous fixtures |
 | `LayoutValidationTest` | Input constraints and immutable stored layouts through direct and serialized commands |
 | `TicketingTest` | Core journeys in synchronous and asynchronous fixtures; time boundaries, roles, ownership, invoice history and schedule cleanup |
@@ -81,7 +82,7 @@ a free-admission section has one exact capacity counter with at most 900 active 
 The counter is deliberately a contention boundary. The section overview uses indexed occupied-seat counts rather than loading each seat.
 `GetSeats` exposes a stable layout page of at most 100 seats with one bounded inventory search.
 These reads are advisory; reservation commits still enforce ownership and exact capacity.
-The immutable performance layout is still loaded as one value; it is not a separate paged
+The selected immutable seating plan is still loaded as one Model; it is not a separate paged
 layout store.
 
 Local qualification checks commit scope after 100 and 1,000 historical reservations, concurrent

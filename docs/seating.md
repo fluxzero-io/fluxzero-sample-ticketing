@@ -46,8 +46,9 @@ above the stalls; the balcony is shown separately as in the source.
 
 ## Product behavior
 
-`HallDetails.source` captures provenance. A performance freezes the source, seats and prices
-along with its layout: a later source revision cannot silently move sold seats.
+`SeatingPlanDetails.source` captures provenance on the independent `SeatingPlan` Model.
+A performance explicitly references one immutable `SeatingPlanId`; its prices belong to
+the performance. A later source revision gets a new plan identity, so it cannot move sold seats.
 The source plan does not determine prices, ranks, sightline restrictions or live availability.
 Those can differ by concert; all events and prices here remain fictional.
 
@@ -57,6 +58,6 @@ List mode provides row filtering, larger controls and pagination; it is the defa
 screens. Switching sections cancels outstanding requests. Availability remains advisory;
 the reservation command decides atomically whether the complete selection can be held.
 
-Use a fresh local runtime after changing this seed configuration. Existing stored performances
-intentionally keep their previous layout. The Main Hall, Ronda and Demo Forum still use
+Use a fresh local runtime after changing this seed configuration. This unpublished schema replaces embedded layouts with plan relationships; it does not
+include migration code for previous development namespaces. The Main Hall, Ronda and Demo Forum still use
 explicitly illustrative configurations; see [demo data](demo-data.md).

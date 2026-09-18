@@ -64,10 +64,12 @@ class InventoryScaleTest extends TicketingTestSupport {
                 .givenCommandsByUser(OPERATOR, DemoCatalog.commands(NOW.plus(Duration.ofDays(1))).toArray())
                 .givenCommandsByUser(OPERATOR,
                         new io.fluxzero.ticketing.catalog.api.CreateHall(hall, new io.fluxzero.ticketing.catalog.api.VenueId("concertgebouw"),
-                                new io.fluxzero.ticketing.catalog.api.model.HallDetails("Load demonstration", DemoCatalog.NOTICE,
+                                new io.fluxzero.ticketing.catalog.api.model.HallDetails("Load demonstration")),
+                        new io.fluxzero.ticketing.catalog.api.RegisterSeatingPlan(new io.fluxzero.ticketing.catalog.api.SeatingPlanId("busy-v1"), hall,
+                                new io.fluxzero.ticketing.catalog.api.model.SeatingPlanDetails("Standing", "1", DemoCatalog.NOTICE,
                                         List.of(new io.fluxzero.ticketing.catalog.api.model.Section("floor", "Floor",
                                                 io.fluxzero.ticketing.catalog.api.model.AdmissionMode.GENERAL_ADMISSION, 1000, List.of())))),
-                        new io.fluxzero.ticketing.catalog.api.SchedulePerformance(show, new io.fluxzero.ticketing.catalog.api.EventId("night-lights"), hall,
+                        new io.fluxzero.ticketing.catalog.api.SchedulePerformance(show, new io.fluxzero.ticketing.catalog.api.EventId("night-lights"), new io.fluxzero.ticketing.catalog.api.SeatingPlanId("busy-v1"),
                                 new io.fluxzero.ticketing.catalog.api.model.PerformanceDetails(NOW.plus(Duration.ofDays(1)), java.time.ZoneId.of("Europe/Amsterdam"),
                                         java.util.Map.of("floor", new io.fluxzero.ticketing.payment.api.model.Money(1000, "EUR")))));
         client.measured.clear();

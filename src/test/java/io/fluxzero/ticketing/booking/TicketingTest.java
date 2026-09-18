@@ -281,7 +281,7 @@ class TicketingTest extends TicketingTestSupport {
     void holdIsCappedAtPerformanceStart(boolean async) {
         var shortShow = new PerformanceId("soon");
         fixture(async).givenCommandsByUser(OPERATOR, new SchedulePerformance(shortShow, new EventId("night-lights"),
-                        new HallId("concertgebouw-main"), new PerformanceDetails(NOW.plusSeconds(60),
+                        io.fluxzero.ticketing.catalog.DemoCatalog.MAIN_PLAN, new PerformanceDetails(NOW.plusSeconds(60),
                         ZoneId.of("Europe/Amsterdam"), Map.of("stalls", new Money(3500, "EUR")))))
                 .givenCommandsByUser(ALICE, new ReserveTickets(R, shortShow, List.of(new Selection("stalls", "A1"))))
                 .whenTimeElapses(Duration.ofMinutes(1)).expectNoSchedules()

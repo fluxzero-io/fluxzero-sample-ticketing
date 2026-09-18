@@ -23,7 +23,7 @@
    its ticket statuses finish updating. New payment and invoice actions are blocked immediately.
    Partial cancellation, admission scanning and commercial cancellation windows need explicit policies before launching a real service.
 6. Availability queries are advisory. `GetAvailability` exposes section names, remaining
-   capacity, prices and the demonstration-layout notice. `GetSeats` returns a stable page
+   capacity, prices and the selected seating plan’s source/demonstration notice. `GetSeats` returns a stable page
    of up to 100 seats in a chosen section, including each seat's availability, row and number.
    These queries do not reserve anything. Selection must be submitted to `ReserveTickets`.
 
@@ -121,3 +121,12 @@ See [integration commands and protocol rules](integrations.md) for provider setu
   problem. It never silently replaces money already recorded.
 - **Checkout progress:** read `GetStripeCheckoutStatus` without contacting the provider. Fetch
   the client capability with `GetStripeCheckout` only when opening the authorized checkout.
+
+## Seating configurations
+
+A hall can have several registered seating-plan revisions. Every revision has its own typed
+identity, version label, section/seat values and optional source provenance. Registration is
+create-only, including before first use. A changed configuration gets a new identity.
+A performance chooses one plan explicitly and prices exactly its sections. It cannot be
+recreated to switch plans after sales begin. A later plan never moves an existing reservation;
+rescheduling and seat exchanges require separate, explicit product flows.

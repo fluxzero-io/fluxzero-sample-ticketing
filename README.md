@@ -1,7 +1,7 @@
 # Fluxzero Ticketing
 
 A standalone Fluxzero 2.0 example: venues, performances, expiring group reservations,
-seat and section availability, tickets, payments and invoicing. Inspired by
+versioned seating plans, seat and section availability, tickets, payments and invoicing. Inspired by
 [Product code](https://fluxzero.io/product-code/), with separate lifecycles for admission
 rights and financial facts.
 
