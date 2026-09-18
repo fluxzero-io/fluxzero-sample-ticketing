@@ -8,21 +8,35 @@ import {
   Minus,
   Ticket,
   CheckCircle,
+  X,
 } from "@phosphor-icons/react";
 import { api, post, money, date, artwork, navigate, signIn } from "./api";
 import { Icon, ErrorMessage, Spinner, useRemote } from "./ui";
 
 export function Performance({ id, session }) {
+  const [draft] = useState(() => {
+    const params = new URLSearchParams(location.hash.split("?")[1]);
+    const quantity = Number(params.get("quantity"));
+    return {
+      section: params.get("section") || "",
+      seats: [...new Set(params.getAll("seat"))].filter(Boolean).slice(0, 12),
+      quantity:
+        Number.isInteger(quantity) && quantity >= 1 && quantity <= 12
+          ? quantity
+          : 1,
+    };
+  });
   const [show, error, reload] = useRemote(
     () => api("/api/programme/" + id),
     [id],
   );
   const [availability, setAvailability] = useState(null),
-    [section, setSection] = useState(""),
+    [section, setSection] = useState(draft.section),
     [seats, setSeats] = useState([]),
     [hasMoreSeats, setHasMoreSeats] = useState(false),
-    [selected, setSelected] = useState([]),
-    [quantity, setQuantity] = useState(1),
+    [selected, setSelected] = useState(draft.seats),
+    [quantity, setQuantity] = useState(draft.quantity),
+    [seatsLoading, setSeatsLoading] = useState(false),
     [problem, setProblem] = useState(null),
     [busy, setBusy] = useState(false),
     [view, setView] = useState("map");
@@ -50,15 +64,35 @@ export function Performance({ id, session }) {
   }, [id]);
   const choice = availability?.sections.find((s) => s.id === section);
   useEffect(() => {
+    if (!availability || choice) return;
+    chooseSection(availability.sections[0]?.id || "");
+  }, [availability, choice]);
+  // Only a draft is carried through sign-in. The server still decides whether it can be held.
+  useEffect(() => {
+    if (!choice) return;
+    const params = new URLSearchParams({ section });
+    if (choice.mode === "RESERVED_SEATING")
+      selected.forEach((seat) => params.append("seat", seat));
+    else params.set("quantity", quantity);
+    history.replaceState(
+      null,
+      "",
+      `${location.pathname}${location.search}#/show/${id}?${params}`,
+    );
+  }, [id, section, choice?.mode, selected, quantity]);
+  function chooseSection(sectionId) {
+    setProblem(null);
+    setSection(sectionId);
     setSelected([]);
     setQuantity(1);
     attempt.current = crypto.randomUUID();
     setSeatOffset(0);
-  }, [id, section]);
+  }
   useEffect(() => {
     setSeats([]);
     setHasMoreSeats(false);
     if (choice?.mode !== "RESERVED_SEATING") return;
+    setSeatsLoading(true);
     let active = true;
     async function refresh() {
       try {
@@ -71,6 +105,8 @@ export function Performance({ id, session }) {
         }
       } catch (e) {
         if (active) setProblem(e);
+      } finally {
+        if (active) setSeatsLoading(false);
       }
     }
     refresh();
@@ -82,7 +118,13 @@ export function Performance({ id, session }) {
   }, [id, section, choice?.mode, seatOffset]);
   const seated = choice?.mode === "RESERVED_SEATING",
     count = seated ? selected.length : quantity;
+  const rows = Object.groupBy(seats, ({ seat }) => seat.row);
+  const unavailableSelection = seats.some(
+    ({ seat, available }) => !available && selected.includes(seat.id),
+  );
   function toggle(seat) {
+    if (!selected.includes(seat) && selected.length >= 12) return;
+    setProblem(null);
     attempt.current = crypto.randomUUID();
     setSelected((s) =>
       s.includes(seat)
@@ -164,7 +206,11 @@ export function Performance({ id, session }) {
           <div className="section-heading">
             <h2>Choose your spot</h2>
             <span className="muted">
-              {availability?.bookable ? "Live availability" : "Booking closed"}
+              {!availability
+                ? "Checking availability…"
+                : availability.bookable
+                  ? "Live availability"
+                  : "Booking closed"}
             </span>
           </div>
           <ErrorMessage error={problem} />
@@ -185,14 +231,16 @@ export function Performance({ id, session }) {
                         : "section-option"
                     }
                     key={s.id}
-                    onClick={() => setSection(s.id)}
+                    disabled={busy}
+                    onClick={() => section !== s.id && chooseSection(s.id)}
                     aria-pressed={section === s.id}
                   >
                     <span>
                       {s.name}
                       <small>
                         {s.mode === "RESERVED_SEATING" ? "Seated" : "Standing"}{" "}
-                        · {s.remaining} available
+                        ·{" "}
+                        {s.remaining ? `${s.remaining} available` : "Sold out"}
                       </small>
                     </span>
                     <strong>{money(s.price)}</strong>
@@ -219,30 +267,48 @@ export function Performance({ id, session }) {
                       </div>
                       <div className={"seat-selector " + view}>
                         <div className="stage">STAGE</div>
+                        {seatsLoading && <Spinner>Loading seats…</Spinner>}
                         <div
                           className="seats"
                           role="group"
                           aria-label="Choose seats"
                         >
-                          {seats.map(({ seat, available }) => (
-                            <button
-                              key={seat.id}
-                              disabled={
-                                !available && !selected.includes(seat.id)
-                              }
-                              className={
-                                selected.includes(seat.id) ? "selected" : ""
-                              }
-                              aria-pressed={selected.includes(seat.id)}
-                              aria-label={`Row ${seat.row}, seat ${seat.number}${!available ? ", unavailable" : ""}`}
-                              onClick={() => toggle(seat.id)}
-                            >
-                              {view === "list"
-                                ? `Row ${seat.row} · Seat ${seat.number}`
-                                : seat.id}
-                              {selected.includes(seat.id) &&
-                                view === "list" && <Icon as={CheckCircle} />}
-                            </button>
+                          {Object.entries(rows).map(([row, rowSeats]) => (
+                            <div className="seat-row" key={row}>
+                              <span className="row-label">{row}</span>
+                              <div
+                                className="row-seats"
+                                role="group"
+                                aria-label={`Row ${row}`}
+                              >
+                                {rowSeats.map(({ seat, available }) => (
+                                  <button
+                                    key={seat.id}
+                                    disabled={
+                                      busy ||
+                                      (!available &&
+                                        !selected.includes(seat.id))
+                                    }
+                                    className={
+                                      selected.includes(seat.id)
+                                        ? "selected"
+                                        : ""
+                                    }
+                                    aria-pressed={selected.includes(seat.id)}
+                                    aria-label={`Row ${seat.row}, seat ${seat.number}${!available ? ", unavailable" : ""}`}
+                                    onClick={() => toggle(seat.id)}
+                                  >
+                                    {view === "list"
+                                      ? `Row ${seat.row} · Seat ${seat.number}`
+                                      : seat.number}
+                                    {selected.includes(seat.id) &&
+                                      view === "list" && (
+                                        <Icon as={CheckCircle} />
+                                      )}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           ))}
                         </div>
                         {seatOffset > 0 && (
@@ -280,8 +346,9 @@ export function Performance({ id, session }) {
                       <div className="quantity">
                         <button
                           aria-label="Fewer tickets"
-                          disabled={quantity <= 1}
+                          disabled={busy || quantity <= 1}
                           onClick={() => {
+                            setProblem(null);
                             setQuantity((q) => q - 1);
                             attempt.current = crypto.randomUUID();
                           }}
@@ -291,8 +358,11 @@ export function Performance({ id, session }) {
                         <output aria-live="polite">{quantity}</output>
                         <button
                           aria-label="More tickets"
-                          disabled={quantity >= Math.min(12, choice.remaining)}
+                          disabled={
+                            busy || quantity >= Math.min(12, choice.remaining)
+                          }
                           onClick={() => {
+                            setProblem(null);
                             setQuantity((q) => q + 1);
                             attempt.current = crypto.randomUUID();
                           }}
@@ -303,14 +373,51 @@ export function Performance({ id, session }) {
                     </div>
                   )}
                   <p className="layout-note">{availability.layoutNotice}</p>
+                  {seated && selected.length > 0 && (
+                    <div
+                      className="selected-seats"
+                      role="group"
+                      aria-label="Selected seats"
+                    >
+                      {selected.map((seat) => (
+                        <button
+                          key={seat}
+                          disabled={busy}
+                          onClick={() => toggle(seat)}
+                          aria-label={`Remove seat ${seat}`}
+                        >
+                          {seat} <Icon as={X} size={14} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div role="status">
+                    {unavailableSelection && (
+                      <p className="notice">
+                        Some selected seats are no longer available. Review your
+                        selection or retry your reservation.
+                      </p>
+                    )}
+                    {seated && count === 12 && (
+                      <p className="caption">
+                        12 tickets maximum per booking. Remove a seat to choose
+                        another.
+                      </p>
+                    )}
+                    {!seated && choice.remaining < quantity && (
+                      <p className="notice">
+                        {choice.remaining === 0
+                          ? "This section is sold out."
+                          : `Only ${choice.remaining} tickets available. Reduce your selection.`}
+                      </p>
+                    )}
+                  </div>
                   <div className="selection-footer">
                     <div>
                       <strong>
                         {count} {count === 1 ? "ticket" : "tickets"}
                       </strong>
-                      <small>
-                        {seated ? selected.join(", ") : choice.name}
-                      </small>
+                      <small>{choice.name}</small>
                     </div>
                     <strong>
                       {money({

@@ -419,11 +419,27 @@ summary {
 }
 .seats {
   display: grid;
-  grid-template-columns: repeat(2, 58px);
-  justify-content: center;
   gap: 14px;
 }
+.seat-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+.row-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+.row-seats {
+  display: flex;
+  justify-content: safe center;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px;
+}
 .seats button {
+  flex: 0 0 48px;
   border: 1px solid #85888d;
   border-radius: 5px;
   height: 48px;
@@ -439,7 +455,7 @@ summary {
   color: #74767b;
   border-color: #33353a;
 }
-.seat-selector.list .seats {
+.seat-selector.list .row-seats {
   display: flex;
   flex-direction: column;
 }
@@ -448,6 +464,22 @@ summary {
   align-items: center;
   justify-content: space-between;
   padding: 0 18px;
+}
+.selected-seats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.selected-seats button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--accent);
 }
 .legend {
   display: flex;

@@ -37,13 +37,14 @@ function ShowRow({ show }) {
     </button>
   );
 }
-export function Discover() {
-  const [term, setTerm] = useState(""),
-    [city, setCity] = useState(""),
-    [when, setWhen] = useState(""),
-    [loadingMore, setLoadingMore] = useState(false),
+export function Discover({ filters, onFiltersChange }) {
+  const { term, city, month: when } = filters;
+  const setTerm = (term) => onFiltersChange((f) => ({ ...f, term }));
+  const setCity = (city) => onFiltersChange((f) => ({ ...f, city }));
+  const setWhen = (month) => onFiltersChange((f) => ({ ...f, month }));
+  const [loadingMore, setLoadingMore] = useState(false),
     [moreError, setMoreError] = useState(null),
-    [searchTerm, setSearchTerm] = useState("");
+    [searchTerm, setSearchTerm] = useState(term);
   useEffect(() => {
     const timer = setTimeout(() => setSearchTerm(term), 200);
     return () => clearTimeout(timer);
@@ -61,6 +62,7 @@ export function Discover() {
     shows.find((s) => s.event.eventId.includes("after-hours")) || shows[0];
   async function more() {
     setLoadingMore(true);
+    setMoreError(null);
     try {
       const next = await api(
         "/api/programme?" + query + "&offset=" + shows.length,
@@ -173,9 +175,7 @@ export function Discover() {
               <button
                 className="text-button"
                 onClick={() => {
-                  setTerm("");
-                  setCity("");
-                  setWhen("");
+                  onFiltersChange({ term: "", city: "", month: "" });
                 }}
               >
                 Reset filters

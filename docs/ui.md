@@ -22,12 +22,20 @@ The Fluxzero HTTP stack owns compression; the app adds no gzip handler.
 ## Customer journey
 
 - Discover performances by event title, city and month. Results are server-filtered and paged;
-  the month filter uses Europe/Amsterdam, matching this example's venues.
+  the month filter uses Europe/Amsterdam, matching this example's venues. Filters stay selected
+  when returning from a performance during the current visit.
 - Select a section and up to twelve seats or general-admission places. Seat pages are bounded
   at one hundred, with a list alternative to the demonstration map. Availability refreshes
   every ten seconds; the reservation command makes the authoritative decision.
+- The demonstration map groups seats by their actual row labels. Selected-seat buttons allow
+  removal without returning to a previous seat page. A changed-availability notice retains the
+  selection for review or retry; it never silently replaces seats or creates a new hold.
 - Sign in, then reserve the complete selection atomically. One client-generated reservation
-  identity is reused if the same selection must be retried. A new selection uses a new identity.
+  identity is reused when retrying an unchanged selection on the same page. A new selection
+  uses a new identity.
+  The URL fragment carries the section and seat or quantity draft through sign-in and reload.
+  That draft contains no identity, payment capability or admission rights, and is checked by
+  the server when reserving. Selection controls pause while a reservation request is in flight.
 - The checkout shows the hold deadline and amount. Release the hold through a confirmation
   dialog, or continue to the Stripe Payment Element when configured. No payment is simulated.
 - Provider confirmation settles the independent core payment. The UI waits for the core

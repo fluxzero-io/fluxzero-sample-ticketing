@@ -9,6 +9,7 @@ import { MyTickets } from "./MyTickets";
 
 export function App() {
   const [route, setRoute] = useState(location.hash.slice(1)),
+    [filters, setFilters] = useState({ term: "", city: "", month: "" }),
     [session, setSession] = useState(null),
     [sessionError, setSessionError] = useState(
       new URLSearchParams(location.search).has("signin")
@@ -36,7 +37,7 @@ export function App() {
       setSessionError(e);
     }
   }
-  const [, page, id] = route.split("/");
+  const [, page, id] = route.split("?")[0].split("/");
   return (
     <>
       <a
@@ -87,7 +88,7 @@ export function App() {
         ) : page === "tickets" ? (
           <MyTickets session={session} />
         ) : (
-          <Discover />
+          <Discover filters={filters} onFiltersChange={setFilters} />
         )}
       </main>
       <footer className="wrap footer">
