@@ -5,9 +5,10 @@ seat and section availability, tickets, payments and invoicing. Inspired by
 [Product code](https://fluxzero.io/product-code/), with separate lifecycles for admission
 rights and financial facts.
 
-**Core behavior and external integrations are implemented.** The core domain now has Stripe payment/refund adapters
-and safe Luma event import, with controlled external-response tests. Payments remain provider
-independent; refund attempts have their own durable workflows and recovery. HTTP endpoints, browser authentication and a frontend belong to phase 3.
+**Core, integrations and a responsive customer UI are implemented.** Browse the programme,
+choose seats or a standing section, hold tickets, pay through Stripe and manage your bookings.
+Payments remain provider independent; Stripe processes and refund attempts stay outside the
+core graph. Luma imports remain an operator action.
 
 ## Get started
 
@@ -20,12 +21,15 @@ fz dev
 
 The supported environment manages Java 25, the matching local runtime, application reloads
 and affected tests. Agents use the installed Fluxzero plugin and its `fluxzero-dev` MCP
-connection. There is no UI to open yet. The executable product scenarios are in
+connection. Open the local URL printed by the environment. It builds the React frontend,
+starts the local identity provider and seeds fictional performances. Sign in with a local demo
+identity; no production credentials are needed to browse and reserve.
+The executable product scenarios are in
 [`TicketingTest`](src/test/java/io/fluxzero/ticketing/booking/TicketingTest.java).
 
-This development branch pins **`2.0.0-f22aa0df867-SNAPSHOT`**, built locally from SDK commit
-`f22aa0df867`, with its matching testserver and proxy. It includes fixes required by the
-recovery and concurrency scenarios. The snapshot must be installed in the local Maven
+This development branch pins **`2.0.0-7604840dad0-SNAPSHOT`**, built locally from SDK commit
+`7604840dad0`, with its matching testserver and proxy. It includes fixes required by the
+recovery, concurrency and compressed HTTP response scenarios. The snapshot must be installed in the local Maven
 repository before `fz dev`; it is not a published dependency. Before publishing the example,
 replace it with a released SDK containing those fixes. The CLI starter was generated with
 `fz 1.18.9`. Use a fresh demo namespace for the new inventory and provider workflow; see
@@ -34,6 +38,10 @@ replace it with a released SDK containing those fixes. The CLI starter was gener
 For CI, or explicit verification with the development environment stopped:
 
 ```sh
+cd frontend
+npm ci
+npm run build
+cd ..
 ./mvnw -B verify
 ```
 
@@ -44,6 +52,7 @@ external-runtime tests are skipped. The remaining tests use the real SDK through
 
 ## Explore the product
 
+- [Browser flows, authentication and packaging](docs/ui.md)
 - [Domain packages and example tree](docs/packages.md)
 - [Model graph and transaction boundaries](docs/model.md)
 - [Product rules and example scenarios](docs/product-rules.md)
@@ -55,8 +64,9 @@ Start with [`ReserveTickets`](src/main/java/io/fluxzero/ticketing/booking/api/Re
 [`RecordPaymentSuccess`](src/main/java/io/fluxzero/ticketing/payment/api/RecordPaymentSuccess.java)
 and [`GetAvailability`](src/main/java/io/fluxzero/ticketing/booking/api/GetAvailability.java).
 `GetAvailability` summarizes sections; [`GetSeats`](src/main/java/io/fluxzero/ticketing/booking/api/GetSeats.java)
-pages stable seat identities for the later selection UI. The reservation command
+pages stable seat identities for the selection UI. The reservation command
 always checks availability again before committing.
 
+Without configured Stripe credentials the checkout shows that online payment is unavailable.
 Provider credentials, deployment and a GitHub remote are not configured.
 See [integration setup](docs/integrations.md) before connecting real accounts.

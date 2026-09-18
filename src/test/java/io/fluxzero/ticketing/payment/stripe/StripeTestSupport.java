@@ -64,6 +64,7 @@ abstract class StripeTestSupport extends TicketingTestSupport {
         return result;
     }
     /** Fixture-only remote HTTP responses; never implements payment or booking behavior. */
+    @io.fluxzero.sdk.tracking.Consumer(name = "external-stripe-stub")
     static class RemoteStripe {
         int createStatus = 200, creates, refundStatus = 200, refundCreates, getStatus = 200;
         String refundState = "pending";
@@ -77,7 +78,8 @@ abstract class StripeTestSupport extends TicketingTestSupport {
             Map<String,String> form = decode(request.getPayloadAs(String.class));
             String key = request.getHeader("Idempotency-Key"); keys.add(key);
             // An external response can arrive before any subsequent local transition.
-            assertEquals(key, binding().operationKey());
+            assertEquals(key, Fluxzero.getDocument(new io.fluxzero.ticketing.payment.api.PaymentId(
+                    form.get("metadata[payment_id]")), StripePaymentProcess.class).orElseThrow().operationKey());
             intent = JsonNodeFactory.instance.objectNode().put("object", "payment_intent").put("id", "pi_fixture")
                     .put("amount", Long.parseLong(form.get("amount"))).put("currency", "eur").put("livemode", false)
                     .put("status", "requires_payment_method").put("client_secret", "secret_fixture").put("amount_received", 0);

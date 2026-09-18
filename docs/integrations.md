@@ -163,10 +163,10 @@ provider intent, refund history and Luma mapping through a fresh application/cli
 completes the refund without another POST. This does not claim live Stripe/Luma account
 qualification or persistence across a runtime/database restart.
 
-Public HTTP routes, trusted account provisioning and a checkout UI belong to phase 3. Before
-public operation, connect the raw-body webhook route, customer ownership checks and provider
-credentials, then qualify the flow against the chosen accounts. Nothing is published or
-deployed by this repository's development setup.
+The [customer UI and authenticated HTTP adapters](ui.md) include owner checks and the raw-body
+webhook route at `/api/checkout/webhook`. Before public operation, configure production identity
+and provider credentials and qualify the flow against the chosen accounts. Nothing is
+published or deployed by this repository's development setup.
 
 ## Storage compatibility
 

@@ -7,17 +7,16 @@
 - Catalog registration, performance setup and cancellation, priced group reservations,
   time-based release, ticket issuance/voiding, payment attempts/capture/refund recording,
   invoice drafting/issuance/voiding and credit notes.
-- Availability and owner-only purchase queries, without HTTP adapters.
+- Paged programme discovery, seat selection, reservations and owner-only purchase HTTP endpoints.
+- Responsive React UI, OIDC/PKCE sign-in and shared opaque browser sessions.
 - Provider-independent payment facts, stateful Stripe checkout/refund/reconciliation and
   verified callback handling, plus atomic Luma event import with local inventory ownership.
 - Operator, payments and billing permissions plus customer ownership at message boundaries.
   The customer identity is injected from `User`, not accepted as a reservation field.
 
-Browser credentials and account provisioning belong to phase 3. A deployed command client
-must supply a trusted `UserProvider` that resolves its users and roles. The test support
-supplies named principals through that SDK extension point; it does not replace domain
-handlers. There is no public authentication endpoint or permissive demo user provider in
-application code.
+Verified OIDC subjects are customers; browser users never receive operator, payment or billing
+roles. Internal work has a separate system principal. See [the browser boundary](ui.md) for
+sessions, CSRF protection, discovery and production configuration.
 
 ## Verification
 
@@ -27,6 +26,11 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 
 | Test class | Evidence |
 | --- | --- |
+| `TicketingEndpointTest` | Programme filters, HTTP ownership, reservation lifecycle and unavailable checkout |
+| `BrowserAccessTest` | OIDC/PKCE callback, opaque-cookie identity, expiry, forged cookies and logout |
+| `CheckoutEndpointTest` | Idempotent checkout creation, capability ownership/expiry and raw signed webhook settlement |
+| `BrowserContractTest` | OpenAPI operations, cookie security, required fields and packaged frontend |
+| `WebResponseCompressionTest` | Typed HTTP responses with identity/gzip in synchronous and asynchronous fixtures |
 | `PerformanceCancellationTest` | Multiple bounded pages and recovery after losing a continuation publication |
 | `StripeObservationConflictTest` | Durable conflicting-fact reconciliation and provider-free checkout status reads |
 | `LayoutValidationTest` | Input constraints and immutable stored layouts through direct and serialized commands |
@@ -67,9 +71,9 @@ Reservation and performance Models additionally maintain public documents for ca
 discovery. Cancellation reactions and continuation use durable events. Inventory uses current documents so a cold stock load does not replay
 its allocation history. Financial and reservation history remain event sourced.
 
-The SDK/testserver pin is a local build from `f22aa0df867`. It contains the required fixes for
+The SDK/testserver pin is a local build from `7604840dad0`. It contains the required fixes for
 creation conflicts, nested deletion, fixture document revisions and document replay before the
-first consumer. A published SDK containing these fixes is required before publishing this app.
+first consumer, plus compressed typed HTTP response handling. A published SDK containing these fixes is required before publishing this app.
 
 A reservation touches at most twelve inventory selections. Seat claims are independent;
 a free-admission section has one exact capacity counter with at most 900 active deadline buckets.
@@ -100,17 +104,19 @@ has not been performed.
 
 ## Phase 3: access and UI
 
-Add trusted identity provisioning and HTTP adapters, then discovery, seat/section selection,
-checkout and owner ticket/billing views. Bind the signed-in customer at the server boundary.
-Keep the demonstration-layout notice visible and distinguish a hold from a ticket and a
-refund request from completed repayment. Add routed transport tests for every public action.
+Implemented: public programme/availability reads, authenticated customer reservations and
+checkout, signed provider webhooks, owner ticket/billing views, OpenAPI discovery and a
+responsive customer interface. Holds, tickets and payment/refund status remain distinct.
+See [UI setup and boundaries](ui.md). Billing documents display when issued through the billing
+API; the customer UI does not create or rewrite invoices.
 
-No frontend, public HTTP routes, deployment workflow or publication is implemented.
+Live merchant account qualification, deployment, operator screens, admission scanning and
+production load qualification remain future work. Nothing is published or deployed.
 
 ## Local SDK prerequisite for this development branch
 
-Build SDK commit `f22aa0df867` in a separate checkout using Java 25. Set the root and
-module Maven versions to `2.0.0-f22aa0df867-SNAPSHOT`, then install the matching artifacts:
+Build SDK commit `7604840dad0` in a separate checkout using Java 25. Set the root and
+module Maven versions to `2.0.0-7604840dad0-SNAPSHOT`, then install the matching artifacts:
 
 ```sh
 ./mvnw -B -pl sdk,test-server,proxy,fluxzero-bom -am -DskipTests -Dmaven.javadoc.skip=true install

@@ -1,4 +1,15 @@
 version: 1
 environment: local
 fastCompiler: true
-idp: external
+idp: managed
+backendPaths:
+  - /app
+  - /login
+frontend:
+  directory: frontend
+  setupCommand: "npm install --prefer-offline --no-audit --no-fund && npm run build"
+  command: "npm run dev -- --host 127.0.0.1 --port {frontendPort}"
+commands:
+  - demo-programme:
+      type: io.fluxzero.ticketing.catalog.api.SeedDemoProgramme
+      payload: {}

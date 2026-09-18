@@ -15,14 +15,22 @@ or enforce endpoint access. Internal workflow events and refund identities live 
 | `booking` | Inventory, availability, atomic group reservations, expiry, ownership and issued tickets |
 | `payment` | Provider-independent payment, capture and refund facts |
 | `billing` | Invoices and retained credit notes |
+| `access` | OIDC sign-in, browser sessions and trusted customer identity |
 
 Selected paths illustrate the layout; each listed directory also contains its other domain types:
 
 ```text
 src/main/java/io/fluxzero/ticketing/
 ├── App.java
+├── Frontend.java
+├── access/
+│   ├── AppAuthEndpoint.java
+│   ├── BrowserSessions.java
+│   ├── TicketingUserProvider.java
+│   └── api/model/TicketingUser.java
 ├── package-info.java
 ├── catalog/
+│   ├── CatalogEndpoint.java
 │   ├── DemoCatalog.java
 │   ├── CatalogRules.java
 │   ├── api/
@@ -50,6 +58,7 @@ src/main/java/io/fluxzero/ticketing/
 │       ├── privateapi/AcceptLumaImport.java
 │       └── request/FetchLumaEvent.java
 ├── booking/
+│   ├── BookingEndpoint.java
 │   ├── ReservationDeadlines.java
 │   ├── ReservationRules.java
 │   ├── InventoryChanges.java
@@ -75,6 +84,7 @@ src/main/java/io/fluxzero/ticketing/
 │   │       ├── Payment.java
 │   │       └── Money.java
 │   └── stripe/
+│       ├── CheckoutEndpoint.java
 │       ├── StripeProtocol.java
 │       ├── StripePaymentProcess.java
 │       ├── StripePaymentEffects.java
@@ -133,3 +143,15 @@ when changing stored types or inventory structure. There are no historical alias
 or replay-only command handlers. Add a migration only when real retained data must be upgraded
 or a migration example is explicitly requested. Financial facts created by the current schema
 retain their normal event-sourced history.
+
+## Browser adapter
+
+`frontend/src` contains the customer screens (`Discover`, `Performance`, `Purchase`, `MyTickets`),
+small shared UI components and the same-origin HTTP adapter. Endpoints remain next to their
+owning domains. `Frontend` serves the built assets when present; the managed environment routes
+to Vite during development. The app does not implement compression: the Fluxzero web stack and
+proxy own HTTP encoding.
+
+Programme responses contain section identities, names and modes, not complete seat plans.
+Seat choices use the existing bounded `GetSeats` query. `Event` and `Venue` also publish searchable
+documents for indexed programme filtering by title and ancestor city.
