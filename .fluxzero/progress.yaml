@@ -1,0 +1,272 @@
+---
+version: 1
+milestones:
+- id: "discover-events"
+  title: "Discover events"
+  description: "Browse performances and choose a place to enjoy them. Retrospectively\
+    \ recorded from the existing project; dates below indicate when this history was\
+    \ recorded."
+  features:
+  - id: "browse-programme"
+    title: "Find performances by city and date"
+    kind: "feature"
+    status: "done"
+    description: ""
+    acceptance:
+    - "Visitors can browse the programme and filter it by city and month."
+    - "Performance details show the venue and available ticket options."
+    createdAt: "2026-09-19T16:40:11.706418Z"
+    updatedAt: "2026-09-19T16:40:11.706418Z"
+    history:
+    - at: "2026-09-19T16:40:11.706418Z"
+      status: "done"
+      verification: "Recorded retrospectively from existing documentation and the\
+        \ latest reported passing TicketingEndpointTest scenario: Routes catalogue\
+        \ filters. This records previously implemented behavior, not a new end-to-end\
+        \ test run."
+  - id: "choose-seats"
+    title: "Choose seats or a standing section"
+    kind: "feature"
+    status: "done"
+    description: "Includes a seat map and row list; automatic adjacent-seat suggestions\
+      \ are still a separate planned feature."
+    acceptance:
+    - "Visitors can inspect seat availability and select seats or a standing section."
+    - "Standing tickets retain their section without pretending to have seat numbers."
+    createdAt: "2026-09-19T16:40:11.712618Z"
+    updatedAt: "2026-09-19T16:40:11.712618Z"
+    history:
+    - at: "2026-09-19T16:40:11.712618Z"
+      status: "done"
+      verification: "Recorded retrospectively from existing documentation and the\
+        \ latest reported passing TicketingTest scenario: General admission tickets.\
+        \ This records previously implemented behavior, not a new end-to-end test\
+        \ run."
+  - id: "preserve-seating-plans"
+    title: "Keep sold seats tied to their original seating plan"
+    kind: "feature"
+    status: "done"
+    description: ""
+    acceptance:
+    - "A new seating configuration does not move seats already sold."
+    - "The Concertgebouw Recital Hall has a source-backed layout, distinct from fictional\
+      \ event data."
+    createdAt: "2026-09-19T16:40:11.716534Z"
+    updatedAt: "2026-09-19T16:40:11.716534Z"
+    history:
+    - at: "2026-09-19T16:40:11.716534Z"
+      status: "done"
+      verification: "Recorded retrospectively from existing documentation and the\
+        \ latest reported passing SeatingPlanTest scenario: A new configuration does\
+        \ not move. This records previously implemented behavior, not a new end-to-end\
+        \ test run."
+- id: "book-tickets"
+  title: "Reserve and manage tickets"
+  description: "Hold a complete selection and keep each customer’s bookings private.\
+    \ Retrospectively recorded from the existing project; dates below indicate when\
+    \ this history was recorded."
+  features:
+  - id: "reserve-group"
+    title: "Reserve the whole group together"
+    kind: "feature"
+    status: "done"
+    description: ""
+    acceptance:
+    - "A group receives every selected place or none."
+    - "Competing reservations cannot sell the same seat or exceed standing capacity."
+    createdAt: "2026-09-19T16:40:11.725886Z"
+    updatedAt: "2026-09-19T16:40:11.725886Z"
+    history:
+    - at: "2026-09-19T16:40:11.725886Z"
+      status: "done"
+      verification: "Recorded retrospectively from existing documentation and the\
+        \ latest reported passing TicketingTest scenario: Conflicting group booking.\
+        \ This records previously implemented behavior, not a new end-to-end test\
+        \ run."
+  - id: "expire-holds"
+    title: "Release tickets when checkout expires"
+    kind: "feature"
+    status: "done"
+    description: ""
+    acceptance:
+    - "Unpaid holds expire at their deadline and places become available again."
+    - "A delayed timer cannot extend the right to purchase an expired hold."
+    createdAt: "2026-09-19T16:40:11.731227Z"
+    updatedAt: "2026-09-19T16:40:11.731227Z"
+    history:
+    - at: "2026-09-19T16:40:11.731227Z"
+      status: "done"
+      verification: "Recorded retrospectively from existing documentation and the\
+        \ latest reported passing TicketingTest scenario: Delayed timer delivery.\
+        \ This records previously implemented behavior, not a new end-to-end test\
+        \ run."
+  - id: "own-bookings"
+    title: "View and release your own bookings"
+    kind: "feature"
+    status: "done"
+    description: "The completed scope is private booking access and releasing unpaid\
+      \ holds. New delivery and entrance workflows are tracked separately."
+    acceptance:
+    - "Customers can view their own reservation and ticket status."
+    - "A customer cannot read or change another customer’s booking."
+    createdAt: "2026-09-19T16:40:11.735657Z"
+    updatedAt: "2026-09-19T16:40:11.735657Z"
+    history:
+    - at: "2026-09-19T16:40:11.735657Z"
+      status: "done"
+      verification: "Recorded retrospectively from existing documentation and the\
+        \ latest reported passing TicketingEndpointTest scenario: Refuses foreign\
+        \ reservation. This records previously implemented behavior, not a new end-to-end\
+        \ test run."
+- id: "payments-billing"
+  title: "Payments and financial history"
+  description: "Accept payment without confusing money received with a valid ticket.\
+    \ Retrospectively recorded from the existing project; dates below indicate when\
+    \ this history was recorded."
+  features:
+  - id: "stripe-checkout"
+    title: "Pay through Stripe and resume checkout"
+    kind: "feature"
+    status: "done"
+    description: "Implemented for the example and local Stripe sandbox; this does\
+      \ not claim a production merchant launch."
+    acceptance:
+    - "An active hold can enter Stripe checkout."
+    - "Retrying checkout resumes the same payment instead of creating a second logical\
+      \ payment."
+    createdAt: "2026-09-19T16:40:11.743746Z"
+    updatedAt: "2026-09-19T16:40:11.743746Z"
+    history:
+    - at: "2026-09-19T16:40:11.743746Z"
+      status: "done"
+      verification: "Recorded retrospectively from existing documentation and the\
+        \ latest reported passing CheckoutEndpointTest scenario: Creates payment once.\
+        \ This records previously implemented behavior, not a new end-to-end test\
+        \ run."
+  - id: "late-payment"
+    title: "Handle late payments without reviving expired tickets"
+    kind: "feature"
+    status: "done"
+    description: ""
+    acceptance:
+    - "A payment arriving after expiry does not take seats from another customer."
+    - "Captured money that cannot fulfil the reservation is retained as a refund obligation."
+    createdAt: "2026-09-19T16:40:11.747620Z"
+    updatedAt: "2026-09-19T16:40:11.747620Z"
+    history:
+    - at: "2026-09-19T16:40:11.747620Z"
+      status: "done"
+      verification: "Recorded retrospectively from existing documentation and the\
+        \ latest reported passing TicketingTest scenario: Late capture does not steal.\
+        \ This records previously implemented behavior, not a new end-to-end test\
+        \ run."
+  - id: "billing-history"
+    title: "Retain invoices and credits after cancellation"
+    kind: "feature"
+    status: "done"
+    description: "The billing lifecycle exists in the core. Customer-facing invoice\
+      \ delivery and legal tax/numbering configuration are outside this completed\
+      \ scope."
+    acceptance:
+    - "An issued invoice retains its original amounts and cannot be edited."
+    - "Cancellation can produce a full credit note without erasing payment history."
+    createdAt: "2026-09-19T16:40:11.752687Z"
+    updatedAt: "2026-09-19T16:40:11.752687Z"
+    history:
+    - at: "2026-09-19T16:40:11.752687Z"
+      status: "done"
+      verification: "Recorded retrospectively from existing documentation and the\
+        \ latest reported passing TicketingTest scenario: Invoicing and credit keep.\
+        \ This records previously implemented behavior, not a new end-to-end test\
+        \ run."
+- id: "ticket-delivery-admission"
+  title: "Receive tickets and enter the venue"
+  description: "Current work on the complete journey from purchase to admission. Retrospectively\
+    \ recorded from the existing project; dates below indicate when this history was\
+    \ recorded."
+  features:
+  - id: "deliver-tickets"
+    title: "Receive tickets by email, download and wallet"
+    kind: "feature"
+    status: "in_progress"
+    description: "Retrospective status from active backlog K20. Confirmation and ticket-pass\
+      \ behavior already have passing tests, but complete delivery and wallet qualification\
+      \ remain unfinished."
+    acceptance:
+    - "An accepted purchase can produce a confirmation and downloadable QR ticket."
+    - "Apple Wallet and Google Wallet delivery are verified as part of the complete\
+      \ customer journey."
+    createdAt: "2026-09-19T16:40:11.759788Z"
+    updatedAt: "2026-09-19T16:40:11.759788Z"
+    history:
+    - at: "2026-09-19T16:40:11.759788Z"
+      status: "in_progress"
+      verification: ""
+  - id: "staff-check-in"
+    title: "Check tickets at the entrance"
+    kind: "feature"
+    status: "in_progress"
+    description: "Retrospective status from active backlog K20. Admission and ticket-pass\
+      \ tests are green; the full staff-facing journey is still being completed."
+    acceptance:
+    - "Authorized staff can scan a ticket and see its current validity."
+    - "A second scan cannot admit the same ticket again; cancelled tickets are refused."
+    createdAt: "2026-09-19T16:40:11.763241Z"
+    updatedAt: "2026-09-19T16:40:11.763241Z"
+    history:
+    - at: "2026-09-19T16:40:11.763241Z"
+      status: "in_progress"
+      verification: ""
+- id: "venue-operations"
+  title: "Run real events"
+  description: "Existing integration work and agreed next product steps. Retrospectively\
+    \ recorded from the existing project; dates below indicate when this history was\
+    \ recorded."
+  features:
+  - id: "luma-import"
+    title: "Import an event from a managed Luma calendar"
+    kind: "feature"
+    status: "in_progress"
+    description: "Retrospective status from active backlog K18. Controlled integration\
+      \ tests pass; qualification against a real managed calendar remains open."
+    acceptance:
+    - "An imported event can use local ticket inventory."
+    - "Reimporting the event preserves existing reservations."
+    - "The complete import-to-booking journey is verified against a real managed calendar."
+    createdAt: "2026-09-19T16:40:11.770536Z"
+    updatedAt: "2026-09-19T16:40:11.770536Z"
+    history:
+    - at: "2026-09-19T16:40:11.770536Z"
+      status: "in_progress"
+      verification: ""
+  - id: "organizer-workspace"
+    title: "Manage sales and orders as an organizer"
+    kind: "feature"
+    status: "planned"
+    description: "Agreed future product scope in backlog K21; not yet implemented\
+      \ as an organizer interface."
+    acceptance:
+    - "Organizers can manage performances and sales windows."
+    - "Authorized staff can find orders and manage cancellations and refunds."
+    createdAt: "2026-09-19T16:40:11.774421Z"
+    updatedAt: "2026-09-19T16:40:11.774421Z"
+    history:
+    - at: "2026-09-19T16:40:11.774421Z"
+      status: "planned"
+      verification: ""
+  - id: "smarter-seat-choice"
+    title: "Find suitable seats together"
+    kind: "feature"
+    status: "planned"
+    description: "Agreed future product scope in backlog K22. Current manual seat\
+      \ selection is already available."
+    acceptance:
+    - "Visitors can receive adjacent-seat suggestions with clear price choices."
+    - "Accessible-seat and companion rules are explicit, and ticket types share the\
+      \ same physical stock."
+    createdAt: "2026-09-19T16:40:11.777677Z"
+    updatedAt: "2026-09-19T16:40:11.777677Z"
+    history:
+    - at: "2026-09-19T16:40:11.777677Z"
+      status: "planned"
+      verification: ""
