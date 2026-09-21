@@ -21,6 +21,7 @@ public record StartPayment(@NotNull PaymentId paymentId, @NotNull ReservationId 
     @AssertLegal void validate(Reservation reservation, User user, Performance performance) {
         require(!performance.cancelled(), "Performance is cancelled");
         owner(reservation, user);
+        require(reservation.channel() == io.fluxzero.ticketing.booking.api.model.SalesChannel.ONLINE, "Pay this booking at the box office");
         require(reservation.holdsAt(Fluxzero.currentTime()), "An active hold is required to start payment");
         require(Fluxzero.loadGraph("pending-payment:" + reservationId, Payment.class).get() == null,
                 "A payment attempt is already pending");

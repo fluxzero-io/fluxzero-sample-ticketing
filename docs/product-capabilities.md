@@ -40,17 +40,17 @@ It is a scope recommendation for this example, not a promise to reproduce every 
 | Ticket products and pricing | Section price categories and per-place Standard/Under 18 choice sharing physical stock, with frozen prices | Time-dependent offers, promotional codes, fees and tax breakdown |
 | Organizer allocations | Persistent production blocks with reasons, shared seat/section stock and explicit release | Invitations, complimentary tickets and access-code allocations |
 | Checkout | EUR card payments, retries and retained provider state | Buyer/contact details, clear fee/tax breakdown, production merchant configuration and payment-method expansion |
-| Fulfilment | Retried confirmation email, owner-only QR ticket, downloadable PDF, signed Apple pass and Google Wallet save link | Production email provider, issuer/device qualification and live wallet updates |
+| Fulfilment | Retried confirmation email, owner-only QR ticket, downloadable PDF, signed Apple pass and Google Wallet save link | Optional production email provider, issuer/device qualification and live wallet updates |
 | Admission | Scoped staff desk, explicit gate, signed code, atomic one-time check-in and duplicate/cancelled-ticket rejection | Camera and offline scanning need explicit conflict and re-entry policies |
 | Cancellation and refunds | Managers can find and cancel active orders; captured payments retain their refund obligation and a bound Stripe process starts one durable full-refund attempt | Refund policy display, customer cancellation requests, ticket-level partial refunds and production refund qualification |
 | Invoicing | Independent invoice and credit-note lifecycle in the core | Billing details, issue/delivery workflow, invoice download and jurisdiction-specific tax/numbering configuration |
 | Organizer access | Explicit local operator allowlist plus revocable performance-scoped admission/manage grants and workspaces | Organizer/venue tenancy, invitations and separation between unrelated organizers |
-| Box office and reporting | Online customer checkout only | Assisted sales using the same inventory, cash/card recording, guest lists, sales/admission reports and exports |
+| Box office and reporting | Assisted sales share stock; cash/external-terminal receipts and offline refunds retain staff identity | Physical terminal integration, guest lists, sales/admission reports and exports |
 | Customer support | Managers search orders by order/customer, see payment state and cancel active purchases | Broader reconciliation actions, explanations of pending/late payments and auditable support notes |
 | Demand management | Exact bounded inventory transactions | Purchase limits across accounts, queue/waitlist policy, abuse controls and fair high-demand admission |
 | Event information and communication | Title, description, venue, date and artwork | Doors/end time, age and entry restrictions, accessibility guidance, reminders, change notices and delivery preferences |
 | Rescheduling | Existing reservations cannot silently move | Explicit reschedule workflow, notifications and refund/acceptance choices |
-| Transfers and resale | Not implemented | Explicit ownership transfer, cancellation of old admission credentials and resale policy |
+| Transfers and resale | Recipient-accepted transfer with immediate revocation of previous admission credentials | Resale and live updates to previously installed wallet passes |
 
 ## Suggested order for this example
 

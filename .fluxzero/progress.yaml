@@ -410,17 +410,25 @@ milestones:
   - id: "box-office"
     title: "Sell tickets at the box office"
     kind: "feature"
-    status: "planned"
+    status: "done"
     description: ""
     acceptance:
     - "Authorized staff can sell from the same stock as online customers."
     - "Sales retain payment, ticket and financial history."
     createdAt: "2026-09-21T21:17:57.561520Z"
-    updatedAt: "2026-09-21T21:17:57.561520Z"
+    updatedAt: "2026-09-21T22:23:55.853909Z"
     history:
     - at: "2026-09-21T21:17:57.561520Z"
       status: "planned"
       verification: ""
+    - at: "2026-09-21T22:07:11.290187Z"
+      status: "in_progress"
+      verification: ""
+    - at: "2026-09-21T22:23:55.853909Z"
+      status: "done"
+      verification: "Twelve synchronous/asynchronous TestFixture scenarios passed.\
+        \ Browser verified a cash sale using shared stock, retained receipt, cancellation,\
+        \ and separately recorded offline refund."
   - id: "partial-refunds"
     title: "Refund part of an order"
     kind: "feature"
@@ -439,48 +447,60 @@ milestones:
   - id: "ticket-transfers"
     title: "Transfer a ticket to another visitor"
     kind: "feature"
-    status: "planned"
+    status: "done"
     description: ""
     acceptance:
     - "The recipient must accept a transfer."
     - "Completion revokes the previous admission credential without duplicating entry\
       \ rights."
     createdAt: "2026-09-21T21:17:57.572212Z"
-    updatedAt: "2026-09-21T21:17:57.572212Z"
+    updatedAt: "2026-09-21T22:23:55.878676Z"
     history:
     - at: "2026-09-21T21:17:57.572212Z"
       status: "planned"
       verification: ""
+    - at: "2026-09-21T21:59:18.329191Z"
+      status: "in_progress"
+      verification: ""
+    - at: "2026-09-21T22:23:55.878676Z"
+      status: "done"
+      verification: "Fourteen synchronous/asynchronous TestFixture scenarios passed.\
+        \ In-app browser and Safari verified sender invitation, recipient acceptance,\
+        \ revoked old QR, recipient access, and revoked recipient access after purchase\
+        \ cancellation."
 - id: "example-readiness"
   title: "A complete and explainable example"
   description: "Agreed qualification and presentation work after the product flows."
   features:
   - id: "production-mail"
-    title: "Deliver tickets to real inboxes"
+    title: "Inspect ticket emails locally"
     kind: "feature"
     status: "planned"
-    description: ""
+    description: "Mailpit is the supported sample delivery target. The user explicitly\
+      \ chose a sample without an external mail provider; real inbox delivery is an\
+      \ optional deployment extension."
     acceptance:
-    - "A configured mail provider can deliver confirmation messages."
-    - "Failures can be recovered without misleading confirmations."
+    - "Run and inspect confirmations locally without a mail-provider account."
+    - "Demonstrate retry and cancelled-order suppression without sending real email."
+    - "Document the sample boundary and optional production adapter."
     createdAt: "2026-09-21T21:17:57.580851Z"
-    updatedAt: "2026-09-21T21:17:57.580851Z"
+    updatedAt: "2026-09-21T22:23:55.888829Z"
     history:
     - at: "2026-09-21T21:17:57.580851Z"
       status: "planned"
       verification: ""
   - id: "physical-wallets"
-    title: "Add tickets to real phones"
+    title: "Try locally signed wallet passes"
     kind: "feature"
     status: "planned"
-    description: "Waiting for user-owned issuer configuration; no account purchases\
-      \ are authorized."
+    description: "Qualify Apple and Google formats locally. Installation on physical\
+      \ devices remains optional and requires user-owned issuer configuration."
     acceptance:
-    - "Apple Wallet and Google Wallet passes can be installed with configured issuer\
-      \ credentials."
-    - "Device qualification is recorded separately from local signing tests."
+    - "Verify Apple package signing and Google save-link signing locally."
+    - "Revoke old admission codes after cancellation or transfer."
+    - "Explain issuer requirements and distinguish local tests from device qualification."
     createdAt: "2026-09-21T21:17:57.584869Z"
-    updatedAt: "2026-09-21T21:17:57.584869Z"
+    updatedAt: "2026-09-21T22:23:55.908803Z"
     history:
     - at: "2026-09-21T21:17:57.584869Z"
       status: "planned"

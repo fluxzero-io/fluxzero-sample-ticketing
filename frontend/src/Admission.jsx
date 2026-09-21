@@ -1,17 +1,17 @@
+import { useLiveResource } from "./operations/useLiveResource";
+import { TransferTicket } from "./Transfers";
 import React, { useEffect, useRef, useState } from "react";
 import { api, post, date } from "./api";
 import { ErrorMessage, Spinner } from "./ui";
 
 export function TicketPass({ id }) {
-  const [pass, setPass] = useState(null), [error, setError] = useState(null), [wallets, setWallets] = useState({}), [saving, setSaving] = useState(false);
+  const { data: pass, error: passError } = useLiveResource(`/api/tickets/${id}/pass`);
+  const [error, setError] = useState(null), [wallets, setWallets] = useState({}), [saving, setSaving] = useState(false);
   useEffect(() => {
     let active = true;
-    setPass(null); setError(null);
-    Promise.all([api(`/api/tickets/${id}/pass`), api("/api/wallets")]).then(([p, w]) => {
-      if (active) {setPass(p); setWallets(w);}
-    }).catch(e => active && setError(e));
+    api("/api/wallets").then(w => { if (active) setWallets(w); }).catch(e => active && setError(e));
     return () => { active = false; };
-  }, [id]);
+  }, []);
   async function saveGoogle() {
     setSaving(true); setError(null);
     try { const result = await post(`/api/tickets/${id}/google-wallet`); location.assign(result.url); }
@@ -20,8 +20,8 @@ export function TicketPass({ id }) {
   }
   return <section className="wrap ticket-pass">
     <a className="back text-button" href="#/tickets">← My tickets</a>
-    <ErrorMessage error={error} />
-    {!pass && !error && <Spinner />}
+    <ErrorMessage error={error || passError} />
+    {!pass && !error && !passError && <Spinner />}
     {pass && <>
       <p className="eyebrow">{pass.hall}</p>
       <h1>{pass.title}</h1>
@@ -36,6 +36,7 @@ export function TicketPass({ id }) {
           {wallets.google && <button className="secondary" disabled={saving} onClick={saveGoogle}>Add to Google Wallet</button>}
         </div>}
       </div>
+      {!pass.checkIn && <TransferTicket id={pass.ticket.ticketId} />}
       <p className="caption">Demo ticket. Not valid for real venue entry.</p>
     </>}
   </section>;

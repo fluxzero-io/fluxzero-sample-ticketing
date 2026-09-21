@@ -16,7 +16,7 @@ public final class TicketCredentials {
     public static String issue(Ticket ticket) {
         String payload = Base64.getUrlEncoder().withoutPadding().encodeToString(
                 ticket.ticketId().getFunctionalId().getBytes(StandardCharsets.UTF_8));
-        return payload + "." + signature(payload, ticket.customerId());
+        return payload + "." + signature(payload, ticket.customerId() + ":" + ticket.credentialVersion());
     }
     public static TicketId ticketId(String credential) {
         require(credential != null && credential.matches("[A-Za-z0-9_-]{1,1024}\\.[A-Za-z0-9_-]{43}"), "Invalid ticket code");

@@ -1,3 +1,4 @@
+import { BoxOfficePayment, BoxOfficeRefund } from "./BoxOffice";
 import React, { useState } from "react";
 import { post, money, date } from "../api";
 import { ErrorMessage, Spinner } from "../ui";
@@ -50,14 +51,17 @@ export function ManagedOrder({ id }) {
           </> : <p>No confirmation email requested.</p>}
         </section>
       </div>
+      {reservation.channel === "BOX_OFFICE" && order.payments.length === 0 && <BoxOfficePayment reservation={reservation} onSaved={refresh} />}
       <section className="operation-card"><h2>Payments and refunds</h2>
         {order.payments.length === 0 && <p>No payment started.</p>}
-        {order.payments.map(({ payment, refund }) => <article className="payment-detail" key={payment.paymentId}>
+        {order.payments.map(({ payment, refund, boxOfficeReceipt }) => <article className="payment-detail" key={payment.paymentId}>
           <div className="financial-row"><strong>{label(payment.status)}</strong><strong>{money(payment.captured || payment.expected)}</strong></div>
           <small>{payment.paymentId}</small>
           {payment.capturedAt && <p>Payment received · {new Date(payment.capturedAt).toLocaleString("en-GB")}</p>}
           {refund && <><p role="status">{refund.status}</p>{refund.detail && <p className="muted">{refund.detail}</p>}</>}
-          {!refund && payment.status === "REFUND_REQUIRED" && <p>Refund due. This payment has no connected refund provider.</p>}
+          {!refund && !boxOfficeReceipt && payment.status === "REFUND_REQUIRED" && <p>Refund due. This payment has no connected refund provider.</p>}
+          {boxOfficeReceipt && <p>{label(boxOfficeReceipt.method)} · {boxOfficeReceipt.reference}</p>}
+          {boxOfficeReceipt && payment.status === "REFUND_REQUIRED" && <BoxOfficeRefund payment={payment} onSaved={refresh} />}
           {refundAction[refund?.action] && <button className="secondary" disabled={busy} onClick={() => act(
             `/api/operations/payments/${payment.paymentId}/recover-refund`, { attemptId: refund.attemptId }, "Refund update requested"
           )}>{refundAction[refund.action]}</button>}

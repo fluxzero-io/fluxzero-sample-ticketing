@@ -54,6 +54,6 @@ public record ReserveTickets(@ApiDoc(required = true) @NotNull ReservationId res
         if (performance.details().startsAt().isBefore(expiresAt)) expiresAt = performance.details().startsAt();
         List<Admission> admissions = admissions(performance, selection);
         return new Reservation(reservationId, performanceId, user.id(), admissions, total(admissions),
-                timestamp, expiresAt, ReservationStatus.HELD, null);
+                timestamp, expiresAt, ReservationStatus.HELD, null, io.fluxzero.ticketing.booking.api.model.SalesChannel.ONLINE);
     }
 }

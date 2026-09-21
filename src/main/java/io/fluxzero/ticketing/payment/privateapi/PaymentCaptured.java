@@ -3,7 +3,6 @@ package io.fluxzero.ticketing.payment.privateapi;
 import io.fluxzero.sdk.modeling.AssertLegal;
 import io.fluxzero.sdk.modeling.AutomaticModelHandling;
 import io.fluxzero.sdk.persisting.eventsourcing.Apply;
-import io.fluxzero.sdk.tracking.handling.authentication.RequiresAnyRole;
 import io.fluxzero.ticketing.booking.api.ReservationId;
 import io.fluxzero.ticketing.booking.api.TicketId;
 import io.fluxzero.ticketing.booking.api.model.Reservation;
@@ -25,7 +24,6 @@ import static io.fluxzero.ticketing.common.Checks.require;
 
 /** Internal normalized capture decision. Persisted once; replay never consults the wall clock. */
 @io.fluxzero.sdk.publishing.LocalOnly
-@RequiresAnyRole("PAYMENTS")
 public record PaymentCaptured(@NotNull PaymentId paymentId, @NotNull ReservationId reservationId, @NotBlank String captureReference,
                               @NotNull @Valid Money amount, @NotNull Instant receivedAt, boolean accepted) {
     @AssertLegal void validate(Payment payment, Reservation reservation) {
@@ -49,6 +47,6 @@ public record PaymentCaptured(@NotNull PaymentId paymentId, @NotNull Reservation
         return IntStream.range(0, reservation.admissions().size()).mapToObj(i -> new Ticket(
                 new TicketId(reservation.reservationId().getFunctionalId() + ":" + (i + 1)),
                 reservation.reservationId(), reservation.performanceId(), reservation.customerId(),
-                reservation.admissions().get(i), TicketStatus.VALID)).toList();
+                reservation.admissions().get(i), TicketStatus.VALID, 0)).toList();
     }
 }

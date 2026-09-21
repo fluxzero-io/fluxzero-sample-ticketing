@@ -28,7 +28,7 @@ import static io.fluxzero.ticketing.common.Checks.require;
 @RequiresUser
 public record GetManagedReservation(@NotNull ReservationId reservationId, @PositiveOrZero int offset)
         implements Request<GetManagedReservation.View> {
-    public record PaymentView(Payment payment, GetStripeRefundStatus.View refund) {}
+    public record PaymentView(Payment payment, GetStripeRefundStatus.View refund, io.fluxzero.ticketing.operations.api.model.BoxOfficeReceipt boxOfficeReceipt) {}
     public record Delivery(String email, Instant acceptedAt, String problem, String stoppedReason) {}
     public record View(Reservation reservation, GetProgramme.Show show, List<Ticket> tickets, int admitted,
                        List<PaymentView> payments, boolean morePayments, Delivery delivery) {}
@@ -47,7 +47,7 @@ public record GetManagedReservation(@NotNull ReservationId reservationId, @Posit
                 payments.stream().limit(20).map(payment -> new PaymentView(payment,
                         payment.status() == PaymentStatus.REFUND_REQUIRED || payment.status() == PaymentStatus.REFUNDED
                                 ? TicketingUser.SYSTEM.apply(() -> Fluxzero.queryAndWait(new GetStripeRefundStatus(payment.paymentId())))
-                                : null)).toList(), payments.size() > 20,
+                                : null, Fluxzero.loadModel(payment.paymentId(),io.fluxzero.ticketing.operations.api.model.BoxOfficeReceipt.class).get())).toList(), payments.size() > 20,
                 contact == null ? null : new Delivery(contact.email(), delivery == null ? null : delivery.acceptedAt(),
                         delivery == null ? null : delivery.problem(), delivery == null ? null : delivery.stoppedReason()));
     }

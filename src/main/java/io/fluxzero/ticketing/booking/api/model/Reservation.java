@@ -19,7 +19,7 @@ import lombok.With;
 public record Reservation(@EntityId ReservationId reservationId,
                           @Parent(pathInParent = "reservations") PerformanceId performanceId,
                           String customerId, List<Admission> admissions, Money total,
-                          Instant createdAt, Instant expiresAt, ReservationStatus status, PaymentId paidBy) {
+                          Instant createdAt, Instant expiresAt, ReservationStatus status, PaymentId paidBy, SalesChannel channel) {
 
     public Reservation { admissions = List.copyOf(admissions); }
     public boolean holdsAt(Instant now) { return status == ReservationStatus.HELD && now.isBefore(expiresAt); }

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { post, date, money } from "./api";
 import { ErrorMessage, Spinner } from "./ui";
+import { BoxOffice } from "./operations/BoxOffice";
 import { ProductionAllocations } from "./operations/ProductionAllocations";
 import { StaffAccess } from "./operations/StaffAccess";
 import { useLiveResource, label } from "./operations/useLiveResource";
@@ -61,6 +62,7 @@ export function PerformanceOperations({ id }) {
         </div>
         <a className="secondary" href={`#/admission/${id}`}>Open entrance desk →</a>
       </div>
+      <BoxOffice id={id} show={show} />
       <OrderList id={id} />
       <ProductionAllocations id={id} show={show} />
       <div className="operations-grid">

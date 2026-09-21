@@ -147,3 +147,15 @@ rescheduling and seat exchanges require separate, explicit product flows.
 Managers can block up to 100 positions in one atomic allocation, with a retained reason and identity. A position is one reserved seat or a positive standing-section quantity. Blocks share the authoritative inventory with customer holds and sold tickets; they cannot displace either. They can be created before the sales window opens, but not after cancellation or performance start.
 
 Blocks remain until explicitly released. Retrying the same allocation or release is idempotent; a released identity never creates a fresh block. Release preserves history and only returns that allocation's stock. More than 100 seat positions require explicit separate batches, each atomic on its own.
+
+## Box office
+
+Managers reserve up to twelve places for a signed-in customer using the same inventory as online sales. Assisted sales may precede the public sales window, but cannot pass performance start or cancellation. The cashier then records money actually received in cash or on an external terminal, including a unique receipt reference. The example does not operate a physical payment terminal. An identical receipt retry is harmless; one receipt cannot pay for two bookings.
+
+A late or incorrectly sized receipt remains a financial fact and requires a refund without reviving admission. Box-office reservations cannot also start online payment attempts. Cancellation voids admission immediately; a manager separately records the actual offline payout. The original capture and cashier identity remain available.
+
+## Ticket transfers
+
+A current owner can offer an unused ticket to another signed-in account. The invitation expires after 24 hours or at performance start, whichever comes first. Until acceptance, admission remains with the sender. The sender can cancel and the recipient can decline. Acceptance changes ownership atomically and increments the admission credential version, invalidating the previous QR, PDF and wallet code even if the ticket later returns to the original owner. Online entrance validation always checks the current version.
+
+Transfer moves admission only. The original buyer retains the purchase, payment and cancellation relationship; cancelling that purchase also voids transferred tickets. The recipient sees the event and selected admission before accepting. Admitted, voided or started-performance tickets cannot be transferred. Wallet passes already stored on a phone are not remotely refreshed; their old code is refused at online admission.

@@ -192,6 +192,20 @@ public class OrganizerEndpoint {
         Fluxzero.sendCommandAndWait(new ReleaseProductionInventory(id));
     }
 
+    @HandlePost("/box-office/reservations") ReservationId reserveBoxOffice(ReserveBoxOfficeTickets command, WebRequest request) {
+        BrowserRequests.requireSameOrigin(request);
+        Fluxzero.sendCommandAndWait(command);
+        return command.reservationId();
+    }
+    @HandlePost("/box-office/payments") void boxOfficePayment(RecordBoxOfficePayment command, WebRequest request) {
+        BrowserRequests.requireSameOrigin(request);
+        Fluxzero.sendCommandAndWait(command);
+    }
+    @HandlePost("/box-office/refunds") void boxOfficeRefund(RecordBoxOfficeRefund command, WebRequest request) {
+        BrowserRequests.requireSameOrigin(request);
+        Fluxzero.sendCommandAndWait(command);
+    }
+
     private static WebResponse response(Object payload) {
         return WebResponse.builder().payload(payload).header("Cache-Control", "no-store").build();
     }

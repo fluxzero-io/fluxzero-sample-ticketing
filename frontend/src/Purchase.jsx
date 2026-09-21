@@ -311,7 +311,7 @@ export function Purchase({ id }) {
                     <small>{t.ticketId}</small>
                   </div>
                   <span>{t.status}</span>
-                  {t.status === "VALID" && !purchase.performanceCancelled && (
+                  {t.status === "VALID" && t.customerId === purchase.reservation.customerId && !purchase.performanceCancelled && (
                     <a className="secondary" href={"#/ticket/" + encodeURIComponent(t.ticketId)}>Open ticket</a>
                   )}
                 </article>
@@ -359,7 +359,10 @@ export function Purchase({ id }) {
           )}
         </section>
         <aside className="checkout-panel">
-          {held ? (
+          {held && r.channel === "BOX_OFFICE" ? (
+            <><h2>Pay at the box office</h2><p className="muted">Your cashier is holding these places. Complete payment there before the hold ends.</p>
+              <button className="text-button quiet" onClick={() => setCancelOpen(true)}>Release tickets</button></>
+          ) : held ? (
             <>
               <h2>Payment</h2>
               {!paymentId && <label className="receipt-address">Confirmation email (optional)

@@ -16,6 +16,8 @@ erDiagram
     RESERVATION ||--o| RECEIPT_CONTACT : addresses
     RESERVATION ||--o{ TICKET : issues
     TICKET ||--o| CHECK_IN : admits_once
+    TICKET ||--o| TICKET_TRANSFER : offers_ownership
+    PAYMENT ||--o| BOX_OFFICE_RECEIPT : records_offline_receipt
     RESERVATION ||--o{ PAYMENT : has_attempts
     RESERVATION ||--o{ INVOICE : bills
     INVOICE ||--o| CREDIT_NOTE : corrects
@@ -230,3 +232,9 @@ section prices and ticket-type policies share the scheduled performance's lifecy
 not inventory. A Reservation freezes each admission's ticket type and price while the same
 SeatInventory or SectionInventory protects all ticket types. Suggestions are advisory reads,
 whereas the reservation command enforces group, accessibility and physical capacity invariants.
+
+## Assisted sales and ownership
+
+`Reservation.channel` distinguishes online and box-office sales. `BoxOfficeReceipt` is an independently retained companion of Payment, with receipt method, external reference and recording staff. It records an offline financial fact without introducing a payment-provider workflow into the graph.
+
+`TicketTransfer` is a ticket-scoped Model with a versioned current invitation, sender, recipient, deadline and accepted/cancelled status. Repeated invitations retain their event history without growing a list on Ticket. Ticket itself has searchable current ownership and a monotonic credential version; purchase ownership and financial records remain unchanged. Queries page owned tickets and incoming invitations directly.

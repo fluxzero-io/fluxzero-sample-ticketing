@@ -1,3 +1,4 @@
+import { OwnedTickets } from "./Transfers";
 import React, { useState } from "react";
 import { Ticket, ArrowRight } from "@phosphor-icons/react";
 import { api, date, artwork, navigate, signIn } from "./api";
@@ -40,6 +41,8 @@ export function MyTickets({ session }) {
         </div>
       ) : (
         <>
+          <OwnedTickets account={session.name} />
+          <h2>Your bookings</h2>
           <ErrorMessage error={error || moreError} retry={reload} />
           {!page && !error && <Spinner />}
           {page?.items.map((r) => (
@@ -48,7 +51,7 @@ export function MyTickets({ session }) {
           {page && !page.items.length && (
             <div className="empty">
               <Icon as={Ticket} size={44} />
-              <h2>Your next night starts here.</h2>
+              <h2>You have no bookings yet.</h2>
               <button className="primary" onClick={() => navigate("")}>
                 Explore events
                 <Icon as={ArrowRight} />
