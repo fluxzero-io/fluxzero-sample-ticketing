@@ -2,7 +2,8 @@
 
 The example supports discovering performances, selecting seats or standing admissions,
 atomic temporary group holds, authenticated checkout, payment confirmation, ticket display
-and releasing unpaid holds. Inventory and financial lifecycles are separate. A source-backed
+and releasing unpaid holds. Organizer operations cover scheduling, sales windows, scoped access,
+order search, cancellation and full-refund progress. Inventory and financial lifecycles are separate. A source-backed
 Recital Hall configuration complements the small illustrative venues.
 
 The following boundaries matter before presenting this as an operational ticketing product.
@@ -33,7 +34,7 @@ It is a scope recommendation for this example, not a promise to reproduce every 
 
 | Capability | Current behavior | Missing product behavior |
 | --- | --- | --- |
-| Venue and programme management | Domain commands, independent immutable seating-plan revisions and seeded fictional performances | Operator UI, publishing/unpublishing, sales windows, configuration editing/retirement and scheduling collision checks |
+| Venue and programme management | Organizer UI schedules immutable-plan performances, manages sales windows and cancels performances | Publishing/unpublishing, configuration editing/retirement, scheduling collision checks and rescheduling |
 | Luma | Operator command imports one managed calendar event atomically; identical imports are idempotent | Live-calendar qualification, operator import screen and explicit reconciliation of changed/cancelled source events |
 | Accessible seating | Wheelchair and companion positions are identifiable | Event-specific access guidance, paired selection policy and assisted booking workflow |
 | Seat selection | Source-backed map, section selection, row list, grouped holds | Automatic adjacent-seat suggestions, sightline warnings, price categories within a section and optional single-seat-gap rules |
@@ -42,11 +43,11 @@ It is a scope recommendation for this example, not a promise to reproduce every 
 | Checkout | EUR card payments, retries and retained provider state | Buyer/contact details, clear fee/tax breakdown, production merchant configuration and payment-method expansion |
 | Fulfilment | Retried confirmation email, owner-only QR ticket, downloadable PDF, signed Apple pass and Google Wallet save link | Production email provider, issuer/device qualification and live wallet updates |
 | Admission | Scoped staff desk, explicit gate, signed code, atomic one-time check-in and duplicate/cancelled-ticket rejection | Camera and offline scanning need explicit conflict and re-entry policies |
-| Cancellation and refunds | Performance cancellation and full-refund workflows exist in the core | Operator/customer support UI, refund policy display, customer cancellation requests, ticket-level partial refunds and practical refund qualification |
+| Cancellation and refunds | Managers can find and cancel active orders; captured payments retain their refund obligation and a bound Stripe process starts one durable full-refund attempt | Refund policy display, customer cancellation requests, ticket-level partial refunds and production refund qualification |
 | Invoicing | Independent invoice and credit-note lifecycle in the core | Billing details, issue/delivery workflow, invoice download and jurisdiction-specific tax/numbering configuration |
-| Organizer access | Explicit local operator allowlist and performance-scoped admission/manage grants | Organizer/venue tenancy, invitations and separation between unrelated organizers |
+| Organizer access | Explicit local operator allowlist plus revocable performance-scoped admission/manage grants and workspaces | Organizer/venue tenancy, invitations and separation between unrelated organizers |
 | Box office and reporting | Online customer checkout only | Assisted sales using the same inventory, cash/card recording, guest lists, sales/admission reports and exports |
-| Customer support | Customers see their own bookings | Staff search, reconciliation actions, explanations of pending/late payments and auditable support actions |
+| Customer support | Managers search orders by order/customer, see payment state and cancel active purchases | Broader reconciliation actions, explanations of pending/late payments and auditable support notes |
 | Demand management | Exact bounded inventory transactions | Purchase limits across accounts, queue/waitlist policy, abuse controls and fair high-demand admission |
 | Event information and communication | Title, description, venue, date and artwork | Doors/end time, age and entry restrictions, accessibility guidance, reminders, change notices and delivery preferences |
 | Rescheduling | Existing reservations cannot silently move | Explicit reschedule workflow, notifications and refund/acceptance choices |
@@ -57,10 +58,10 @@ It is a scope recommendation for this example, not a promise to reproduce every 
 1. **Admission journey delivered.** Buyer contact, retained mail delivery, PDF/QR, wallet formats,
    scoped staff access and atomic online check-in are implemented. Camera scanning, live wallet
    updates and offline door reconciliation remain deliberate extensions.
-2. **Make the product operable.** Provide a small organizer interface for programme setup,
-   plan selection, sales opening/closing, order lookup, cancellation and refund progress.
-   Establish organizer-scoped authorization before supporting independent sellers. Include
-   confirmation/change communications and issue/download workflows for invoices and credit notes.
+2. **Organizer baseline delivered.** The workspace schedules performances from bounded catalogue
+   choices, sets sales windows in the venue time zone, grants scoped access, searches orders and
+   cancels purchases while showing retained payment/refund state. Organizer tenancy, invitations,
+   change communications and issue/download workflows for invoices and credit notes remain extensions.
 3. **Make seat and ticket choice realistic.** Add adjacent-seat suggestions, price categories,
    companion rules and sightline information. Ticket types must draw from the same physical
    inventory; introducing an adult/child price must never multiply section capacity. Artist and

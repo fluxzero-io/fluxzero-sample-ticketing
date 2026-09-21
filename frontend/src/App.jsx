@@ -7,6 +7,8 @@ import { Performance } from "./Performance";
 import { Purchase } from "./Purchase";
 import { MyTickets } from "./MyTickets";
 import { TicketPass, AdmissionDesk, StaffPerformances } from "./Admission";
+import { Operations, PerformanceOperations, NewPerformance, ManagedOrder } from "./Operations";
+import { useLiveResource } from "./operations/useLiveResource";
 
 export function App() {
   const [route, setRoute] = useState(location.hash.slice(1)),
@@ -39,6 +41,7 @@ export function App() {
     }
   }
   const [, page, id] = route.split("?")[0].split("/");
+  const { data: access } = useLiveResource(session?.authenticated ? "/api/operations/access" : null);
   return (
     <>
       <a
@@ -67,7 +70,8 @@ export function App() {
           >
             My tickets
           </a>
-          {session?.authenticated && <a className={page === "staff" || page === "admission" ? "active" : ""} href="#/staff">Backstage</a>}
+          {access?.admission && !access?.manage && <a className={page === "staff" || page === "admission" ? "active" : ""} href="#/staff">Entrance</a>}
+          {access?.manage && <a className={["operations", "operations-new", "order", "admission"].includes(page) ? "active" : ""} href="#/operations">Operations</a>}
         </nav>
         {session?.authenticated ? (
           <button className="account" onClick={logout} aria-label="Sign out">
@@ -93,6 +97,14 @@ export function App() {
           <StaffPerformances />
         ) : page === "admission" ? (
           <AdmissionDesk key={id} id={id} />
+        ) : page === "operations" && id ? (
+          <PerformanceOperations key={id} id={id} />
+        ) : page === "operations" ? (
+          <Operations />
+        ) : page === "operations-new" ? (
+          <NewPerformance />
+        ) : page === "order" ? (
+          <ManagedOrder key={id} id={id} />
         ) : page === "tickets" ? (
           <MyTickets session={session} />
         ) : (

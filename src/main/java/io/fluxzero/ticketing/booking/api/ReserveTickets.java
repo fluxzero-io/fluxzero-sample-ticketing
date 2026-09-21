@@ -1,10 +1,10 @@
 package io.fluxzero.ticketing.booking.api;
 
-import io.fluxzero.sdk.web.ApiDoc;
 import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.sdk.persisting.eventsourcing.InterceptApply;
 import io.fluxzero.sdk.tracking.handling.authentication.RequiresUser;
 import io.fluxzero.sdk.tracking.handling.authentication.User;
+import io.fluxzero.sdk.web.ApiDoc;
 import io.fluxzero.ticketing.booking.InventoryChanges;
 import io.fluxzero.ticketing.booking.ReservationRules;
 import io.fluxzero.ticketing.booking.api.model.Admission;
@@ -14,6 +14,8 @@ import io.fluxzero.ticketing.booking.api.model.Selection;
 import io.fluxzero.ticketing.booking.privateapi.ReservationHeld;
 import io.fluxzero.ticketing.catalog.api.PerformanceId;
 import io.fluxzero.ticketing.catalog.api.model.Performance;
+import io.fluxzero.ticketing.catalog.api.model.SalesWindow;
+import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -33,10 +35,11 @@ import static io.fluxzero.ticketing.common.Checks.require;
 public record ReserveTickets(@ApiDoc(required = true) @NotNull ReservationId reservationId, @ApiDoc(required = true) @NotNull PerformanceId performanceId,
                              @ApiDoc(required = true) @NotEmpty @Size(max = 12) List<@NotNull @Valid Selection> selection) {
     @InterceptApply
-    Object decide(Performance performance, User user, Instant sentAt) {
+    Object decide(Performance performance, @Nullable SalesWindow salesWindow, User user, Instant sentAt) {
         Instant now = Fluxzero.currentTime();
         require(!sentAt.isAfter(now), "Reservation request cannot be future-dated");
         require(sentAt.plus(Duration.ofMinutes(15)).isAfter(now), "Reservation request is too old");
+        require(SalesWindow.openAt(salesWindow, performance, now), "Ticket sales are closed");
         ReservationRules.validSelection(performance, selection, now);
         var reservation = hold(performance, user, sentAt);
         reservation = reservation.withExpiresAt(reservation.expiresAt().truncatedTo(ChronoUnit.SECONDS));

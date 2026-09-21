@@ -14,15 +14,15 @@ export async function api(path, options = {}) {
     let message = raw;
     try {
       const data = JSON.parse(raw);
-      message = data.message || data.error || "Please try again.";
+      message = typeof data === "string" ? data : data.message || data.error || "Please try again.";
     } catch {
       /* plain SDK error */
     }
     const error = new Error(
-      response.status === 401
-        ? "Sign in to continue."
-        : message.length < 250
-          ? message
+      message && message.length < 250
+        ? message
+        : response.status === 401
+          ? "Sign in to continue."
           : "Something went wrong. Please try again.",
     );
     error.status = response.status;

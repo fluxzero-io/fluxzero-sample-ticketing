@@ -11,14 +11,14 @@ or enforce endpoint access. Internal workflow events and refund identities live 
 
 | Domain | Responsibility |
 | --- | --- |
-| `catalog` | Venues, halls, immutable seating-plan revisions, programmes and dated performances with fixed plan selection and prices |
+| `catalog` | Venues, halls, immutable seating-plan revisions, programmes, dated performances and independently managed sales windows |
 | `booking` | Inventory, availability, atomic group reservations, expiry, ownership and issued tickets |
 | `payment` | Provider-independent payment, capture and refund facts |
 | `billing` | Invoices and retained credit notes |
 | `access` | OIDC sign-in, browser sessions and trusted customer identity |
 | `delivery` | Confirmation addresses, retained delivery intent and local mail requests |
 | `admission` | Owned ticket passes, gate state, signed codes and atomic check-in |
-| `operations` | Performance-scoped staff grants and operational queries |
+| `operations` | Organizer endpoints, bounded order views and performance-scoped staff grants |
 | `wallet` | Apple and Google Wallet format adapters outside the domain graph |
 
 Selected paths illustrate the layout; each listed directory also contains its other domain types:
@@ -40,6 +40,7 @@ src/main/java/io/fluxzero/ticketing/
 │   ├── api/
 │   │   ├── CreateVenue.java
 │   │   ├── SchedulePerformance.java
+│   │   ├── ConfigureSalesWindow.java
 │   │   ├── VenueId.java
 │   │   ├── PerformanceId.java
 │   │   └── model/
@@ -47,6 +48,7 @@ src/main/java/io/fluxzero/ticketing/
 │   │       ├── Hall.java
 │   │       ├── Event.java
 │   │       ├── Performance.java
+│   │       ├── SalesWindow.java
 │   │       ├── Section.java
 │   │       └── Seat.java
 │   ├── privateapi/
@@ -134,8 +136,13 @@ src/main/java/io/fluxzero/ticketing/
 │       ├── Gate.java
 │       └── CheckIn.java
 ├── operations/
+│   ├── OrganizerEndpoint.java
 │   ├── StaffPermission.java
-│   └── api/model/StaffAccess.java
+│   └── api/
+│       ├── GetManagedOrders.java
+│       ├── GetManagedPerformances.java
+│       ├── CancelManagedReservation.java
+│       └── model/StaffAccess.java
 ├── wallet/
 │   ├── ApplePass.java
 │   ├── GooglePass.java
@@ -170,9 +177,9 @@ retain their normal event-sourced history.
 
 ## Browser adapter
 
-`frontend/src` contains the customer screens (`Discover`, `Performance`, `Purchase`, `MyTickets`),
-small shared UI components and the same-origin HTTP adapter. Endpoints remain next to their
-owning domains. `Frontend` serves the built assets when present; the managed environment routes
+`frontend/src` contains customer screens (`Discover`, `Performance`, `Purchase`, `MyTickets`),
+staff admission and organizer operations, small shared UI components and the same-origin HTTP
+adapter. Endpoints remain next to their owning domains. `Frontend` serves the built assets when present; the managed environment routes
 to Vite during development. The app does not implement compression: the Fluxzero web stack and
 proxy own HTTP encoding.
 

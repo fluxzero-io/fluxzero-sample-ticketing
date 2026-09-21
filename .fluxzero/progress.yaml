@@ -254,18 +254,39 @@ milestones:
   - id: "organizer-workspace"
     title: "Manage sales and orders as an organizer"
     kind: "feature"
-    status: "planned"
-    description: "Agreed future product scope in backlog K21; not yet implemented\
-      \ as an organizer interface."
+    status: "done"
+    description: "Operators schedule performances from paged event and venue-layout\
+      \ choices, manage sales windows and staff access, and find orders. Performance\
+      \ managers inspect delivery and payment history, cancel eligible orders and\
+      \ recover refunds without bypassing the independent financial lifecycle."
     acceptance:
-    - "Organizers can manage performances and sales windows."
-    - "Authorized staff can find orders and manage cancellations and refunds."
+    - "Operators can schedule and cancel performances and administer scoped staff\
+      \ access."
+    - "Performance managers can configure sales windows, find orders and cancel active\
+      \ purchases without bypassing payment or refund lifecycles."
+    - "Refund obligations include late captures; pending and failed provider work\
+      \ has safe, attempt-specific recovery."
+    - "Catalog, order and payment-history pages bound their work; payment state and\
+      \ amounts remain visible on mobile."
     createdAt: "2026-09-19T16:40:11.774421Z"
-    updatedAt: "2026-09-19T16:40:11.774421Z"
+    updatedAt: "2026-09-21T20:57:39.292314Z"
     history:
     - at: "2026-09-19T16:40:11.774421Z"
       status: "planned"
       verification: ""
+    - at: "2026-09-21T16:49:43.673609Z"
+      status: "in_progress"
+      verification: ""
+    - at: "2026-09-21T20:57:39.292314Z"
+      status: "done"
+      verification: "Managed Fluxzero tests passed for catalog paging, venue time\
+        \ conversion, sales windows, scoped rights and revocation, admitted-order\
+        \ cancellation refusal, late-capture refunds, failed-refund recovery with\
+        \ duplicate actions, interrupted mail handoff and the combined capture-to-delivery-to-admission\
+        \ journey. In-app browser verified planning, sales-window save, reservation-to-management\
+        \ cancellation, staff grant/use/revocation and mobile order amounts/status.\
+        \ Provider responses in the new journey tests were controlled; no new live\
+        \ merchant qualification is claimed."
   - id: "smarter-seat-choice"
     title: "Find suitable seats together"
     kind: "feature"

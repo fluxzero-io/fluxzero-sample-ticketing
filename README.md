@@ -5,8 +5,10 @@ versioned seating plans, seat and section availability, tickets, payments and in
 [Product code](https://fluxzero.io/product-code/), with separate lifecycles for admission
 rights and financial facts.
 
-**Core, integrations and a responsive customer UI are implemented.** Browse the programme,
+**Core, integrations and responsive customer and organizer workspaces are implemented.** Browse the programme,
 choose seats or a standing section, hold tickets, pay through Stripe and manage your bookings.
+Operators can schedule performances, set sales windows, grant performance access, find and cancel orders,
+and follow retained payment and refund state.
 Payments remain provider independent; Stripe processes and refund attempts stay outside the
 core graph. Luma imports remain an operator action.
 
@@ -53,6 +55,7 @@ external-runtime tests are skipped. The remaining tests use the real SDK through
 ## Explore the product
 
 - [Ticket delivery, wallets and staff admission](docs/delivery.md)
+- [Organizer operations](docs/ui.md#organizer-operations)
 - [Browser flows, authentication and packaging](docs/ui.md)
 - [Domain packages and example tree](docs/packages.md)
 - [Model graph and transaction boundaries](docs/model.md)

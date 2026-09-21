@@ -46,11 +46,11 @@ public final class DemoCatalog {
         var conference = new EventId("future-makers");
         return List.of(
                 new CreateVenue(concertgebouw, new VenueDetails("The Concertgebouw", "Concertgebouwplein 10, 1071 LN",
-                        "Amsterdam", "https://www.concertgebouw.nl/en/contact-en")),
+                        "Amsterdam", "https://www.concertgebouw.nl/en/contact-en", ZoneId.of("Europe/Amsterdam"))),
                 new CreateVenue(tivoli, new VenueDetails("TivoliVredenburg", "Vredenburgkade 11, 3511 WC",
-                        "Utrecht", "https://www.tivolivredenburg.nl/contact/")),
+                        "Utrecht", "https://www.tivolivredenburg.nl/contact/", ZoneId.of("Europe/Amsterdam"))),
                 new CreateVenue(fabrique, new VenueDetails("DeFabrique", "Westkanaaldijk 7, 3542 DA",
-                        "Utrecht", "https://www.defabrique.nl/en/contact")),
+                        "Utrecht", "https://www.defabrique.nl/en/contact", ZoneId.of("Europe/Amsterdam"))),
                 new CreateHall(main, concertgebouw, new HallDetails("Main Hall")),
                 new RegisterSeatingPlan(MAIN_PLAN, main, new SeatingPlanDetails("Demo seated", "1", NOTICE, List.of(
                         new Section("stalls", "Demo stalls", AdmissionMode.RESERVED_SEATING, 4,

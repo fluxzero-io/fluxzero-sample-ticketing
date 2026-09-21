@@ -12,6 +12,7 @@ import io.fluxzero.ticketing.booking.api.model.SectionAvailability;
 import io.fluxzero.ticketing.catalog.api.PerformanceId;
 import io.fluxzero.ticketing.catalog.api.model.AdmissionMode;
 import io.fluxzero.ticketing.catalog.api.model.Performance;
+import io.fluxzero.ticketing.catalog.api.model.SalesWindow;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.List;
@@ -30,7 +31,8 @@ public record GetAvailability(@NotNull PerformanceId performanceId) implements R
         require(performance != null, "Unknown performance");
         var plan = io.fluxzero.ticketing.catalog.CatalogRules.plan(performance);
         Instant now = Fluxzero.currentTime();
-        boolean bookable = !performance.cancelled() && now.isBefore(performance.details().startsAt());
+        var salesWindow = Fluxzero.loadModel(performanceId, SalesWindow.class).get();
+        boolean bookable = !performance.cancelled() && SalesWindow.openAt(salesWindow, performance, now);
         List<SectionAvailability> sections = plan.details().sections().stream().map(s -> {
             int remaining = 0;
             if (bookable) {
@@ -51,6 +53,8 @@ public record GetAvailability(@NotNull PerformanceId performanceId) implements R
             return new SectionAvailability(s.id(), s.name(), s.mode(), performance.details().sectionPrices().get(s.id()), remaining);
         }).toList();
         return new Availability(performanceId, plan.hallId(), performance.details(),
-                plan.details().layoutNotice(), bookable, sections);
+                plan.details().layoutNotice(), bookable, SalesWindow.statusAt(salesWindow, performance, now),
+                salesWindow == null ? null : salesWindow.opensAt(),
+                salesWindow == null ? performance.details().startsAt() : salesWindow.closesAt(), sections);
     }
 }

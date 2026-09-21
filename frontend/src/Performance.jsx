@@ -229,7 +229,9 @@ export function Performance({ id, session }) {
                 ? "Checking availability…"
                 : availability.bookable
                   ? "Live availability"
-                  : "Booking closed"}
+                  : availability.salesStatus === "SCHEDULED"
+                    ? `Sales open ${new Intl.DateTimeFormat("en-GB", {dateStyle:"medium", timeStyle:"short", timeZone:show.performance.details.timeZone}).format(new Date(availability.salesOpensAt))}`
+                    : "Sales closed"}
             </span>
           </div>
           <ErrorMessage error={problem} />

@@ -8,6 +8,8 @@
   time-based release, ticket issuance/voiding, payment attempts/capture/refund recording,
   invoice drafting/issuance/voiding and credit notes.
 - Paged programme discovery, seat selection, reservations and owner-only purchase HTTP endpoints.
+- Organizer workspace for scheduling, venue-local sales windows, scoped grants, bounded order
+  search, cancellation and retained refund progress.
 - Responsive React UI, OIDC/PKCE sign-in and shared opaque browser sessions.
 - Provider-independent payment facts, stateful Stripe checkout/refund/reconciliation and
   verified callback handling, plus atomic Luma event import with local inventory ownership.
@@ -52,6 +54,10 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 | `IntegrationRecoveryTest` | Fresh client recovers adapter intent and imported source, then completes a pending refund without another POST |
 | `ModelDeletionTest` | Owning-parent cascade, preserved values after logical deletion, reservation deadline cleanup and explicit erasure of selected Model histories |
 | `RuntimeRecoveryTest` | New WebSocket client and application load models and a pending deadline written to the managed runtime by the previous application, without reseeding |
+| `AdmissionTest`, `TicketPassTest`, `AdmissionEndpointTest` | Current signed credentials, PDF/QR delivery, atomic one-time entry, cancellation boundaries and encoded ticket routes |
+| `ConfirmationTest`, `WalletTest`, `StaffAccessTest` | Retained email delivery, signed wallet artifacts and revocable performance-scoped staff rights |
+| `OrganizerOperationsTest` | Sales-window boundaries, scheduling choices, bounded manager access, order lookup, cancellation and immediate revocation |
+| `AutomaticRefundTest` | A core refund obligation starts the already-bound Stripe process without coupling payment state to Stripe |
 
 The race test delays transport to the real SDK store; it does not implement substitute
 booking logic. Time is fixed in local fixtures. The network test uses a clock aligned with
@@ -84,6 +90,10 @@ The counter is deliberately a contention boundary. The section overview uses ind
 These reads are advisory; reservation commits still enforce ownership and exact capacity.
 The selected immutable seating plan is still loaded as one Model; it is not a separate paged
 layout store.
+Organizer performance and order lists fetch at most 21 documents to return a 20-row page.
+Order details load only the selected reservation graph. Scheduling choices are capped at one
+hundred events and one hundred seating plans; they traverse each of at most one hundred venue
+graphs because halls and immutable plans deliberately have no search documents.
 
 Local qualification checks commit scope after 100 and 1,000 historical reservations, concurrent
 groups competing for capacity, expiry/capture races and cancellation over multiple search pages.
@@ -111,11 +121,12 @@ subscription is active. Controlled Luma contract tests remain available.
 
 Implemented: public programme/availability reads, authenticated customer reservations and
 checkout, signed provider webhooks, owner ticket/billing views, OpenAPI discovery and a
-responsive customer interface. Holds, tickets and payment/refund status remain distinct.
+responsive customer interface. The organizer workspace schedules performances, manages sales
+windows and grants, searches and cancels orders, and exposes refund progress. Holds, tickets and payment/refund status remain distinct.
 See [UI setup and boundaries](ui.md). Billing documents display when issued through the billing
 API; the customer UI does not create or rewrite invoices.
 
-Production merchant qualification, deployment, operator screens, admission scanning and
+Production merchant qualification, deployment, organizer tenancy, offline/camera admission and
 production load qualification remain future work. See the [functional capability inventory](product-capabilities.md)
 for the remaining customer and operator workflows. Nothing is published or deployed.
 

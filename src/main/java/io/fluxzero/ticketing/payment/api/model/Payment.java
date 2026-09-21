@@ -3,6 +3,7 @@ package io.fluxzero.ticketing.payment.api.model;
 import io.fluxzero.sdk.modeling.Alias;
 import io.fluxzero.sdk.modeling.EntityId;
 import io.fluxzero.sdk.modeling.Model;
+import io.fluxzero.sdk.modeling.ModelPersistence;
 import io.fluxzero.sdk.modeling.Parent;
 import io.fluxzero.ticketing.booking.api.ReservationId;
 import io.fluxzero.ticketing.payment.api.PaymentId;
@@ -10,7 +11,7 @@ import java.time.Instant;
 import lombok.With;
 
 /** A payment attempt with retained capture/refund facts, independently of admission rights. */
-@Model
+@Model(persistence = {ModelPersistence.EVENT_SOURCED, ModelPersistence.DOCUMENT})
 @With
 public record Payment(@EntityId PaymentId paymentId,
                       @Parent(pathInParent = "payments") ReservationId reservationId,

@@ -23,9 +23,16 @@
    its ticket statuses finish updating. New payment and invoice actions are blocked immediately.
    Partial cancellation and commercial cancellation windows need explicit policies before launching a real service. Online admission is one-time; a customer cannot cancel a booking after any ticket in it has been admitted.
 6. Availability queries are advisory. `GetAvailability` exposes section names, remaining
-   capacity, prices and the selected seating plan’s source/demonstration notice. `GetSeats` returns a stable page
+   capacity, prices, sales status and the selected seating plan’s source/demonstration notice. `GetSeats` returns a stable page
    of up to 100 seats in a chosen section, including each seat's availability, row and number.
    These queries do not reserve anything. Selection must be submitted to `ReserveTickets`.
+7. A performance without an explicit sales window accepts new reservations until start. A configured
+   window uses an inclusive opening and exclusive closing instant, and must close by performance
+   start. Closing sales refuses new holds but does not invalidate an existing hold or shorten its deadline.
+8. Global operators schedule and cancel performances and administer staff grants. A scoped
+   `MANAGE` grant can change the sales window, search that performance's orders and cancel an active
+   order. `ADMISSION` alone never exposes orders. Revocation deletes current authority while retaining
+   its event-sourced history.
 
 ## Payments are financial facts
 
@@ -59,6 +66,9 @@ Marking money as `REFUND_REQUIRED` does not claim that a bank transfer happened.
 reference, amount, timestamp and earlier failure reason remain after refund. Partial refunds,
 chargebacks and multiple currencies are later extensions. Phase 2 supplies provider
 reconciliation for the supported full-payment/refund flow.
+When a bound Stripe payment enters `REFUND_REQUIRED`, the Stripe adapter starts one stable durable
+refund attempt automatically. Other payment providers are untouched and can react with their own
+adapter. Provider acceptance, pending state and completed repayment remain separate facts.
 
 ## Invoicing is a separate lifecycle
 
@@ -94,6 +104,8 @@ The current product exposes cancellation and financial correction, without delet
 | Late success after resale | Expire, reserve same seats for another customer, record original success | New hold unchanged; original payment requires refund |
 | Failed attempt followed by two captures | Fail first, start second, capture second, capture first | One purchase; surplus capture requires refund |
 | Cancel invoiced purchase | `CancelReservation`, `CreditInvoice`, `ConfirmRefund` | Voided tickets, retained invoice plus credit, retained refunded payment |
+| Organizer closes sales | `ConfigureSalesWindow`, then `ReserveTickets` | New hold refused; an earlier unexpired hold may still enter payment |
+| Manager cancels a paid order | `CancelManagedReservation` | Inventory released, tickets void, capture retained and refund process started |
 
 The tests execute these messages through Fluxzero's command/query gateways and `TestFixture`.
 There is no alternative in-memory implementation of this domain.

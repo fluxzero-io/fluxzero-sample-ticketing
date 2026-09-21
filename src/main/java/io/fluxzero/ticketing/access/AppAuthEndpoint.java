@@ -9,6 +9,8 @@ import io.fluxzero.idp.client.TokenValidationException;
 import io.fluxzero.idp.client.TokenValidationRequest;
 import io.fluxzero.idp.client.TokenValidators;
 import io.fluxzero.sdk.Fluxzero;
+import io.fluxzero.ticketing.access.api.model.TicketingUser;
+import io.fluxzero.ticketing.access.privateapi.RecordSignedInPerson;
 import io.fluxzero.sdk.tracking.handling.authentication.NoUserRequired;
 import io.fluxzero.sdk.web.HandleGet;
 import io.fluxzero.sdk.web.HandlePost;
@@ -46,6 +48,9 @@ public class AppAuthEndpoint {
             var tokens = new OidcClient(config).exchangeCode(code, pending.get().codeVerifier());
             var claims = TokenValidators.validate(TokenValidationRequest.idToken(tokens.idToken(), config).withNow(Fluxzero.currentTime()));
             if (claims.subject() == null || claims.subject().isBlank() || claims.subject().startsWith("$")) return failed("access");
+            String name = claims.name() == null || claims.name().isBlank() ? claims.subject() : claims.name();
+            TicketingUser.SYSTEM.run(() -> Fluxzero.sendCommandAndWait(new RecordSignedInPerson(claims.subject(), name)));
+            Fluxzero.commit().join();
             BrowserSessions.delete(request.getMetadata());
             var expires = Fluxzero.currentTime().plus(Duration.ofHours(8));
             if (claims.expiresAt().isBefore(expires)) expires = claims.expiresAt();

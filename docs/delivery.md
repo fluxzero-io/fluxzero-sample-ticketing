@@ -7,14 +7,20 @@ After an accepted payment, each ticket has a signed admission code tied to its t
 1. Start the managed environment with `fz dev`. Mailpit must be installed (`brew install mailpit` on macOS); the environment owns its process and ports. It captures mail locally and has no outgoing relay.
 2. Sign in as any local customer, reserve tickets, enter an optional confirmation email and complete a Stripe **test** payment using the [sandbox profile](integrations.md#stripe-sandbox-development-profile).
 3. Open **My tickets**, then **Open ticket**. Download the PDF or show its QR at the entrance. The confirmation contains an authenticated link to the booking, not a bearer link to someone else's tickets.
-4. Sign in as `demo-organizer` and open **Backstage**. Choose a performance and open its entrance. A connected QR scanner can type the code and press Enter; pasting the code is also supported. Camera scanning is not implemented.
+4. Sign in as `demo-organizer` and open **Operations**. Choose a performance, open its entrance desk and open the gate. A connected QR scanner can type the code and press Enter; pasting the code is also supported. Camera scanning is not implemented.
 5. Scan once to admit. A second scan, a cancelled ticket, a ticket for another performance, a closed entrance or an unauthorized staff member is rejected.
 
 Find Mailpit's current URL in the managed service status. The mail workflow retains intent, records provider acceptance, retries temporary failures with the same Message-ID and stops automatic retries after ten failed attempts. Mailpit deduplicates that identity while the message remains in its mailbox. This is not a claim of exactly-once delivery across mailbox deletion or replacement. Production email delivery needs a configured provider adapter.
 
 ## Staff rights
 
-`StaffAccess` belongs to one performance and one verified subject. `ADMISSION` allows checking tickets; `MANAGE` allows opening and closing its entrance. Grants and revocations retain history. Commands read the particular grant in their atomic decision, so a previous screen or a stale search result does not confer authority.
+The initial transition-to-delivery handoff has its own retrying consumer: a failed publication
+does not acknowledge the reservation event. Managers can inspect delivery on the order detail
+and request another attempt after a delivery problem. Admission-only staff see **Entrance**;
+ordinary customers receive no staff navigation. Operators select staff from people who have
+already signed in, inspect their current grants and revoke them from the same workspace.
+
+`StaffAccess` belongs to one performance and one verified subject. `ADMISSION` allows checking tickets; `MANAGE` allows opening and closing its entrance and operating that performance's sales window and orders. Revocation logically deletes current authority while event-sourced history remains. Commands read the particular grant in their atomic decision, so a previous screen or a stale search result does not confer authority.
 
 The application owner can configure a comma-separated allowlist with `ticketing.operator-subjects` (`TICKETING_OPERATOR_SUBJECTS`). Operators can administer grants through `SetStaffAccess`. The default is empty. Only the committed **local development profiles** grant `demo-organizer` that role. Never reuse a development identity provider or the demonstration admission key for deployment. Payment and billing privileges remain reserved for trusted internal work.
 

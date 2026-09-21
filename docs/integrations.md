@@ -181,10 +181,14 @@ current provider state. They do not create duplicate tickets or count pending re
 completed. A successful payment after expiry records captured funds as `REFUND_REQUIRED`;
 resold seats remain with their new owner.
 
-Refund execution starts only after `BeginStripeRefund`; the process does not automatically
-authorize refunds merely because the core requires one. Verified notifications or explicit
-reconciliation refresh pending outcomes; there is no polling loop. Refund-required state is retained until then. A refund does not automatically
-rewrite an issued invoice; the billing commands still own credit notes.
+`StripeRefundRequests` observes the committed transition into `REFUND_REQUIRED`, including late
+captures, and sends `BeginStripeRefund` with a stable first-attempt identity for bound Stripe
+payments. The provider process independently authorizes and executes the refund. Verified
+notifications or explicit reconciliation refresh pending provider outcomes; status polling in
+the UI reads local state only. Managers can check pending refunds, resume interrupted work and
+retry a definitively failed refund from the order detail. Recovery targets the displayed attempt,
+and a repeated retry keeps the same next-attempt identity. A refund does not automatically rewrite
+an issued invoice; the billing commands still own credit notes.
 
 ## Luma import
 

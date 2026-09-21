@@ -14,6 +14,7 @@ import io.fluxzero.ticketing.payment.stripe.privateapi.StripePaymentRequested;
 import io.fluxzero.ticketing.payment.stripe.privateapi.StripeProcessEvents.*;
 import io.fluxzero.ticketing.payment.stripe.privateapi.StripeRefundEvents.*;
 import io.fluxzero.ticketing.payment.stripe.privateapi.StripeWebhookReceived;
+import io.fluxzero.ticketing.payment.stripe.privateapi.StripeRefundId;
 import io.fluxzero.ticketing.payment.stripe.privateapi.model.StripeProblem;
 import java.time.Instant;
 import lombok.With;
@@ -30,10 +31,10 @@ public record StripePaymentProcess(@EntityId @Association PaymentId paymentId, M
                                    String intentId, String providerStatus, String chargeId, Money captured,
                                    boolean captureRecorded, boolean cancellationRecorded,
                                    RefundRequested refundAuthorization, boolean refundDispatched,
-                                   StripeProblem problem) {
+                                   StripeProblem problem, StripeRefundId latestRefundId) {
     @HandleEvent static StripePaymentProcess start(StripePaymentRequested event) {
         return new StripePaymentProcess(event.paymentId(), event.amount(), event.account(), event.operationKey(), event.requestedAt(),
-                event.operationKey(), null, null, null, null, null, false, false, null, false, null);
+                event.operationKey(), null, null, null, null, null, false, false, null, false, null, null);
     }
     @HandleEvent StripePaymentProcess alreadyStarted(StripePaymentRequested event) {
         require(amount.equals(event.amount()) && account.equals(event.account()), "Checkout request conflicts with the existing process");
@@ -72,7 +73,7 @@ public record StripePaymentProcess(@EntityId @Association PaymentId paymentId, M
         require(refundAuthorization == null, "An unresolved refund attempt already exists");
         require(chargeId != null && account.reference(chargeId).equals(event.captureReference()), "Refund identifies another capture");
         require(captured.equals(event.amount()), "Refund amount differs from the capture");
-        return withRefundAuthorization(event).withRefundDispatched(false);
+        return withRefundAuthorization(event).withRefundDispatched(false).withLatestRefundId(event.refundId());
     }
     @HandleEvent StripePaymentProcess dispatched(RefundAuthorized event) {
         return refundAuthorization != null && refundAuthorization.refundId().equals(event.refundId())

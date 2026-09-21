@@ -40,13 +40,14 @@ public abstract class TicketingTestSupport {
     protected static final Actor OPERATOR = new Actor("operator", Set.of("OPERATOR"));
     protected static final Actor PAYMENTS = new Actor("payments", Set.of("PAYMENTS"));
     protected static final Actor BILLING = new Actor("billing", Set.of("BILLING"));
+    protected static final Actor IDENTITY = new Actor("identity", Set.of("IDENTITY"));
     public record Actor(String id, Set<String> roles) implements User {
         @Override public boolean hasRole(String role) { return roles.contains(role); }
     }
     protected static FluxzeroBuilder builder() {
         return DefaultFluxzero.builder().registerUserProvider(new AbstractUserProvider(Actor.class) {
             @Override public User getUserById(Object id) {
-                return java.util.stream.Stream.of(ALICE, BOB, OPERATOR, PAYMENTS, BILLING)
+                return java.util.stream.Stream.of(ALICE, BOB, OPERATOR, PAYMENTS, BILLING, IDENTITY)
                         .filter(a -> a.id().equals(id.toString())).findFirst().orElse(null);
             }
             @Override public User getSystemUser() { return new Actor("system", Set.of("OPERATOR", "PAYMENTS", "BILLING")); }

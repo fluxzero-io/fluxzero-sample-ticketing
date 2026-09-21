@@ -6,6 +6,7 @@ erDiagram
     HALL ||--o{ SEATING_PLAN : configures
     SEATING_PLAN ||--o{ PERFORMANCE : stages
     EVENT ||--o{ PERFORMANCE : occurs_as
+    PERFORMANCE ||--o| SALES_WINDOW : sells_during
     PERFORMANCE ||--o{ RESERVATION : receives
     PERFORMANCE ||--o{ SEAT_INVENTORY : allocates
     PERFORMANCE ||--o{ SECTION_INVENTORY : allocates
@@ -33,6 +34,7 @@ require a child to remain active after its parent is deleted.
 | SeatingPlan | `SeatingPlanId`, hall + immutable configuration revision | Registered independently; changed geometry/capacity requires a new ID |
 | Event | `EventId`, programme title and description | Shared by multiple performances |
 | Performance | `PerformanceId`, event + seating plan + instant + time zone | Bookable until start; may be cancelled |
+| SalesWindow | Performance-scoped identity, opening and closing instants | Independently revised; gates new holds without invalidating existing ones |
 | SeatInventory | `(performance, section, seat)` | One current owner, deadline and sold flag |
 | SectionInventory | `(performance, section)` | Sold count and active deadline counts; at most 900 second buckets |
 | Reservation | `ReservationId`, authenticated customer and complete priced selection | Held → confirmed, expired or cancelled; confirmed → cancelled |
@@ -105,7 +107,7 @@ remain separate future work.
 
 ## Atomic business decisions
 
-`ReserveTickets` validates the selected immutable plan and performance gate, then returns a normalized
+`ReserveTickets` validates the selected immutable plan, performance gate and current `SalesWindow`, then returns a normalized
 `ReservationHeld` plus at most twelve inventory changes. Fluxzero commits the entire ordered
 set atomically. No retained reservation collection or search result decides the sale. A failed
 last selection rolls back every earlier selection. Different seats have independent inventory
@@ -124,9 +126,8 @@ replacement allocation commits after expiry, the shared inventory conflict force
 the late capture becomes a refund obligation. A historical provider timestamp cannot revive it.
 
 Normalized events have automatic command handling disabled. Customers cannot submit an
-acceptance decision or an inventory delta as a standalone command. Original event applies
-remain available to reconstruct earlier business history; that does not migrate old live holds
-into the new inventory. See the storage boundary below.
+acceptance decision or an inventory delta as a standalone command. Current events reconstruct
+business history; no historical schema migration is included. See the storage boundary below.
 
 `CancelReservation` releases at most twelve selections, voids at most twelve tickets and marks
 its one paying attempt for refund. It does not scan the history of failed payment attempts.
@@ -153,6 +154,12 @@ without an application observer. Already delivered commands still check current 
 a missing reservation is a no-op. Availability and payment rules check time themselves, so
 scheduler delays never extend a hold.
 
+An absent `SalesWindow` means sales are open until performance start, preserving a small useful
+default for newly scheduled performances. `ConfigureSalesWindow` creates or revises the single
+owned window and accepts venue-local input through the organizer endpoint. Closing sales blocks
+new reservations immediately. It does not cancel an already accepted hold, whose own stored
+deadline remains authoritative for checkout.
+
 ## Current financial relationships
 
 `Payment.pendingReservation()` exposes an alias only while the attempt is `PENDING`.
@@ -168,7 +175,8 @@ does not remove a newer attempt's alias.
 ## Integration transactions
 
 `StripePaymentProcess` and `StripeRefundProcess` use `@Stateful` execution memory outside this graph.
-The payment process retains payment correlation, pending work and one refund authorization.
+The payment process retains payment correlation, pending work, one refund authorization and
+the identity of its latest refund attempt for exact operational lookup.
 Each refund attempt has its own document, correlation and recovery status; old attempts never
 accumulate inside the payment document. Verified webhooks become durable
 internal events. A document observer executes committed intent through local HTTP commands
@@ -193,3 +201,27 @@ reservation and invoice events still preserve their financial and business histo
 `Gate` is an independently changed companion of a performance. `StaffAccess` is an independent, searchable grant for one subject and performance. `CheckIn` is an immutable companion of a ticket: its existence is the admission fact, so two scanners cannot both create it. `ReceiptContact` is an independently updated companion of a reservation.
 
 Confirmation delivery is a separate `@Stateful` process outside this graph. It observes the exact reservation transition through event-bound `Graph<Reservation>.previous()`, then reconciles retained delivery intent. Mail acceptance is neither payment success nor admission. PDF and wallet adapters read owned ticket data; their signing material and provider formats never become core Models. See [delivery and admission](delivery.md).
+
+## Organizer operations
+
+Global `OPERATOR` identities schedule and cancel performances and administer grants. A
+performance-scoped `MANAGE` grant permits sales-window changes, bounded order search and order
+cancellation for that performance only; `ADMISSION` remains separate. `CancelManagedReservation`
+uses the same reservation cancellation transition as customer and performance cancellation, so
+inventory, tickets and refund obligations cannot diverge by entry point. Individually admitted
+orders cannot be cancelled from the support desk. Whole-performance cancellation remains a
+separate operator decision with its own settlement lifecycle.
+
+Stripe observes entry into `PaymentStatus.REFUND_REQUIRED` through event-bound `Graph<Payment>`
+and `previous()`. This includes a rejected late capture as well as cancellation. It starts a
+stable, durable full-refund attempt only for payments already bound to a Stripe process.
+Support can check a pending attempt, resume failed execution or start one new attempt after
+terminal provider failure. The displayed attempt identifies the action; repeated clicks cannot
+create additional attempts. Provider details stay in the integration, outside the core graph.
+
+`SeatingPlan` and `Payment` expose searchable documents alongside their event history. The
+organizer catalog directly pages events and plans; it never discovers plans by walking venue
+descendants. An order-list row uses exact identities and bounded existence queries; the detail
+pages payment history separately. Admission and ticket reads remain bounded by the twelve-ticket
+reservation limit. `Person` is a document of the verified sign-in name and subject, used only for
+display and staff selection. It grants no authority; `StaffAccess` owns the actual permissions.
