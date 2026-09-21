@@ -410,13 +410,16 @@ milestones:
   - id: "box-office"
     title: "Sell tickets at the box office"
     kind: "feature"
-    status: "done"
-    description: ""
+    status: "in_progress"
+    description: "Cash sale, transfer and refund journeys are verified and committed.\
+      \ Broader order-detail verification exposed an SDK alias-fallback defect when\
+      \ reading an absent BoxOfficeReceipt for an online payment; qualification remains\
+      \ open until that boundary is corrected."
     acceptance:
     - "Authorized staff can sell from the same stock as online customers."
     - "Sales retain payment, ticket and financial history."
     createdAt: "2026-09-21T21:17:57.561520Z"
-    updatedAt: "2026-09-21T22:23:55.853909Z"
+    updatedAt: "2026-09-21T22:35:57.404403Z"
     history:
     - at: "2026-09-21T21:17:57.561520Z"
       status: "planned"
@@ -429,20 +432,29 @@ milestones:
       verification: "Twelve synchronous/asynchronous TestFixture scenarios passed.\
         \ Browser verified a cash sale using shared stock, retained receipt, cancellation,\
         \ and separately recorded offline refund."
+    - at: "2026-09-21T22:35:57.404403Z"
+      status: "in_progress"
+      verification: ""
   - id: "partial-refunds"
     title: "Refund part of an order"
     kind: "feature"
-    status: "planned"
-    description: ""
+    status: "in_progress"
+    description: "Core work is in progress with eight passing sync/async behavior\
+      \ scenarios. End-to-end qualification is blocked by the SDK companion/alias\
+      \ lookup defect recorded in the K23 dossier; the unfinished changes are not\
+      \ committed."
     acceptance:
     - "Staff can refund eligible parts of a purchase."
     - "Total refunds cannot exceed captured money and affected admission rights are\
       \ explicit."
     createdAt: "2026-09-21T21:17:57.567733Z"
-    updatedAt: "2026-09-21T21:17:57.567733Z"
+    updatedAt: "2026-09-21T22:35:57.427755Z"
     history:
     - at: "2026-09-21T21:17:57.567733Z"
       status: "planned"
+      verification: ""
+    - at: "2026-09-21T22:25:36.201948Z"
+      status: "in_progress"
       verification: ""
   - id: "ticket-transfers"
     title: "Transfer a ticket to another visitor"
