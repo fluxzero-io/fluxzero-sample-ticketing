@@ -6,6 +6,7 @@ import { Discover } from "./Discover";
 import { Performance } from "./Performance";
 import { Purchase } from "./Purchase";
 import { MyTickets } from "./MyTickets";
+import { TicketPass, AdmissionDesk, StaffPerformances } from "./Admission";
 
 export function App() {
   const [route, setRoute] = useState(location.hash.slice(1)),
@@ -66,6 +67,7 @@ export function App() {
           >
             My tickets
           </a>
+          {session?.authenticated && <a className={page === "staff" || page === "admission" ? "active" : ""} href="#/staff">Backstage</a>}
         </nav>
         {session?.authenticated ? (
           <button className="account" onClick={logout} aria-label="Sign out">
@@ -85,6 +87,12 @@ export function App() {
           <Performance key={id} id={id} session={session} />
         ) : page === "reservation" ? (
           <Purchase key={id} id={id} />
+        ) : page === "ticket" ? (
+          <TicketPass key={id} id={id} />
+        ) : page === "staff" ? (
+          <StaffPerformances />
+        ) : page === "admission" ? (
+          <AdmissionDesk key={id} id={id} />
         ) : page === "tickets" ? (
           <MyTickets session={session} />
         ) : (

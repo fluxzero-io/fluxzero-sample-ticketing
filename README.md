@@ -27,8 +27,8 @@ identity; no production credentials are needed to browse and reserve.
 The executable product scenarios are in
 [`TicketingTest`](src/test/java/io/fluxzero/ticketing/booking/TicketingTest.java).
 
-This development branch pins **`2.0.0-7604840dad0-SNAPSHOT`**, built locally from SDK commit
-`7604840dad0`, with its matching testserver and proxy. It includes fixes required by the
+This development branch pins **`2.0.0-dd799f2d8ca-SNAPSHOT`**, built locally from SDK commit
+`dd799f2d8ca`, with its matching testserver and proxy. It includes fixes required by the
 recovery, concurrency and compressed HTTP response scenarios. The snapshot must be installed in the local Maven
 repository before `fz dev`; it is not a published dependency. Before publishing the example,
 replace it with a released SDK containing those fixes. The CLI starter was generated with
@@ -52,6 +52,7 @@ external-runtime tests are skipped. The remaining tests use the real SDK through
 
 ## Explore the product
 
+- [Ticket delivery, wallets and staff admission](docs/delivery.md)
 - [Browser flows, authentication and packaging](docs/ui.md)
 - [Domain packages and example tree](docs/packages.md)
 - [Model graph and transaction boundaries](docs/model.md)

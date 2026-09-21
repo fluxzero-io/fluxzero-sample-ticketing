@@ -97,6 +97,6 @@ configuration and real-money payments remain outside the local example.
 ## Remaining product work
 
 Operator tooling, invoice issuance policy and downloadable legal invoice documents, refunds as
-customer self-service, seat-plan editing, ticket transfer/resale, admission scanning, deployment
+customer self-service, seat-plan editing, ticket transfer/resale, camera/offline admission scanning, deployment
 hardening and load qualification remain separate work. The next planned step is a domain-specific
 load test covering on-sale contention and delayed provider confirmations through these flows.

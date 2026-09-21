@@ -101,8 +101,11 @@ class StripeRefundProcessTest extends StripeTestSupport {
             case "payment_intent" -> remote.refund.put(field, "pi_other");
             case "metadata" -> ((ObjectNode) remote.refund.get(field)).put("operation_key", "other");
         }
-        fixture.whenCommandByUser(PAYMENTS, new RefreshStripeRefund(P, "first", null)).expectSuccessfulResult()
-                .expectNoErrors().expectThat(f -> assertNotNull(StripeTestSupport.refundProcess("first").problem()))
+        var result = fixture.whenCommandByUser(PAYMENTS, new RefreshStripeRefund(P, "first", null)).expectSuccessfulResult();
+        // Currency is rejected by the wire decoder; the fixture observes that handled nested query failure.
+        if (field.equals("currency")) result.expectError(io.fluxzero.sdk.tracking.handling.IllegalCommandException.class);
+        else result.expectNoErrors();
+        result.expectThat(f -> assertNotNull(StripeTestSupport.refundProcess("first").problem()))
                 .expectThat(f -> assertEquals(PaymentStatus.REFUND_REQUIRED, payment().status()));
     }
 

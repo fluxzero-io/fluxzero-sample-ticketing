@@ -50,7 +50,7 @@ class BrowserAccessTest extends TicketingTestSupport {
     void opaqueCookieControlsOnlyItsOwnersBookingsAndExpires(boolean async) {
         var fixture = browser(async);
         String token = fixture.whenApplying(f -> BrowserSessions.create("alice", NOW.plusSeconds(60))).getResult(String.class);
-        fixture.whenWebRequest(WebRequest.post("/api/reservations").payload(seats(R,"A1"))
+        fixture.whenWebRequestByUser(BOB, WebRequest.post("/api/reservations").payload(seats(R,"A1"))
                         .header("Cookie", "ticketing_session=" + token).header("Origin", BASE)
                         .header("X-Ticketing-Request", "1").build())
                 .expectWebResult(r -> r.getStatus() == 200)

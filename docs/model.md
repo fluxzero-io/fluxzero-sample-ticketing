@@ -9,7 +9,11 @@ erDiagram
     PERFORMANCE ||--o{ RESERVATION : receives
     PERFORMANCE ||--o{ SEAT_INVENTORY : allocates
     PERFORMANCE ||--o{ SECTION_INVENTORY : allocates
+    PERFORMANCE ||--o| GATE : admits_through
+    PERFORMANCE ||--o{ STAFF_ACCESS : authorizes
+    RESERVATION ||--o| RECEIPT_CONTACT : addresses
     RESERVATION ||--o{ TICKET : issues
+    TICKET ||--o| CHECK_IN : admits_once
     RESERVATION ||--o{ PAYMENT : has_attempts
     RESERVATION ||--o{ INVOICE : bills
     INVOICE ||--o| CREDIT_NOTE : corrects
@@ -183,3 +187,9 @@ This unpublished reference app supports the current schema only. Use a fresh dem
 after incompatible changes; no namespace is migrated or erased automatically. Compatibility
 aliases, upcasters and old-schema replay handlers are intentionally absent. Current payment,
 reservation and invoice events still preserve their financial and business history.
+
+## Ticket delivery and admission
+
+`Gate` is an independently changed companion of a performance. `StaffAccess` is an independent, searchable grant for one subject and performance. `CheckIn` is an immutable companion of a ticket: its existence is the admission fact, so two scanners cannot both create it. `ReceiptContact` is an independently updated companion of a reservation.
+
+Confirmation delivery is a separate `@Stateful` process outside this graph. It observes the exact reservation transition through event-bound `Graph<Reservation>.previous()`, then reconciles retained delivery intent. Mail acceptance is neither payment success nor admission. PDF and wallet adapters read owned ticket data; their signing material and provider formats never become core Models. See [delivery and admission](delivery.md).

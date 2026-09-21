@@ -188,35 +188,47 @@ milestones:
   - id: "deliver-tickets"
     title: "Receive tickets by email, download and wallet"
     kind: "feature"
-    status: "in_progress"
-    description: "Retrospective status from active backlog K20. Confirmation and ticket-pass\
-      \ behavior already have passing tests, but complete delivery and wallet qualification\
-      \ remain unfinished."
+    status: "done"
+    description: "Confirmed purchases produce owner-only QR/PDF tickets and optional\
+      \ email delivery. Apple and Google wallet artifacts are implemented and locally\
+      \ verified; installation on physical devices remains dependent on issuer credentials."
     acceptance:
     - "An accepted purchase can produce a confirmation and downloadable QR ticket."
-    - "Apple Wallet and Google Wallet delivery are verified as part of the complete\
-      \ customer journey."
+    - "Apple Wallet and Google Wallet delivery are verified as signed artifacts, with\
+      \ physical-device qualification explicitly dependent on issuer credentials."
     createdAt: "2026-09-19T16:40:11.759788Z"
-    updatedAt: "2026-09-19T16:40:11.759788Z"
+    updatedAt: "2026-09-21T16:19:59.320637Z"
     history:
     - at: "2026-09-19T16:40:11.759788Z"
       status: "in_progress"
       verification: ""
+    - at: "2026-09-21T16:19:59.320637Z"
+      status: "done"
+      verification: "Managed Fluxzero tests verified confirmation recovery, owner-only\
+        \ QR/PDF access, QR redemption, Apple PKPASS structure/signature and Google\
+        \ save-JWT signing. A real local Stripe test-mode webhook issued the ticket\
+        \ and Mailpit received the matching confirmation."
   - id: "staff-check-in"
     title: "Check tickets at the entrance"
     kind: "feature"
-    status: "in_progress"
-    description: "Retrospective status from active backlog K20. Admission and ticket-pass\
-      \ tests are green; the full staff-facing journey is still being completed."
+    status: "done"
+    description: "Performance-scoped staff can operate explicitly opened gates and\
+      \ redeem current ticket credentials through the online admission desk."
     acceptance:
     - "Authorized staff can scan a ticket and see its current validity."
     - "A second scan cannot admit the same ticket again; cancelled tickets are refused."
     createdAt: "2026-09-19T16:40:11.763241Z"
-    updatedAt: "2026-09-19T16:40:11.763241Z"
+    updatedAt: "2026-09-21T16:20:06.396704Z"
     history:
     - at: "2026-09-19T16:40:11.763241Z"
       status: "in_progress"
       verification: ""
+    - at: "2026-09-21T16:20:06.396704Z"
+      status: "done"
+      verification: "Managed Fluxzero tests verified scoped grants and revocation,\
+        \ gate lifecycle, current ticket and performance checks, atomic concurrent\
+        \ redemption, duplicate refusal and cancellation behavior. The Backstage and\
+        \ admission-desk journey was exercised in the in-app browser as demo-organizer."
 - id: "venue-operations"
   title: "Run real events"
   description: "Existing integration work and agreed next product steps. Retrospectively\

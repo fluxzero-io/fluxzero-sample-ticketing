@@ -1154,3 +1154,21 @@ dialog p {
 .row-filter { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; color: var(--muted); font-size: 13px; }
 .row-filter select { background: #222629; color: #eee; border: 1px solid var(--line); border-radius: 4px; padding: 10px; }
 .layout-note a { text-decoration: underline; text-underline-offset: 3px; }
+
+.ticket-pass, .admission-desk { padding-top: 3rem; padding-bottom: 5rem; max-width: 720px; }
+.entry-ticket { background: #fff; color: #101111; padding: 2rem; margin: 2rem 0; border-radius: 12px; text-align: center; }
+.ticket-qr { width: min(100%, 280px); aspect-ratio: 1; image-rendering: pixelated; }
+.entry-ticket .primary { display: inline-flex; margin-top: 1rem; }
+.admission-desk form { display: grid; gap: 1rem; margin: 2rem 0; }
+.admission-desk input { min-height: 54px; padding: 1rem; width: 100%; }
+.scan-accepted { background: #d5ff40; color: #101111; padding: 2rem; font-size: 2rem; font-weight: 700; }
+
+.receipt-address { display: grid; gap: .5rem; margin-bottom: 1.5rem; }
+.receipt-address input { min-height: 48px; width: 100%; padding: .75rem; }
+
+.wallet-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; justify-content: center; }
+.staff-workspace { padding-block: 50px 100px; min-height: 65vh; }
+.staff-list { margin-block: 30px; }
+.staff-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: inherit; }
+.staff-row small { display: block; margin-top: 6px; color: var(--muted); }
+.gate-controls { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-block: 28px; }

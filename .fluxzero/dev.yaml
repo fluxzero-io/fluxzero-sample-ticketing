@@ -6,6 +6,23 @@ profiles:
     fastCompiler: true
     idp: managed
     backendPaths: [/app, /login]
+    apps: [local]
+    applicationConfig:
+      local:
+        application: fluxzero-ticketing
+        env:
+          TICKETING_OPERATOR_SUBJECTS: "demo-organizer"
+          TICKETING_ADMISSION_SIGNING_KEY: "local-demo-ticket-signing-key-do-not-use-in-production"
+          TICKETING_MAILPIT_URL: "{services.mailpit.url}"
+    services:
+      mailpit:
+        command: "mailpit --listen 127.0.0.1:{servicePort.http} --smtp 127.0.0.1:{servicePort.smtp} --disable-version-check --ignore-duplicate-ids"
+        ports:
+          http: dynamic
+          smtp: dynamic
+        url: "http://127.0.0.1:{servicePort.http}"
+        readiness:
+          http: "{url}/readyz"
     frontend:
       directory: frontend
       setupCommand: "npm install --prefer-offline --no-audit --no-fund && npm run build"
@@ -25,8 +42,19 @@ profiles:
       stripe:
         application: fluxzero-ticketing
         env:
+          TICKETING_OPERATOR_SUBJECTS: "demo-organizer"
+          TICKETING_ADMISSION_SIGNING_KEY: "local-demo-ticket-signing-key-do-not-use-in-production"
+          TICKETING_MAILPIT_URL: "{services.mailpit.url}"
           FLUXZERO_CONFIG_LOCATIONS: file:.fluxzero/stripe/sandbox.properties
     services:
+      mailpit:
+        command: "mailpit --listen 127.0.0.1:{servicePort.http} --smtp 127.0.0.1:{servicePort.smtp} --disable-version-check --ignore-duplicate-ids"
+        ports:
+          http: dynamic
+          smtp: dynamic
+        url: "http://127.0.0.1:{servicePort.http}"
+        readiness:
+          http: "{url}/readyz"
       stripe-webhooks:
         command: >-
           stripe listen --skip-update --color off

@@ -26,6 +26,11 @@ public class BookingEndpoint {
         return WebResponse.builder().payload(Fluxzero.queryAndWait(new GetReservation(id)))
                 .header("Cache-Control", "no-store").build();
     }
+    public record ReceiptAddress(String email) {}
+    @HandlePost("/{id}/receipt-email") void contact(@PathParam("id") ReservationId id, ReceiptAddress address, WebRequest request) {
+        BrowserRequests.requireSameOrigin(request);
+        Fluxzero.sendCommandAndWait(new io.fluxzero.ticketing.delivery.api.SetReceiptEmail(id, address.email()));
+    }
     @HandlePost("/{id}/cancel") void cancel(@PathParam("id") ReservationId id, WebRequest request) {
         BrowserRequests.requireSameOrigin(request);
         Fluxzero.sendCommandAndWait(new CancelReservation(id));

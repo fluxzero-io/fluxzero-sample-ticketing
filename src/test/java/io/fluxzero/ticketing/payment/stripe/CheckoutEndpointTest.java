@@ -34,8 +34,8 @@ class CheckoutEndpointTest extends StripeTestSupport {
                 .withProperty("ticketing.stripe.accountId", "acct_fixture")
                 .withProperty("ticketing.stripe.webhookSecret", "whsec_fixture")
                 .givenCommandsByUser(TicketingUser.SYSTEM, DemoCatalog.commands(NOW.plusSeconds(86400)).toArray())
-                .givenCommandsByUser(new TicketingUser("alice"), seats(R,"A1","A2"));
-        return started ? fixture.givenCommandsByUser(new TicketingUser("alice"), new StartPayment(P,R)) : fixture;
+                .givenCommandsByUser(new TicketingUser("alice", java.util.Set.of()), seats(R,"A1","A2"));
+        return started ? fixture.givenCommandsByUser(new TicketingUser("alice", java.util.Set.of()), new StartPayment(P,R)) : fixture;
     }
     static WebRequest post(String path) {
         return WebRequest.post(path).header("Origin","http://localhost:8080").header("X-Ticketing-Request","1").build();

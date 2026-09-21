@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 import static io.fluxzero.sdk.configuration.ApplicationProperties.getProperty;
 import static io.fluxzero.sdk.configuration.ApplicationProperties.requireProperty;
 
-/** OIDC/PKCE is identical locally and in production; verified subjects can buy tickets; browser users never receive operator roles. */
+/** OIDC/PKCE is identical locally and in production; verified subjects can buy tickets; operational access requires explicit application configuration. */
 @Component
 @NoUserRequired
 @Path("/app")

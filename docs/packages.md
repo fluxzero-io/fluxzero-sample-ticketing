@@ -16,6 +16,10 @@ or enforce endpoint access. Internal workflow events and refund identities live 
 | `payment` | Provider-independent payment, capture and refund facts |
 | `billing` | Invoices and retained credit notes |
 | `access` | OIDC sign-in, browser sessions and trusted customer identity |
+| `delivery` | Confirmation addresses, retained delivery intent and local mail requests |
+| `admission` | Owned ticket passes, gate state, signed codes and atomic check-in |
+| `operations` | Performance-scoped staff grants and operational queries |
+| `wallet` | Apple and Google Wallet format adapters outside the domain graph |
 
 Selected paths illustrate the layout; each listed directory also contains its other domain types:
 
@@ -117,6 +121,25 @@ src/main/java/io/fluxzero/ticketing/
 │   └── model/
 │       ├── Invoice.java
 │       └── CreditNote.java
+├── delivery/
+│   ├── ConfirmationDelivery.java
+│   ├── ConfirmationEffects.java
+│   ├── api/SetReceiptEmail.java
+│   └── request/SendConfirmationMail.java
+├── admission/
+│   ├── AdmissionEndpoint.java
+│   ├── TicketCredentials.java
+│   ├── TicketPdf.java
+│   └── api/model/
+│       ├── Gate.java
+│       └── CheckIn.java
+├── operations/
+│   ├── StaffPermission.java
+│   └── api/model/StaffAccess.java
+├── wallet/
+│   ├── ApplePass.java
+│   ├── GooglePass.java
+│   └── WalletEndpoint.java
 └── common/
     ├── Checks.java
     └── web/
@@ -132,8 +155,9 @@ API. Each external call remains in a specific local command/query handler using 
 requests. `common` contains only a generic precondition and HTTP response validation, without
 business policy or an HTTP client layer.
 
-Tests mirror `booking`, `payment.stripe` and `catalog.luma`. The booking journey tests also
-exercise payments and billing together. Shared fixture setup lives in test-only `support`.
+Tests mirror the domain and adapter packages, including booking, delivery, admission, operations,
+wallets, Stripe and Luma. The booking journey tests also exercise payments and billing together.
+Shared fixture setup lives in test-only `support`.
 The root package registers current message and value types through `@RegisterType`.
 
 ## Current schema

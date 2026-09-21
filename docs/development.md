@@ -73,7 +73,7 @@ Reservation and performance Models additionally maintain public documents for ca
 discovery. Cancellation reactions and continuation use durable events. Inventory uses current documents so a cold stock load does not replay
 its allocation history. Financial and reservation history remain event sourced.
 
-The SDK/testserver pin is a local build from `7604840dad0`. It contains the required fixes for
+The SDK/testserver pin is a local build from `dd799f2d8ca`. It contains the required fixes for
 creation conflicts, nested deletion, fixture document revisions and document replay before the
 first consumer, plus compressed typed HTTP response handling. A published SDK containing these fixes is required before publishing this app.
 
@@ -94,7 +94,8 @@ A domain-specific load test follows the completed UI, so it can exercise realist
 selection, payment and cancellation traffic together.
 
 Hall-calendar collision checks, programme rescheduling, waiting rooms, seat-plan editing,
-ticket transfer/resale and admission scanning are not implemented. Existing sold selections
+ticket transfer/resale and camera or offline admission scanning are not implemented. Online
+admission with pasted codes and connected keyboard-style scanners is supported. Existing sold selections
 are never silently moved by catalogue updates; there is no layout-editing command.
 
 ## Phase 2: external services
@@ -120,8 +121,8 @@ for the remaining customer and operator workflows. Nothing is published or deplo
 
 ## Local SDK prerequisite for this development branch
 
-Build SDK commit `7604840dad0` in a separate checkout using Java 25. Set the root and
-module Maven versions to `2.0.0-7604840dad0-SNAPSHOT`, then install the matching artifacts:
+Build SDK commit `dd799f2d8ca` in a separate checkout using Java 25. Set the root and
+module Maven versions to `2.0.0-dd799f2d8ca-SNAPSHOT`, then install the matching artifacts:
 
 ```sh
 ./mvnw -B -pl sdk,test-server,proxy,fluxzero-bom -am -DskipTests -Dmaven.javadoc.skip=true install

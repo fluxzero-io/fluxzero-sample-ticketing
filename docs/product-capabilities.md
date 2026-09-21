@@ -40,11 +40,11 @@ It is a scope recommendation for this example, not a promise to reproduce every 
 | Ticket products and pricing | One price per section per performance | Adult/child/student or early-bird types sharing the same physical stock; promotional codes, fees and explicit price breakdown |
 | Organizer allocations | Only temporary customer holds | Production/artist/partner blocks, invitations, complimentary tickets and controlled release into public sale |
 | Checkout | EUR card payments, retries and retained provider state | Buyer/contact details, clear fee/tax breakdown, production merchant configuration and payment-method expansion |
-| Fulfilment | Owner-only ticket view and browser printing | Confirmation email, recoverable delivery, downloadable branded tickets and QR/barcode credentials |
-| Admission | Tickets have valid/void domain state | Staff scanner, atomic check-in, duplicate-scan handling, door permissions and explicit re-entry policy; offline scanning requires a separate conflict policy |
+| Fulfilment | Retried confirmation email, owner-only QR ticket, downloadable PDF, signed Apple pass and Google Wallet save link | Production email provider, issuer/device qualification and live wallet updates |
+| Admission | Scoped staff desk, explicit gate, signed code, atomic one-time check-in and duplicate/cancelled-ticket rejection | Camera and offline scanning need explicit conflict and re-entry policies |
 | Cancellation and refunds | Performance cancellation and full-refund workflows exist in the core | Operator/customer support UI, refund policy display, customer cancellation requests, ticket-level partial refunds and practical refund qualification |
 | Invoicing | Independent invoice and credit-note lifecycle in the core | Billing details, issue/delivery workflow, invoice download and jurisdiction-specific tax/numbering configuration |
-| Organizer access | Global operational roles and customer ownership | Organizer/venue-scoped staff permissions, invitations and separation between unrelated organizers |
+| Organizer access | Explicit local operator allowlist and performance-scoped admission/manage grants | Organizer/venue tenancy, invitations and separation between unrelated organizers |
 | Box office and reporting | Online customer checkout only | Assisted sales using the same inventory, cash/card recording, guest lists, sales/admission reports and exports |
 | Customer support | Customers see their own bookings | Staff search, reconciliation actions, explanations of pending/late payments and auditable support actions |
 | Demand management | Exact bounded inventory transactions | Purchase limits across accounts, queue/waitlist policy, abuse controls and fair high-demand admission |
@@ -54,11 +54,9 @@ It is a scope recommendation for this example, not a promise to reproduce every 
 
 ## Suggested order for this example
 
-1. **Complete the admission journey.** Capture buyer contact details, deliver tickets reliably,
-   add downloadable credentials and an online staff check-in flow. A second scan must report
-   the original admission instead of admitting twice; cancelled/refunded admission must fail.
-   Keep ticket status, credential validity and check-in facts distinct. Start online; wallet
-   passes, rotating barcodes and offline door reconciliation can follow when justified.
+1. **Admission journey delivered.** Buyer contact, retained mail delivery, PDF/QR, wallet formats,
+   scoped staff access and atomic online check-in are implemented. Camera scanning, live wallet
+   updates and offline door reconciliation remain deliberate extensions.
 2. **Make the product operable.** Provide a small organizer interface for programme setup,
    plan selection, sales opening/closing, order lookup, cancellation and refund progress.
    Establish organizer-scoped authorization before supporting independent sellers. Include

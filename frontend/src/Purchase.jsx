@@ -96,7 +96,8 @@ export function Purchase({ id }) {
     [checkoutProblem, setCheckoutProblem] = useState(null),
     [submitted, setSubmitted] = useState(false),
     [now, setNow] = useState(Date.now()),
-    [cancelOpen, setCancelOpen] = useState(false);
+    [cancelOpen, setCancelOpen] = useState(false),
+    [receiptEmail, setReceiptEmail] = useState("");
   async function refresh() {
     const p = await api("/api/reservations/" + id);
     setPurchase(p);
@@ -196,6 +197,7 @@ export function Purchase({ id }) {
     setBusy(true);
     setError(null);
     try {
+      if (receiptEmail.trim()) await post("/api/reservations/" + id + "/receipt-email", {email: receiptEmail.trim()});
       setPaymentId(await post("/api/checkout/" + id));
     } catch (e) {
       setError(e);
@@ -309,6 +311,9 @@ export function Purchase({ id }) {
                     <small>{t.ticketId}</small>
                   </div>
                   <span>{t.status}</span>
+                  {t.status === "VALID" && !purchase.performanceCancelled && (
+                    <a className="secondary" href={"#/ticket/" + encodeURIComponent(t.ticketId)}>Open ticket</a>
+                  )}
                 </article>
               ))}
               <p className="caption">
@@ -357,6 +362,10 @@ export function Purchase({ id }) {
           {held ? (
             <>
               <h2>Payment</h2>
+              {!paymentId && <label className="receipt-address">Confirmation email (optional)
+                <input type="email" value={receiptEmail} autoComplete="email" placeholder="you@example.com"
+                  onChange={e => setReceiptEmail(e.target.value)} />
+              </label>}
               {!config ? (
                 <Spinner />
               ) : !config.available ? (

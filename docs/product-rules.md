@@ -21,7 +21,7 @@
    The cancellation moves from `NONE` to `SETTLING` to `SETTLED`; the last state describes admission
    settlement, while refunds and credits retain their own lifecycle. The purchase view exposes cancellation even before
    its ticket statuses finish updating. New payment and invoice actions are blocked immediately.
-   Partial cancellation, admission scanning and commercial cancellation windows need explicit policies before launching a real service.
+   Partial cancellation and commercial cancellation windows need explicit policies before launching a real service. Online admission is one-time; a customer cannot cancel a booking after any ticket in it has been admitted.
 6. Availability queries are advisory. `GetAvailability` exposes section names, remaining
    capacity, prices and the selected seating plan’s source/demonstration notice. `GetSeats` returns a stable page
    of up to 100 seats in a chosen section, including each seat's availability, row and number.
