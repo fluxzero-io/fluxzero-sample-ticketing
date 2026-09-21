@@ -39,7 +39,8 @@ public record GetAvailability(@NotNull PerformanceId performanceId) implements R
                 if (s.mode() == AdmissionMode.RESERVED_SEATING) {
                     long occupied = Fluxzero.search(SeatInventory.class)
                             .match(performanceId, true, "performanceId").match(s.id(), true, "sectionId")
-                            .any(MatchConstraint.match(true, true, "sold"),
+                            .any(io.fluxzero.common.api.search.constraints.ExistsConstraint.exists("productionHoldId"),
+                                    MatchConstraint.match(true, true, "sold"),
                                     BetweenConstraint.atLeast(
                                             now.truncatedTo(SECONDS).plusSeconds(1), "expiresAt"))
                             .count();

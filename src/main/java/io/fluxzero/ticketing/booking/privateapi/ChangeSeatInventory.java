@@ -23,8 +23,8 @@ public record ChangeSeatInventory(SeatInventoryId seatInventoryId, PerformanceId
     SeatInventory apply(@Nullable SeatInventory current) {
         if (action.releases()) {
             return current != null && reservationId.equals(current.reservationId())
-                    ? new SeatInventory(seatInventoryId, performanceId, sectionId, seatId, null, null, false) : current;
+                    ? new SeatInventory(seatInventoryId, performanceId, sectionId, seatId, null, null, false, null) : current;
         }
-        return new SeatInventory(seatInventoryId, performanceId, sectionId, seatId, reservationId, expiresAt, action == InventoryAction.SELL);
+        return new SeatInventory(seatInventoryId, performanceId, sectionId, seatId, reservationId, expiresAt, action == InventoryAction.SELL, null);
     }
 }

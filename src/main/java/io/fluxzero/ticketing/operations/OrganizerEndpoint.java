@@ -24,6 +24,9 @@ import io.fluxzero.ticketing.catalog.api.SeatingPlanId;
 import io.fluxzero.ticketing.catalog.api.model.Performance;
 import io.fluxzero.ticketing.catalog.api.model.PerformanceDetails;
 import io.fluxzero.ticketing.operations.api.CancelManagedReservation;
+import io.fluxzero.ticketing.operations.api.*;
+import io.fluxzero.ticketing.operations.api.model.ProductionHold;
+import io.fluxzero.ticketing.operations.api.model.ProductionHold.Position;
 import io.fluxzero.ticketing.operations.api.GetManagedOrders;
 import io.fluxzero.ticketing.operations.api.GetManagedPerformance;
 import io.fluxzero.ticketing.operations.api.GetManagedPerformances;
@@ -160,6 +163,33 @@ public class OrganizerEndpoint {
             @PathParam("id") PerformanceId id, Access access, WebRequest request) {
         BrowserRequests.requireSameOrigin(request);
         Fluxzero.sendCommandAndWait(new SetStaffAccess(id, access.subject(), access.permissions()));
+    }
+
+    @HandleGet("/performances/{id}/allocations") WebResponse allocations(
+            @PathParam("id") PerformanceId id, @QueryParam("offset") Integer offset) {
+        return response(Fluxzero.queryAndWait(new GetProductionHolds(id, offset == null ? 0 : offset)));
+    }
+
+    @HandleGet("/performances/{id}/allocation-seats") WebResponse allocationSeats(
+            @PathParam("id") PerformanceId id, @QueryParam("section") String section,
+            @QueryParam("offset") Integer offset) {
+        return response(Fluxzero.queryAndWait(new GetAllocationSeats(id, section, offset == null ? 0 : offset)));
+    }
+
+    public record Allocation(@NotNull ProductionHoldId productionHoldId, @NotNull @Valid ProductionHold.Details details,
+                             @NotEmpty List<@NotNull @Valid Position> positions) {}
+
+    @HandlePost("/performances/{id}/allocations") void blockInventory(
+            @PathParam("id") PerformanceId id, Allocation allocation, WebRequest request) {
+        BrowserRequests.requireSameOrigin(request);
+        Fluxzero.sendCommandAndWait(new BlockProductionInventory(allocation.productionHoldId(), id,
+                allocation.details(), allocation.positions()));
+    }
+
+    @HandlePost("/allocations/{id}/release") void releaseInventory(
+            @PathParam("id") ProductionHoldId id, WebRequest request) {
+        BrowserRequests.requireSameOrigin(request);
+        Fluxzero.sendCommandAndWait(new ReleaseProductionInventory(id));
     }
 
     private static WebResponse response(Object payload) {

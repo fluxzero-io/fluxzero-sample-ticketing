@@ -373,17 +373,26 @@ milestones:
   - id: "production-holds"
     title: "Reserve production and artist allocations"
     kind: "feature"
-    status: "planned"
+    status: "done"
     description: ""
     acceptance:
     - "Organizers can block and release places without selling them."
     - "Blocked places are excluded from customer availability."
     createdAt: "2026-09-21T21:17:57.551142Z"
-    updatedAt: "2026-09-21T21:17:57.551142Z"
+    updatedAt: "2026-09-21T21:59:06.071644Z"
     history:
     - at: "2026-09-21T21:17:57.551142Z"
       status: "planned"
       verification: ""
+    - at: "2026-09-21T21:48:06.926190Z"
+      status: "in_progress"
+      verification: ""
+    - at: "2026-09-21T21:59:06.071644Z"
+      status: "done"
+      verification: "Synchronous and asynchronous TestFixture scenarios cover capacity,\
+        \ occupied seats, atomic rejection, permissions, retries and release before\
+        \ sales open. Browser verified an organizer allocation blocks A1, appears\
+        \ in history and restores A1 on explicit release."
   - id: "waitlists"
     title: "Join a sold-out performance waitlist"
     kind: "feature"

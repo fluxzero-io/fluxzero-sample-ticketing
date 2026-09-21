@@ -7,6 +7,7 @@ erDiagram
     SEATING_PLAN ||--o{ PERFORMANCE : stages
     EVENT ||--o{ PERFORMANCE : occurs_as
     PERFORMANCE ||--o| SALES_WINDOW : sells_during
+    PERFORMANCE ||--o{ PRODUCTION_HOLD : reserves_for_operations
     PERFORMANCE ||--o{ RESERVATION : receives
     PERFORMANCE ||--o{ SEAT_INVENTORY : allocates
     PERFORMANCE ||--o{ SECTION_INVENTORY : allocates
@@ -34,8 +35,9 @@ require a child to remain active after its parent is deleted.
 | Event | `EventId`, programme title and description | Shared by multiple performances |
 | Performance | `PerformanceId`, event + seating plan + instant + time zone | Bookable until start; may be cancelled |
 | SalesWindow | Performance-scoped identity, opening and closing instants | Independently revised; gates new holds without invalidating existing ones |
-| SeatInventory | `(performance, section, seat)` | One current owner, deadline and sold flag |
-| SectionInventory | `(performance, section)` | Sold count and active deadline counts; at most 900 second buckets |
+| ProductionHold | `ProductionHoldId`, reason and bounded positions | Explicit block → release; history retained |
+| SeatInventory | `(performance, section, seat)` | One current reservation or production allocation, deadline and sold flag |
+| SectionInventory | `(performance, section)` | Sold and production-blocked counts and active deadline counts; at most 900 second buckets |
 | Reservation | `ReservationId`, authenticated customer and complete priced selection | Held → confirmed, expired or cancelled; confirmed → cancelled |
 | Ticket | `TicketId`, reservation, explicit performance, customer and admission | Issued only on accepted payment; valid → void |
 | Payment | `PaymentId`, reservation, expected and actual amounts | Pending → failed or captured; captured → refund required → refunded |

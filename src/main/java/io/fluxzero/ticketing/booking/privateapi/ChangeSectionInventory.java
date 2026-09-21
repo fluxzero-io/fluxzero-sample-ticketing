@@ -25,7 +25,7 @@ public record ChangeSectionInventory(SectionInventoryId sectionInventoryId, Perf
     }
     @Apply(automaticHandling = AutomaticModelHandling.DISABLED)
     SectionInventory apply(@Nullable SectionInventory current) {
-        var stock = current == null ? new SectionInventory(sectionInventoryId, performanceId, 0, Map.of()) : current;
+        var stock = current == null ? new SectionInventory(sectionInventoryId, performanceId, 0, Map.of(), 0) : current;
         return stock.change(decidedAt, expiresAt, action.heldChange(quantity), action.soldChange(quantity));
     }
 }

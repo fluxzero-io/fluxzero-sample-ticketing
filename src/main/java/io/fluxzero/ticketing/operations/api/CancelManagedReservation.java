@@ -1,7 +1,6 @@
 package io.fluxzero.ticketing.operations.api;
 
 import io.fluxzero.sdk.Fluxzero;
-import io.fluxzero.sdk.modeling.AssertLegal;
 import io.fluxzero.sdk.modeling.Graph;
 import io.fluxzero.ticketing.admission.api.model.CheckIn;
 import io.fluxzero.sdk.persisting.eventsourcing.InterceptApply;
@@ -21,12 +20,9 @@ import static io.fluxzero.ticketing.common.Checks.require;
 /** Cancel one managed order and retain any resulting refund obligation. */
 @RequiresUser
 public record CancelManagedReservation(@NotNull ReservationId reservationId) {
-    @AssertLegal Object allowed(Reservation reservation, User user) {
-        return StaffPermission.forUser(reservation.performanceId(), user, Permission.MANAGE);
-    }
-
-    @InterceptApply Object decide(Graph<Reservation> graph, Performance performance) {
+    @InterceptApply Object decide(Graph<Reservation> graph, Performance performance, User user) {
         Reservation reservation = graph.get();
+        StaffPermission.assertForUser(reservation.performanceId(), user, Permission.MANAGE);
         if (reservation.status() == ReservationStatus.CANCELLED) return null;
         require(graph.descendantModels("tickets/checkIns", CheckIn.class).isEmpty(),
                 "An admitted order cannot be cancelled; it requires a separate support decision");

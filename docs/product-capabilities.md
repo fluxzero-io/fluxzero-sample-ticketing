@@ -38,7 +38,7 @@ It is a scope recommendation for this example, not a promise to reproduce every 
 | Accessible seating | Wheelchair requests and matching companion pairs are validated atomically | Event-specific access guidance and assisted booking workflow |
 | Seat selection | Source-backed map, row list, grouped holds and paged adjacent-seat suggestions | Sightline warnings, price categories within a section and optional single-seat-gap rules |
 | Ticket products and pricing | Section price categories and per-place Standard/Under 18 choice sharing physical stock, with frozen prices | Time-dependent offers, promotional codes, fees and tax breakdown |
-| Organizer allocations | Only temporary customer holds | Production/artist/partner blocks, invitations, complimentary tickets and controlled release into public sale |
+| Organizer allocations | Persistent production blocks with reasons, shared seat/section stock and explicit release | Invitations, complimentary tickets and access-code allocations |
 | Checkout | EUR card payments, retries and retained provider state | Buyer/contact details, clear fee/tax breakdown, production merchant configuration and payment-method expansion |
 | Fulfilment | Retried confirmation email, owner-only QR ticket, downloadable PDF, signed Apple pass and Google Wallet save link | Production email provider, issuer/device qualification and live wallet updates |
 | Admission | Scoped staff desk, explicit gate, signed code, atomic one-time check-in and duplicate/cancelled-ticket rejection | Camera and offline scanning need explicit conflict and re-entry policies |

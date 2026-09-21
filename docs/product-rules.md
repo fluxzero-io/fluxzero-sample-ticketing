@@ -141,3 +141,9 @@ create-only, including before first use. A changed configuration gets a new iden
 A performance chooses one plan explicitly and prices exactly its sections. It cannot be
 recreated to switch plans after sales begin. A later plan never moves an existing reservation;
 rescheduling and seat exchanges require separate, explicit product flows.
+
+## Production allocations
+
+Managers can block up to 100 positions in one atomic allocation, with a retained reason and identity. A position is one reserved seat or a positive standing-section quantity. Blocks share the authoritative inventory with customer holds and sold tickets; they cannot displace either. They can be created before the sales window opens, but not after cancellation or performance start.
+
+Blocks remain until explicitly released. Retrying the same allocation or release is idempotent; a released identity never creates a fresh block. Release preserves history and only returns that allocation's stock. More than 100 seat positions require explicit separate batches, each atomic on its own.

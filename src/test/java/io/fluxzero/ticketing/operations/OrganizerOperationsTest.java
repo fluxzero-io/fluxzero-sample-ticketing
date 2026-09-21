@@ -159,4 +159,13 @@ class OrganizerOperationsTest extends TicketingTestSupport {
                 .expectExceptionalResult(UnauthorizedException.class);
     }
 
+    @ParameterizedTest @ValueSource(booleans = {false, true})
+    void customerAndAdmissionOnlyStaffCannotCancelManagedOrders(boolean async) {
+        paid(async).whenCommandByUser(ALICE, new CancelManagedReservation(R))
+                .expectExceptionalResult(UnauthorizedException.class)
+                .andThen().givenCommandsByUser(OPERATOR, new SetStaffAccess(SHOW, BOB.id(), Set.of(Permission.ADMISSION)))
+                .whenCommandByUser(BOB, new CancelManagedReservation(R)).expectExceptionalResult(UnauthorizedException.class)
+                .expectThat(f -> org.junit.jupiter.api.Assertions.assertEquals(ReservationStatus.CONFIRMED, reservation().status()));
+    }
+
 }

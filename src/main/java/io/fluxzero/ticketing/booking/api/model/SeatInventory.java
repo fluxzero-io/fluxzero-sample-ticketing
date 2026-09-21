@@ -15,8 +15,8 @@ import java.time.Instant;
 public record SeatInventory(@EntityId SeatInventoryId seatInventoryId,
                             @Parent(pathInParent = "seatInventory") PerformanceId performanceId,
                             String sectionId, String seatId, ReservationId reservationId,
-                            @Sortable Instant expiresAt, boolean sold) {
+                            @Sortable Instant expiresAt, boolean sold, io.fluxzero.ticketing.operations.api.ProductionHoldId productionHoldId) {
     public boolean occupiedAt(Instant now) {
-        return reservationId != null && (sold || now.isBefore(expiresAt));
+        return productionHoldId != null || reservationId != null && (sold || now.isBefore(expiresAt));
     }
 }

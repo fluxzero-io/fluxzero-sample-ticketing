@@ -14,10 +14,10 @@ import java.util.TreeMap;
 @Model(persistence = ModelPersistence.DOCUMENT)
 public record SectionInventory(@EntityId SectionInventoryId sectionInventoryId,
                                @Parent(pathInParent = "sectionInventory") PerformanceId performanceId,
-                               int sold, Map<Instant, Integer> holds) {
+                               int sold, Map<Instant, Integer> holds, int blocked) {
     public SectionInventory { holds = Map.copyOf(holds); }
     public long occupiedAt(Instant now) {
-        return (long) sold + holds.entrySet().stream().filter(e -> now.isBefore(e.getKey())).mapToLong(Map.Entry::getValue).sum();
+        return (long) sold + blocked + holds.entrySet().stream().filter(e -> now.isBefore(e.getKey())).mapToLong(Map.Entry::getValue).sum();
     }
     public SectionInventory change(Instant now, Instant deadline, int heldDelta, int soldDelta) {
         var updated = new TreeMap<Instant, Integer>();
@@ -26,6 +26,6 @@ public record SectionInventory(@EntityId SectionInventoryId sectionInventoryId,
             int count = Math.addExact(updated.getOrDefault(deadline, 0), heldDelta);
             if (count == 0) updated.remove(deadline); else updated.put(deadline, count);
         }
-        return new SectionInventory(sectionInventoryId, performanceId, Math.addExact(sold, soldDelta), updated);
+        return new SectionInventory(sectionInventoryId, performanceId, Math.addExact(sold, soldDelta), updated, blocked);
     }
 }

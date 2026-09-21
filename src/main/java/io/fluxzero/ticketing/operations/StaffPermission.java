@@ -15,6 +15,10 @@ public record StaffPermission(StaffAccessId staffAccessId, StaffAccess.Permissio
         return user.hasRole("OPERATOR") ? null : new StaffPermission(StaffAccessId.of(performanceId, user.id()), permission);
     }
 
+    public static void assertForUser(PerformanceId performanceId, User user, StaffAccess.Permission permission) {
+        if (!user.hasRole("OPERATOR")) Fluxzero.assertLegal(forUser(performanceId, user, permission));
+    }
+
     public static void require(PerformanceId performanceId, User user, StaffAccess.Permission permission) {
         if (user.hasRole("OPERATOR")) return;
         var access = Fluxzero.getDocument(StaffAccessId.of(performanceId, user.id()), StaffAccess.class).orElse(null);

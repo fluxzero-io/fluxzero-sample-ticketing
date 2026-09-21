@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { post, date, money } from "./api";
 import { ErrorMessage, Spinner } from "./ui";
+import { ProductionAllocations } from "./operations/ProductionAllocations";
 import { StaffAccess } from "./operations/StaffAccess";
 import { useLiveResource, label } from "./operations/useLiveResource";
 import { Pagination } from "./operations/Pagination";
@@ -61,6 +62,7 @@ export function PerformanceOperations({ id }) {
         <a className="secondary" href={`#/admission/${id}`}>Open entrance desk →</a>
       </div>
       <OrderList id={id} />
+      <ProductionAllocations id={id} show={show} />
       <div className="operations-grid">
         <SalesWindow view={view} id={id} onSaved={refresh} />
         {view.operator && <StaffAccess id={id} />}
