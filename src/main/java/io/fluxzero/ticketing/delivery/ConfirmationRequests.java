@@ -2,6 +2,8 @@ package io.fluxzero.ticketing.delivery;
 import io.fluxzero.common.Guarantee;
 import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.sdk.modeling.Graph;
+import io.fluxzero.sdk.tracking.Consumer;
+import io.fluxzero.sdk.tracking.ForeverRetryingErrorHandler;
 import io.fluxzero.sdk.tracking.handling.HandleEvent;
 import io.fluxzero.ticketing.booking.api.model.Reservation;
 import io.fluxzero.ticketing.booking.api.model.ReservationStatus;
@@ -11,6 +13,8 @@ import org.springframework.stereotype.Component;
 
 /** A purchase transition requests delivery; payment-provider events never own ticket delivery. */
 @Component
+@Consumer(name = "confirmation-requests", threads = 4, minIndex = 0,
+        errorHandler = ForeverRetryingErrorHandler.class)
 public class ConfirmationRequests {
     @HandleEvent void confirmed(Graph<Reservation> graph) {
         var current = graph.get();

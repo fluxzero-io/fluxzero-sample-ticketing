@@ -36,6 +36,9 @@ abstract class StripeTestSupport extends TicketingTestSupport {
                 .givenCommandsByUser(OPERATOR, DemoCatalog.commands(NOW.plus(Duration.ofDays(1))).toArray())
                 .givenCommandsByUser(ALICE, seats(R, seatIds), new StartPayment(P, R));
     }
+    TestFixture stripeWithAutomaticRefund(boolean async, RemoteStripe remote) {
+        return stripe(async, remote).registerHandlers(new StripeRefundRequests());
+    }
     TestFixture captured(boolean async, RemoteStripe remote) {
         var fixture = stripe(async, remote).givenCommandsByUser(PAYMENTS,
                 new io.fluxzero.ticketing.payment.stripe.api.BeginStripePayment(P));
