@@ -229,6 +229,26 @@ milestones:
         \ gate lifecycle, current ticket and performance checks, atomic concurrent\
         \ redemption, duplicate refusal and cancellation behavior. The Backstage and\
         \ admission-desk journey was exercised in the in-app browser as demo-organizer."
+  - id: "stop-obsolete-confirmation"
+    title: "Stop delayed confirmations after cancellation"
+    kind: "bug"
+    status: "done"
+    description: ""
+    acceptance:
+    - "A cancelled booking or performance does not receive a delayed purchase confirmation."
+    - "Stopped delivery remains distinct from accepted email and does not keep retrying."
+    createdAt: "2026-09-21T21:17:57.522682Z"
+    updatedAt: "2026-09-21T21:39:12.537318Z"
+    history:
+    - at: "2026-09-21T21:17:57.522682Z"
+      status: "in_progress"
+      verification: ""
+    - at: "2026-09-21T21:39:12.537318Z"
+      status: "done"
+      verification: "Synchronous and asynchronous ConfirmationTest scenarios passed\
+        \ for cancellation of a booking or performance before retry, a distinct stopped\
+        \ outcome, and refusal to restart stopped delivery. Existing accepted-payment\
+        \ and temporary-failure scenarios passed."
 - id: "venue-operations"
   title: "Run real events"
   description: "Existing integration work and agreed next product steps. Retrospectively\
@@ -236,21 +256,28 @@ milestones:
     \ recorded."
   features:
   - id: "luma-import"
-    title: "Import an event from a managed Luma calendar"
+    title: "Remove the Luma integration"
     kind: "feature"
-    status: "in_progress"
-    description: "Retrospective status from active backlog K18. Controlled integration\
-      \ tests pass; qualification against a real managed calendar remains open."
+    status: "done"
+    description: "The user withdrew the earlier import feature. Its live-calendar\
+      \ qualification was never completed; this item now tracks removal and retains\
+      \ the original history."
     acceptance:
-    - "An imported event can use local ticket inventory."
-    - "Reimporting the event preserves existing reservations."
-    - "The complete import-to-booking journey is verified against a real managed calendar."
+    - "No Luma commands, requests, source mappings or credentials remain in the application."
+    - "Local event planning and Stripe recovery remain available."
     createdAt: "2026-09-19T16:40:11.770536Z"
-    updatedAt: "2026-09-19T16:40:11.770536Z"
+    updatedAt: "2026-09-21T21:39:12.514933Z"
     history:
     - at: "2026-09-19T16:40:11.770536Z"
       status: "in_progress"
       verification: ""
+    - at: "2026-09-21T21:39:12.514933Z"
+      status: "done"
+      verification: "Removed all Luma application and test packages, configuration\
+        \ guidance and graph references. Source and compiled-output searches find\
+        \ no remaining adapter. Managed deletion and Stripe recovery scenarios passed;\
+        \ local event scheduling remains functional. Historical Progress records are\
+        \ retained; no live import qualification is claimed."
   - id: "organizer-workspace"
     title: "Manage sales and orders as an organizer"
     kind: "feature"
@@ -290,16 +317,192 @@ milestones:
   - id: "smarter-seat-choice"
     title: "Find suitable seats together"
     kind: "feature"
-    status: "planned"
-    description: "Agreed future product scope in backlog K22. Current manual seat\
-      \ selection is already available."
+    status: "done"
+    description: "Section prices form the price categories. Per-place ticket types\
+      \ share the same physical stock; the matinee and organizer form demonstrate\
+      \ Standard and Under 18 at 50% off. Adjacent-seat suggestions are advisory.\
+      \ Within-section price ranks and sightline information remain separate extensions."
     acceptance:
-    - "Visitors can receive adjacent-seat suggestions with clear price choices."
-    - "Accessible-seat and companion rules are explicit, and ticket types share the\
-      \ same physical stock."
+    - "Visitors can request adjacent standard seats without crossing an aisle."
+    - "Price choices and ticket types are shown before holding tickets and share physical\
+      \ inventory."
+    - "Wheelchair and companion choices follow explicit booking rules."
     createdAt: "2026-09-19T16:40:11.777677Z"
-    updatedAt: "2026-09-19T16:40:11.777677Z"
+    updatedAt: "2026-09-21T21:39:12.553049Z"
     history:
     - at: "2026-09-19T16:40:11.777677Z"
+      status: "planned"
+      verification: ""
+    - at: "2026-09-21T21:17:57.538825Z"
+      status: "in_progress"
+      verification: ""
+    - at: "2026-09-21T21:39:12.553049Z"
+      status: "done"
+      verification: "Twenty synchronous/asynchronous TicketChoiceTest scenarios passed:\
+        \ shared inventory, frozen concession prices, duplicate and unknown types,\
+        \ matching wheelchair/companion requests, paged adjacency, sales closure and\
+        \ competing holds after suggestions. Source-layout checks preserve explicit\
+        \ aisle gaps. Browser verified mixed-price booking through sign-in, accessible-pair\
+        \ validation, mobile totals at 390px and organizer scheduling with an Under\
+        \ 18 offer. PDF/wallet artifact tests passed with ticket-type labels."
+  - id: "mixed-staff-navigation"
+    title: "Keep entrance access visible with mixed staff roles"
+    kind: "bug"
+    status: "done"
+    description: ""
+    acceptance:
+    - "A user who manages one performance and checks tickets at another can reach\
+      \ both workspaces."
+    - "Each workspace still enforces the current performance permissions."
+    createdAt: "2026-09-21T21:17:57.531872Z"
+    updatedAt: "2026-09-21T21:39:12.545623Z"
+    history:
+    - at: "2026-09-21T21:17:57.531872Z"
+      status: "in_progress"
+      verification: ""
+    - at: "2026-09-21T21:39:12.545623Z"
+      status: "done"
+      verification: "Managed OrganizerOperationsTest verifies both workspace capabilities\
+        \ for mixed performance roles and denies access to an admission-only performance\
+        \ through management. The in-app browser shows Entrance and Operations together\
+        \ for the operator."
+- id: "extended-sales"
+  title: "Flexible sales and ticket ownership"
+  description: "Agreed follow-up features; not part of the completed booking baseline."
+  features:
+  - id: "production-holds"
+    title: "Reserve production and artist allocations"
+    kind: "feature"
+    status: "planned"
+    description: ""
+    acceptance:
+    - "Organizers can block and release places without selling them."
+    - "Blocked places are excluded from customer availability."
+    createdAt: "2026-09-21T21:17:57.551142Z"
+    updatedAt: "2026-09-21T21:17:57.551142Z"
+    history:
+    - at: "2026-09-21T21:17:57.551142Z"
+      status: "planned"
+      verification: ""
+  - id: "waitlists"
+    title: "Join a sold-out performance waitlist"
+    kind: "feature"
+    status: "planned"
+    description: ""
+    acceptance:
+    - "Customers can join and leave a waitlist."
+    - "Released places are offered with a clear expiry and no overselling."
+    createdAt: "2026-09-21T21:17:57.555966Z"
+    updatedAt: "2026-09-21T21:17:57.555966Z"
+    history:
+    - at: "2026-09-21T21:17:57.555966Z"
+      status: "planned"
+      verification: ""
+  - id: "box-office"
+    title: "Sell tickets at the box office"
+    kind: "feature"
+    status: "planned"
+    description: ""
+    acceptance:
+    - "Authorized staff can sell from the same stock as online customers."
+    - "Sales retain payment, ticket and financial history."
+    createdAt: "2026-09-21T21:17:57.561520Z"
+    updatedAt: "2026-09-21T21:17:57.561520Z"
+    history:
+    - at: "2026-09-21T21:17:57.561520Z"
+      status: "planned"
+      verification: ""
+  - id: "partial-refunds"
+    title: "Refund part of an order"
+    kind: "feature"
+    status: "planned"
+    description: ""
+    acceptance:
+    - "Staff can refund eligible parts of a purchase."
+    - "Total refunds cannot exceed captured money and affected admission rights are\
+      \ explicit."
+    createdAt: "2026-09-21T21:17:57.567733Z"
+    updatedAt: "2026-09-21T21:17:57.567733Z"
+    history:
+    - at: "2026-09-21T21:17:57.567733Z"
+      status: "planned"
+      verification: ""
+  - id: "ticket-transfers"
+    title: "Transfer a ticket to another visitor"
+    kind: "feature"
+    status: "planned"
+    description: ""
+    acceptance:
+    - "The recipient must accept a transfer."
+    - "Completion revokes the previous admission credential without duplicating entry\
+      \ rights."
+    createdAt: "2026-09-21T21:17:57.572212Z"
+    updatedAt: "2026-09-21T21:17:57.572212Z"
+    history:
+    - at: "2026-09-21T21:17:57.572212Z"
+      status: "planned"
+      verification: ""
+- id: "example-readiness"
+  title: "A complete and explainable example"
+  description: "Agreed qualification and presentation work after the product flows."
+  features:
+  - id: "production-mail"
+    title: "Deliver tickets to real inboxes"
+    kind: "feature"
+    status: "planned"
+    description: ""
+    acceptance:
+    - "A configured mail provider can deliver confirmation messages."
+    - "Failures can be recovered without misleading confirmations."
+    createdAt: "2026-09-21T21:17:57.580851Z"
+    updatedAt: "2026-09-21T21:17:57.580851Z"
+    history:
+    - at: "2026-09-21T21:17:57.580851Z"
+      status: "planned"
+      verification: ""
+  - id: "physical-wallets"
+    title: "Add tickets to real phones"
+    kind: "feature"
+    status: "planned"
+    description: "Waiting for user-owned issuer configuration; no account purchases\
+      \ are authorized."
+    acceptance:
+    - "Apple Wallet and Google Wallet passes can be installed with configured issuer\
+      \ credentials."
+    - "Device qualification is recorded separately from local signing tests."
+    createdAt: "2026-09-21T21:17:57.584869Z"
+    updatedAt: "2026-09-21T21:17:57.584869Z"
+    history:
+    - at: "2026-09-21T21:17:57.584869Z"
+      status: "planned"
+      verification: ""
+  - id: "peak-sales"
+    title: "Keep booking reliable during peak demand"
+    kind: "feature"
+    status: "planned"
+    description: ""
+    acceptance:
+    - "Concurrent buyers cannot oversell seats or sections."
+    - "Measured latency and progress include slow or failing payment providers."
+    createdAt: "2026-09-21T21:17:57.588804Z"
+    updatedAt: "2026-09-21T21:17:57.588804Z"
+    history:
+    - at: "2026-09-21T21:17:57.588804Z"
+      status: "planned"
+      verification: ""
+  - id: "builder-guide"
+    title: "Explain the example with screenshots"
+    kind: "feature"
+    status: "planned"
+    description: ""
+    acceptance:
+    - "English setup and illustrated journeys are understandable to technical and\
+      \ nontechnical builders."
+    - "The guide distinguishes working capabilities, demo limitations and remaining\
+      \ work."
+    createdAt: "2026-09-21T21:17:57.592948Z"
+    updatedAt: "2026-09-21T21:17:57.592948Z"
+    history:
+    - at: "2026-09-21T21:17:57.592948Z"
       status: "planned"
       verification: ""

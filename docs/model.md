@@ -18,7 +18,6 @@ erDiagram
     RESERVATION ||--o{ PAYMENT : has_attempts
     RESERVATION ||--o{ INVOICE : bills
     INVOICE ||--o| CREDIT_NOTE : corrects
-    PERFORMANCE ||--o| LUMA_IMPORT : originates_from
 ```
 
 Every box is an independent Fluxzero `@Model` with typed identity. Business records retain
@@ -42,7 +41,6 @@ require a child to remain active after its parent is deleted.
 | Payment | `PaymentId`, reservation, expected and actual amounts | Pending → failed or captured; captured → refund required → refunded |
 | Invoice | `InvoiceId`, reservation and paying attempt, frozen lines and total | Draft → issued or void; issued → credited |
 | CreditNote | `CreditNoteId`, original invoice, full amount and reason | Issued correction with its own retained history |
-| LumaImport | Calendar/event-derived `LumaImportId`, performance and source snapshot | Retained import provenance; identical reimport is a no-op |
 
 `Ticket.performanceId` is an explicit typed reference. Its graph path to the performance
 already runs through the reservation, so an extra parent edge would duplicate the same
@@ -59,7 +57,7 @@ records. Deleting a reservation reaches its tickets, payments, invoices and cred
 
 A performance has two owning parents: its programme and its seating plan. Deleting **either** logically
 deletes that performance and its descendants. Deleting a hall does not delete the programme
-or performances hosted in other halls. The Luma source mapping belongs to its performance.
+or performances hosted in other halls.
 Plain references such as `Ticket.performanceId` and `Invoice.paymentId` add no deletion edge.
 `deleteOnParentDeletion = false` would be appropriate for a relation whose child must remain
 an active, independently addressable record after that parent disappears; none of these
@@ -185,10 +183,6 @@ Repeated delivery is expected; external idempotency and core duplicate checks pr
 Neither Model cascade nor payment status silently deletes this workflow's retained intent.
 See [integration recovery](integrations.md) for failure boundaries and storage compatibility.
 
-`AcceptLumaImport` creates the programme, performance and source mapping in one transaction.
-Its deterministic source identity prevents duplicate local performances. The existing local
-chosen local seating plan and operator-supplied prices define inventory; remote capacity never does.
-
 ## Storage transition
 
 This unpublished reference app supports the current schema only. Use a fresh demo namespace
@@ -225,3 +219,12 @@ descendants. An order-list row uses exact identities and bounded existence queri
 pages payment history separately. Admission and ticket reads remain bounded by the twelve-ticket
 reservation limit. `Person` is a document of the verified sign-in name and subject, used only for
 display and staff selection. It grants no authority; `StaffAccess` owns the actual permissions.
+
+## Seat links and price policies
+
+A SeatingPlan owns immutable seat adjacency (`nextSeatId`) and companion-to-wheelchair links
+(`companionFor`), both scoped to a section. These values share the plan's lifecycle. Performance
+section prices and ticket-type policies share the scheduled performance's lifecycle; they are
+not inventory. A Reservation freezes each admission's ticket type and price while the same
+SeatInventory or SectionInventory protects all ticket types. Suggestions are advisory reads,
+whereas the reservation command enforces group, accessibility and physical capacity invariants.

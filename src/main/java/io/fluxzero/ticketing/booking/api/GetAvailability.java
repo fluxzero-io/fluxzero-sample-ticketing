@@ -50,7 +50,9 @@ public record GetAvailability(@NotNull PerformanceId performanceId) implements R
                     remaining = Math.toIntExact(s.capacity() - (stock == null ? 0 : stock.occupiedAt(now)));
                 }
             }
-            return new SectionAvailability(s.id(), s.name(), s.mode(), performance.details().sectionPrices().get(s.id()), remaining);
+            return new SectionAvailability(s.id(), s.name(), s.mode(), performance.details().sectionPrices().get(s.id()), remaining,
+                    performance.details().ticketTypes().stream().map(t -> new SectionAvailability.TicketPrice(
+                            t.id(), t.name(), t.eligibility(), t.price(performance.details().sectionPrices().get(s.id())))).toList());
         }).toList();
         return new Availability(performanceId, plan.hallId(), performance.details(),
                 plan.details().layoutNotice(), bookable, SalesWindow.statusAt(salesWindow, performance, now),

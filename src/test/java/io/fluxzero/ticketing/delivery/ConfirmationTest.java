@@ -71,4 +71,33 @@ class ConfirmationTest extends TicketingTestSupport {
                 .expectThat(f -> assertEquals(2, remote.received.size()));
     }
 
+    @ParameterizedTest @ValueSource(booleans = {false, true})
+    void aCancelledReservationStopsScheduledConfirmationRetries(boolean async) {
+        var remote = new Mailpit(); remote.failures.set(1);
+        delivery(async, remote).whenCommandByUser(PAYMENTS, success())
+                .expectError(io.fluxzero.ticketing.common.web.IntegrationFailure.class).andThen()
+                .givenCommandsByUser(ALICE, new io.fluxzero.ticketing.booking.api.CancelReservation(R))
+                .whenTimeElapses(java.time.Duration.ofSeconds(60)).expectNoErrors()
+                .expectThat(f -> {
+                    assertEquals(1, remote.received.size());
+                    var stopped = Fluxzero.getDocument(R, ConfirmationDelivery.class).orElseThrow();
+                    assertNull(stopped.acceptedAt());
+                    assertNotNull(stopped.stoppedReason());
+                    assertNull(stopped.retryAt());
+                }).andThen().whenEvent(new io.fluxzero.ticketing.delivery.privateapi.ConfirmationEvents.RetryConfirmation(R))
+                .expectThat(f -> assertEquals(1, remote.received.size()));
+    }
+    @ParameterizedTest @ValueSource(booleans = {false, true})
+    void aCancelledPerformanceStopsConfirmationBeforeReservationSettlement(boolean async) {
+        var remote = new Mailpit(); remote.failures.set(1);
+        delivery(async, remote).whenCommandByUser(PAYMENTS, success())
+                .expectError(io.fluxzero.ticketing.common.web.IntegrationFailure.class).andThen()
+                .givenCommandsByUser(OPERATOR, new io.fluxzero.ticketing.catalog.api.CancelPerformance(SHOW))
+                .whenTimeElapses(java.time.Duration.ofSeconds(60)).expectNoErrors()
+                .expectThat(f -> {
+                    assertEquals(1, remote.received.size());
+                    assertNotNull(Fluxzero.getDocument(R, ConfirmationDelivery.class).orElseThrow().stoppedReason());
+                });
+    }
+
 }

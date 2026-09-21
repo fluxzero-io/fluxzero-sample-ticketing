@@ -34,8 +34,9 @@ The four R-marked positions are resolved using the venue's
 [accessibility guidance](https://www.concertgebouw.nl/minder-mobiele-bezoekers) and
 [facilities document](https://d35w1qwxagl33g.cloudfront.net/common/gehandicaptenvoorzieningen.pdf):
 stalls 9-1 and 10-24 are wheelchair spaces, with companion seats 9-2 and 10-23.
-The example labels these types but does not implement the venue's telephone booking policy,
-eligibility rules or paired wheelchair/companion sales. Actual visits require the venue's
+The example requires a wheelchair-space request and allows its companion seat only in the same
+booking as that particular wheelchair space. A wheelchair space can also be booked alone.
+This demonstration policy does not implement the venue's telephone booking or eligibility policy. Actual visits require the venue's
 own accessibility arrangements; balcony access is via stairs.
 
 Positions are the centers of the drawn seat outlines, translated and uniformly scaled per
@@ -43,6 +44,12 @@ section to a 100×100 coordinate space. Both axes use the same scale, preserving
 aisles and relative placement. The app renders its own schematic buttons, not the venue's
 PDF artwork. Distances and seat icons are not an architectural drawing. The stage remains
 above the stalls; the balcony is shown separately as in the source.
+
+Each seat retains an explicit `nextSeatId` within its section and row. The checked-in links
+follow the drawn contiguous runs, stopping at aisles and gaps (including stalls row 13 and
+the balcony centre aisle). `companionFor` links a companion to its wheelchair space. Neither
+link is inferred from a customer's selected seat numbers at runtime. These are immutable
+layout values on the SeatingPlan graph, not separate inventory pools.
 
 ## Product behavior
 
@@ -61,3 +68,19 @@ the reservation command decides atomically whether the complete selection can be
 Use a fresh local runtime after changing this seed configuration. This unpublished schema replaces embedded layouts with plan relationships; it does not
 include migration code for previous development namespaces. The Main Hall, Ronda and Demo Forum still use
 explicitly illustrative configurations; see [demo data](demo-data.md).
+
+## Prices and ticket choice
+
+Section prices are the example's price categories; multiple ticket types can use the same
+seat or standing stock. The matinee offers Standard and fictional Under 18 tickets at 50%
+off. Eligibility is displayed before purchase; checking age at entry is a staff responsibility,
+not a claim that the app verifies a visitor's age. Discounts round down to cents, with a minimum
+paid price of one cent. The accepted type, label and amount are frozen on each admission.
+Scheduling can enable the same Under 18 offer. Seat-specific ranks, dynamic pricing and
+promotional codes are outside this slice.
+
+**Find together** pages through at most 100 seats per request and offers up to five groups
+of standard seats. It follows explicit adjacency, skips occupied or accessible positions,
+and honours sales windows. Suggestions do not reserve stock: a concurrent sale can invalidate
+them, and ReserveTickets still accepts the complete group or none. The UI lets customers
+choose a different ticket type for each selected place and retains that draft through sign-in.

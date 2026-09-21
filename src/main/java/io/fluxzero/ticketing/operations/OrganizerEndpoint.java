@@ -43,6 +43,8 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.List;
+import io.fluxzero.ticketing.catalog.api.model.TicketType;
 import java.util.Set;
 import org.springframework.stereotype.Component;
 
@@ -70,7 +72,8 @@ public class OrganizerEndpoint {
 
     public record Schedule(@NotBlank String performanceId, @NotBlank String eventId,
                            @NotBlank String seatingPlanId, @NotNull LocalDateTime startsAt,
-                           @NotEmpty Map<@NotBlank String, @NotNull @Valid Money> sectionPrices) {}
+                           @NotEmpty Map<@NotBlank String, @NotNull @Valid Money> sectionPrices,
+                           @NotEmpty List<@NotNull @Valid TicketType> ticketTypes) {}
 
     @HandlePost("/performances") PerformanceId schedule(Schedule schedule, WebRequest request) {
         BrowserRequests.requireSameOrigin(request);
@@ -83,7 +86,7 @@ public class OrganizerEndpoint {
                 "Choose an unambiguous local time outside the daylight-saving clock change");
         var command = new SchedulePerformance(new PerformanceId(schedule.performanceId()),
                 new EventId(schedule.eventId()), new SeatingPlanId(schedule.seatingPlanId()),
-                new PerformanceDetails(schedule.startsAt().atZone(zone).toInstant(), zone, schedule.sectionPrices()));
+                new PerformanceDetails(schedule.startsAt().atZone(zone).toInstant(), zone, schedule.sectionPrices(), schedule.ticketTypes()));
         Fluxzero.sendCommandAndWait(command);
         return command.performanceId();
     }

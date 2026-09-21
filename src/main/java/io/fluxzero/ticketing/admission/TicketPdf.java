@@ -45,7 +45,7 @@ public final class TicketPdf {
                 content.showText(DateTimeFormatter.ofPattern("EEE d MMM uuuu, HH:mm", java.util.Locale.ENGLISH)
                         .withZone(pass.timeZone()).format(pass.startsAt()));
                 for (String line : new String[]{pass.hall(), pass.section() + " / " + pass.seat(),
-                        pass.ticket().ticketId().toString(), "Demo ticket - not valid for real venue entry"}) {
+                        pass.ticket().admission().ticketTypeName(), pass.ticket().ticketId().toString(), "Demo ticket - not valid for real venue entry"}) {
                     content.newLineAtOffset(0, -22); content.showText(fit(font, line, 12, 504));
                 }
                 content.endText();

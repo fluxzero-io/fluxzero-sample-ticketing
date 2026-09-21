@@ -28,7 +28,7 @@ export function TicketPass({ id }) {
       <p>{new Intl.DateTimeFormat("en-GB", {dateStyle:"full", timeStyle:"short", timeZone:pass.timeZone}).format(new Date(pass.startsAt))}</p>
       <div className="entry-ticket">
         <img className="ticket-qr" src={`/api/tickets/${id}/qr`} alt="Ticket admission QR code" />
-        <h2>{pass.section}</h2><p>{pass.seat}</p>
+        <h2>{pass.section}</h2><p>{pass.seat} · {pass.ticket.admission.ticketTypeName}</p>
         {pass.checkIn && <p role="status">Already admitted</p>}
         <a className="primary" href={`/api/tickets/${id}/download`}>Download PDF</a>
         {!pass.checkIn && <div className="wallet-actions">

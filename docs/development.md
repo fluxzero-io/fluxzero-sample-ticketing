@@ -12,7 +12,7 @@
   search, cancellation and retained refund progress.
 - Responsive React UI, OIDC/PKCE sign-in and shared opaque browser sessions.
 - Provider-independent payment facts, stateful Stripe checkout/refund/reconciliation and
-  verified callback handling, plus atomic Luma event import with local inventory ownership.
+  verified callback handling.
 - Operator, payments and billing permissions plus customer ownership at message boundaries.
   The customer identity is injected from `User`, not accepted as a reservation field.
 
@@ -50,8 +50,8 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 | `StripeRefundIsolationTest` | Old attempts cannot restart or release their replacement; payment notifications cannot resume a paused refund |
 | `StripeRefundProcessTest` | Competing requests permit one unresolved provider attempt; mismatches cannot settle core refunds |
 | `StripeEffectRecoveryTest`, `StripeWebhookTest` | Pending/failed/refunded separation, retained attempts, terminal-state protection, signature verification, duplicate and out-of-order callbacks |
-| `LumaIntegrationTest` | Current API contract, scoped calendar, safe mapping, validated direct acceptance, atomic rollback and idempotent import |
-| `IntegrationRecoveryTest` | Fresh client recovers adapter intent and imported source, then completes a pending refund without another POST |
+| `IntegrationRecoveryTest` | Fresh client recovers adapter intent, then completes a pending refund without another POST |
+| `TicketChoiceTest` | Shared stock across ticket types, frozen prices, explicit wheelchair/companion rules, paged adjacency and sales-window enforcement |
 | `ModelDeletionTest` | Owning-parent cascade, preserved values after logical deletion, reservation deadline cleanup and explicit erasure of selected Model histories |
 | `RuntimeRecoveryTest` | New WebSocket client and application load models and a pending deadline written to the managed runtime by the previous application, without reseeding |
 | `AdmissionTest`, `TicketPassTest`, `AdmissionEndpointTest` | Current signed credentials, PDF/QR delivery, atomic one-time entry, cancellation boundaries and encoded ticket routes |
@@ -113,9 +113,7 @@ are never silently moved by catalogue updates; there is no layout-editing comman
 Implemented. See [integration setup and recovery](integrations.md) for configuration,
 local command names, supported API contracts and boundaries. Controlled HTTP handlers are
 fixture-only and never replace domain behavior. The managed Stripe sandbox has been exercised
-through the browser, including successful and declined payments and signed callbacks. Luma
-live-calendar qualification is deferred because its API requires a paid Plus calendar; no
-subscription is active. Controlled Luma contract tests remain available.
+through the browser, including successful and declined payments and signed callbacks.
 
 ## Phase 3: access and UI
 

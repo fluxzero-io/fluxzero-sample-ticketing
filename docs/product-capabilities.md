@@ -35,10 +35,9 @@ It is a scope recommendation for this example, not a promise to reproduce every 
 | Capability | Current behavior | Missing product behavior |
 | --- | --- | --- |
 | Venue and programme management | Organizer UI schedules immutable-plan performances, manages sales windows and cancels performances | Publishing/unpublishing, configuration editing/retirement, scheduling collision checks and rescheduling |
-| Luma | Operator command imports one managed calendar event atomically; identical imports are idempotent | Live-calendar qualification, operator import screen and explicit reconciliation of changed/cancelled source events |
-| Accessible seating | Wheelchair and companion positions are identifiable | Event-specific access guidance, paired selection policy and assisted booking workflow |
-| Seat selection | Source-backed map, section selection, row list, grouped holds | Automatic adjacent-seat suggestions, sightline warnings, price categories within a section and optional single-seat-gap rules |
-| Ticket products and pricing | One price per section per performance | Adult/child/student or early-bird types sharing the same physical stock; promotional codes, fees and explicit price breakdown |
+| Accessible seating | Wheelchair requests and matching companion pairs are validated atomically | Event-specific access guidance and assisted booking workflow |
+| Seat selection | Source-backed map, row list, grouped holds and paged adjacent-seat suggestions | Sightline warnings, price categories within a section and optional single-seat-gap rules |
+| Ticket products and pricing | Section price categories and per-place Standard/Under 18 choice sharing physical stock, with frozen prices | Time-dependent offers, promotional codes, fees and tax breakdown |
 | Organizer allocations | Only temporary customer holds | Production/artist/partner blocks, invitations, complimentary tickets and controlled release into public sale |
 | Checkout | EUR card payments, retries and retained provider state | Buyer/contact details, clear fee/tax breakdown, production merchant configuration and payment-method expansion |
 | Fulfilment | Retried confirmation email, owner-only QR ticket, downloadable PDF, signed Apple pass and Google Wallet save link | Production email provider, issuer/device qualification and live wallet updates |
@@ -62,10 +61,9 @@ It is a scope recommendation for this example, not a promise to reproduce every 
    choices, sets sales windows in the venue time zone, grants scoped access, searches orders and
    cancels purchases while showing retained payment/refund state. Organizer tenancy, invitations,
    change communications and issue/download workflows for invoices and credit notes remain extensions.
-3. **Make seat and ticket choice realistic.** Add adjacent-seat suggestions, price categories,
-   companion rules and sightline information. Ticket types must draw from the same physical
-   inventory; introducing an adult/child price must never multiply section capacity. Artist and
-   production blocks need explicit release rules, not long-lived customer holds.
+3. **Seat and ticket choice delivered.** Paged suggestions follow explicit adjacency; wheelchair
+   and companion requests are validated as a group. Section prices and optional concession
+   types share physical stock. Seat-specific price ranks and sightline information remain extensions.
 4. **Extend sales and after-sales deliberately.** Consider presales/codes, waitlists, box-office
    sales, partial refunds, rescheduling and transfers. Transfers need recipient acceptance and
    revocation of the previous admission credential. Bundles, season passes, resale, dynamic

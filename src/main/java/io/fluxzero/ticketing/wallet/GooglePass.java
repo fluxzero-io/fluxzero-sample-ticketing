@@ -35,6 +35,7 @@ public final class GooglePass {
                     "barcode", Map.of("type", "QR_CODE", "value", pass.credential()),
                     "seatInfo", Map.of("section", text(pass.section()), "seat", text(pass.seat())),
                     "textModulesData", List.of(Map.of("id", "venue", "header", "VENUE", "body", pass.hall()),
+                            Map.of("id", "ticketType", "header", "TICKET", "body", pass.ticket().admission().ticketTypeName()),
                             Map.of("id", "admission", "header", "ADMISSION", "body", "Current ticket status is checked online at the entrance.")));
             var now = Fluxzero.currentTime();
             var claims = Map.of("iss", account.path("client_email").asText(), "aud", "google", "typ", "savetowallet",

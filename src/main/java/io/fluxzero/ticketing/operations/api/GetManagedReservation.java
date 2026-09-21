@@ -29,7 +29,7 @@ import static io.fluxzero.ticketing.common.Checks.require;
 public record GetManagedReservation(@NotNull ReservationId reservationId, @PositiveOrZero int offset)
         implements Request<GetManagedReservation.View> {
     public record PaymentView(Payment payment, GetStripeRefundStatus.View refund) {}
-    public record Delivery(String email, Instant acceptedAt, String problem) {}
+    public record Delivery(String email, Instant acceptedAt, String problem, String stoppedReason) {}
     public record View(Reservation reservation, GetProgramme.Show show, List<Ticket> tickets, int admitted,
                        List<PaymentView> payments, boolean morePayments, Delivery delivery) {}
 
@@ -49,6 +49,6 @@ public record GetManagedReservation(@NotNull ReservationId reservationId, @Posit
                                 ? TicketingUser.SYSTEM.apply(() -> Fluxzero.queryAndWait(new GetStripeRefundStatus(payment.paymentId())))
                                 : null)).toList(), payments.size() > 20,
                 contact == null ? null : new Delivery(contact.email(), delivery == null ? null : delivery.acceptedAt(),
-                        delivery == null ? null : delivery.problem()));
+                        delivery == null ? null : delivery.problem(), delivery == null ? null : delivery.stoppedReason()));
     }
 }

@@ -145,4 +145,18 @@ class OrganizerOperationsTest extends TicketingTestSupport {
                                 io.fluxzero.ticketing.operations.api.model.StaffAccess.class).orElse(null)))
                 .expectSuccessfulResult();
     }
+    @ParameterizedTest @ValueSource(booleans = {false, true})
+    void combinedRolesExposeBothWorkspacesWithoutWideningPerformancePermissions(boolean async) {
+        fixture(async).givenCommandsByUser(OPERATOR,
+                        new SetStaffAccess(SHOW, BOB.id(), Set.of(Permission.MANAGE)),
+                        new SetStaffAccess(GA, BOB.id(), Set.of(Permission.ADMISSION)))
+                .whenQueryByUser(BOB, new GetWorkspaceAccess())
+                .expectResult(new GetWorkspaceAccess.Access(true, true))
+                .andThen().whenQueryByUser(BOB, new GetManagedPerformances(0))
+                .expectResult((GetManagedPerformances.Page page) -> page.items().size() == 1
+                        && page.items().getFirst().show().performance().performanceId().equals(SHOW))
+                .andThen().whenQueryByUser(BOB, new GetManagedPerformance(GA))
+                .expectExceptionalResult(UnauthorizedException.class);
+    }
+
 }

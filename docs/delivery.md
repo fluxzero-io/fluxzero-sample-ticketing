@@ -12,11 +12,17 @@ After an accepted payment, each ticket has a signed admission code tied to its t
 
 Find Mailpit's current URL in the managed service status. The mail workflow retains intent, records provider acceptance, retries temporary failures with the same Message-ID and stops automatic retries after ten failed attempts. Mailpit deduplicates that identity while the message remains in its mailbox. This is not a claim of exactly-once delivery across mailbox deletion or replacement. Production email delivery needs a configured provider adapter.
 
+Before an outbound attempt, the delivery handler checks the current booking and performance.
+An observed cancellation stops confirmation delivery and cancels its retry schedule. That
+outcome is retained separately from provider acceptance. A late acceptance still records the
+fact that mail was accepted. Cancellation and external mail are not one transaction: an
+already in-flight message cannot be recalled, and the booking link always shows current status.
+
 ## Staff rights
 
 The initial transition-to-delivery handoff has its own retrying consumer: a failed publication
 does not acknowledge the reservation event. Managers can inspect delivery on the order detail
-and request another attempt after a delivery problem. Admission-only staff see **Entrance**;
+and request another attempt after a delivery problem. Anyone with admission access sees **Entrance**, including users who also manage other performances;
 ordinary customers receive no staff navigation. Operators select staff from people who have
 already signed in, inspect their current grants and revoke them from the same workspace.
 

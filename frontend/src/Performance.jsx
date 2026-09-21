@@ -19,6 +19,8 @@ export function Performance({ id, session }) {
     const params = new URLSearchParams(location.hash.split("?")[1]);
     const quantity = Number(params.get("quantity"));
     return {
+      types: params.getAll("type"),
+      wheelchair: params.get("wheelchair") === "yes",
       section: params.get("section") || "",
       seats: [...new Set(params.getAll("seat"))].filter(Boolean).slice(0, 12),
       quantity:
@@ -41,6 +43,14 @@ export function Performance({ id, session }) {
     [busy, setBusy] = useState(false),
     [view, setView] = useState(() => window.matchMedia("(max-width: 640px)").matches ? "list" : "map"),
     [rowFilter, setRowFilter] = useState("");
+  const [ticketTypes, setTicketTypes] = useState(() => Object.fromEntries(
+    (draft.seats.length ? draft.seats : Array.from({length: draft.quantity}, (_, i) => `ga-${i}`))
+      .map((key, i) => [key, draft.types[i] || "standard"])));
+  const [wheelchair, setWheelchair] = useState(draft.wheelchair);
+  const [groupSize, setGroupSize] = useState(2);
+  const [suggestions, setSuggestions] = useState(null);
+  const [suggesting, setSuggesting] = useState(false);
+  const suggestionRequest = useRef(0);
   const attempt = useRef(crypto.randomUUID());
   const [seatOffset, setSeatOffset] = useState(0);
   useEffect(() => {
@@ -75,16 +85,24 @@ export function Performance({ id, session }) {
     if (choice.mode === "RESERVED_SEATING")
       selected.forEach((seat) => params.append("seat", seat));
     else params.set("quantity", quantity);
+    (choice.mode === "RESERVED_SEATING" ? selected : Array.from({length: quantity}, (_, i) => `ga-${i}`))
+      .forEach(key => params.append("type", ticketTypes[key] || "standard"));
+    if (wheelchair) params.set("wheelchair", "yes");
     history.replaceState(
       null,
       "",
       `${location.pathname}${location.search}#/show/${id}?${params}`,
     );
-  }, [id, section, choice?.mode, selected, quantity]);
+  }, [id, section, choice?.mode, selected, quantity, ticketTypes, wheelchair]);
   function chooseSection(sectionId) {
     setProblem(null);
     setSection(sectionId);
     setSelected([]);
+    setTicketTypes({});
+    setWheelchair(false);
+    setSuggestions(null);
+    suggestionRequest.current++;
+    setSuggesting(false);
     setQuantity(1);
     attempt.current = crypto.randomUUID();
     setSeatOffset(0);
@@ -141,6 +159,21 @@ export function Performance({ id, session }) {
   const unavailableSelection = seats.some(
     ({ seat, available }) => !available && selected.includes(seat.id),
   );
+  const selectionKeys = seated ? selected : Array.from({length: quantity}, (_, i) => `ga-${i}`);
+  const ticketPrice = key => choice?.ticketPrices?.find(t => t.id === (ticketTypes[key] || "standard")) || choice?.ticketPrices?.[0];
+  const total = selectionKeys.reduce((sum, key) => sum + (ticketPrice(key)?.price.minorUnits || choice?.price.minorUnits || 0), 0);
+  const selectedSeats = seats.filter(({seat}) => selected.includes(seat.id)).map(({seat}) => seat);
+  const needsWheelchair = selectedSeats.some(seat => seat.kind === "WHEELCHAIR");
+  const missingCompanionPair = selectedSeats.find(seat => seat.kind === "COMPANION" && !selected.includes(seat.companionFor));
+  async function suggest(offset = 0) {
+    const request = ++suggestionRequest.current;
+    setSuggesting(true); setProblem(null);
+    try {
+      const result = await api(`/api/programme/${id}/suggestions?section=${encodeURIComponent(section)}&quantity=${groupSize}&offset=${offset}`);
+      if (request === suggestionRequest.current) setSuggestions(result);
+    } catch (e) { if (request === suggestionRequest.current) setProblem(e); }
+    finally { if (request === suggestionRequest.current) setSuggesting(false); }
+  }
   function toggle(seat) {
     if (!selected.includes(seat) && selected.length >= 12) return;
     setProblem(null);
@@ -165,10 +198,11 @@ export function Performance({ id, session }) {
         reservationId: attempt.current,
         performanceId: id,
         selection: seated
-          ? selected.map((seatId) => ({ sectionId: section, seatId }))
-          : Array.from({ length: quantity }, () => ({
+          ? selected.map((seatId) => ({ sectionId: section, seatId, ticketType: ticketTypes[seatId] || "standard", wheelchairAccessRequired: wheelchair }))
+          : Array.from({ length: quantity }, (_, i) => ({
               sectionId: section,
               seatId: null,
+              ticketType: ticketTypes[`ga-${i}`] || "standard",
             })),
       });
       navigate("/reservation/" + result);
@@ -264,7 +298,7 @@ export function Performance({ id, session }) {
                         {s.remaining ? `${s.remaining} available` : "Sold out"}
                       </small>
                     </span>
-                    <strong>{money(s.price)}</strong>
+                    <strong>{s.ticketPrices?.length > 1 ? `${money({...s.price, minorUnits: Math.min(...s.ticketPrices.map(t => t.price.minorUnits))})}–${money(s.price)}` : money(s.price)}</strong>
                   </button>
                 ))}
               </div>
@@ -272,6 +306,22 @@ export function Performance({ id, session }) {
                 <>
                   {seated ? (
                     <>
+                      <div className="together-tools">
+                        <label>Seats together<select aria-label="Seats together" value={groupSize} onChange={e => {
+                          setGroupSize(Number(e.target.value)); setSuggestions(null); suggestionRequest.current++; setSuggesting(false);
+                        }}>{Array.from({length:12}, (_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}</select></label>
+                        <button className="secondary" disabled={busy || suggesting || !availability.bookable} onClick={() => suggest()}>
+                          {suggesting ? "Finding seats…" : "Find together"}
+                        </button>
+                      </div>
+                      {suggestions && <div className="suggested-seats" aria-label="Seat suggestions">
+                        {suggestions.groups.map(group => <button className="secondary" key={group[0].id} onClick={() => {
+                          setSelected(group.map(s => s.id)); setTicketTypes({}); setWheelchair(false); setProblem(null); attempt.current = crypto.randomUUID();
+                        }}>Row {group[0].row} · {group.map(s => s.number).join(", ")}</button>)}
+                        {!suggestions.groups.length && <p className="caption">No suitable group in this part of the section.</p>}
+                        {suggestions.hasMore && <button className="text-button" disabled={suggesting} onClick={() => suggest(suggestions.nextOffset)}>More suggestions</button>}
+                        <p className="caption">Standard seats only. Places are held when you reserve.</p>
+                      </div>}
                       <div className="view-toggle">
                         <button
                           aria-pressed={view === "map"}
@@ -431,6 +481,19 @@ export function Performance({ id, session }) {
                       ))}
                     </div>
                   )}
+                  {count > 0 && choice.ticketPrices?.length > 1 && <fieldset className="ticket-types"><legend>Ticket types</legend>
+                    {selectionKeys.map((key, i) => <label key={key}>{seated ? `Seat ${key}` : `Ticket ${i + 1}`}
+                      <select value={ticketTypes[key] || "standard"} onChange={e => {
+                        setTicketTypes(t => ({...t, [key]: e.target.value})); attempt.current = crypto.randomUUID();
+                      }}>{choice.ticketPrices.map(t => <option key={t.id} value={t.id}>{t.name} · {money(t.price)}</option>)}</select>
+                    </label>)}
+                    {[...new Set(selectionKeys.map(key => ticketTypes[key] || "standard"))].filter(t => t !== "standard").map(id =>
+                      <p className="caption" key={id}>{choice.ticketPrices.find(t => t.id === id)?.eligibility}</p>)}
+                  </fieldset>}
+                  {needsWheelchair && <label className="choice-option"><input type="checkbox" checked={wheelchair} onChange={e => {
+                    setWheelchair(e.target.checked); attempt.current = crypto.randomUUID();
+                  }} />A visitor in this booking needs the selected wheelchair space.</label>}
+                  {missingCompanionPair && <p className="notice">Companion seat {missingCompanionPair.id} requires wheelchair space {missingCompanionPair.companionFor} in this booking.</p>}
                   <div role="status">
                     {unavailableSelection && (
                       <p className="notice">
@@ -462,7 +525,7 @@ export function Performance({ id, session }) {
                     <strong>
                       {money({
                         ...choice.price,
-                        minorUnits: choice.price.minorUnits * count,
+                        minorUnits: total,
                       })}
                     </strong>
                   </div>
@@ -471,6 +534,8 @@ export function Performance({ id, session }) {
                     disabled={
                       busy ||
                       !count ||
+                      (needsWheelchair && !wheelchair) ||
+                      !!missingCompanionPair ||
                       !availability.bookable ||
                       (!seated && choice.remaining < quantity)
                     }

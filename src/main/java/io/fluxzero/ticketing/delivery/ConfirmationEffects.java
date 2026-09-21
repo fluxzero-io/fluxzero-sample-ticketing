@@ -17,15 +17,16 @@ public class ConfirmationEffects {
     @HandleDocument void reconcile(ConfirmationDelivery observed) {
         var delivery = Fluxzero.getDocument(observed.reservationId(), ConfirmationDelivery.class).orElseThrow();
         var schedule = ScheduleId.of("confirmation", delivery.reservationId());
-        if (delivery.acceptedAt() != null) { Fluxzero.cancelSchedule(schedule); return; }
+        if (delivery.acceptedAt() != null || delivery.stoppedReason() != null) { Fluxzero.cancelSchedule(schedule); return; }
         if (delivery.problem() != null) {
             if (delivery.retryAt() != null) Fluxzero.schedule(new RetryConfirmation(delivery.reservationId()), schedule, delivery.retryAt());
             return;
         }
         Object outcome;
         try {
-            Fluxzero.sendCommandAndWait(new SendConfirmationMail(delivery.reservationId(), delivery.recipient()));
-            outcome = new ConfirmationAccepted(delivery.reservationId(), Fluxzero.currentTime());
+            boolean sent = Fluxzero.sendCommandAndWait(new SendConfirmationMail(delivery.reservationId(), delivery.recipient()));
+            outcome = sent ? new ConfirmationAccepted(delivery.reservationId(), Fluxzero.currentTime())
+                    : new ConfirmationStopped(delivery.reservationId(), "Booking or performance is no longer valid");
         } catch (io.fluxzero.ticketing.common.web.IntegrationFailure | io.fluxzero.sdk.publishing.TimeoutException e) {
             outcome = new ConfirmationFailed(delivery.reservationId(), "Email delivery needs attention",
                     delivery.attempts() < 9 ? Fluxzero.currentTime().plusSeconds(60) : null);

@@ -3,11 +3,11 @@
 The root package is `io.fluxzero.ticketing`. Business domains own their messages, identities,
 state and behavior. Commands, queries and typed IDs live in each domain's `api`; Models,
 query results and value objects live in `api.model`. Self-handling commands and queries keep
-their Fluxzero handlers. Outgoing HTTP messages live in `payment.stripe.request` and `catalog.luma.request`,
+their Fluxzero handlers. Outgoing HTTP messages live in `payment.stripe.request`,
 separate from commands and queries intended for UI or endpoint adapters. They retain local
 Fluxzero dispatch and are not public application actions. Package names alone do not grant
 or enforce endpoint access. Internal workflow events and refund identities live in
-`payment.stripe.privateapi`; retained refund values live in its `model` subpackage. Internal inventory and accepted domain transitions live in each owning `privateapi`, including Luma import acceptance. Separate observers and domain rules sit beside the domain's API.
+`payment.stripe.privateapi`; retained refund values live in its `model` subpackage. Internal inventory and accepted domain transitions live in each owning `privateapi`. Separate observers and domain rules sit beside the domain's API.
 
 | Domain | Responsibility |
 | --- | --- |
@@ -51,18 +51,9 @@ src/main/java/io/fluxzero/ticketing/
 │   │       ├── SalesWindow.java
 │   │       ├── Section.java
 │   │       └── Seat.java
-│   ├── privateapi/
-│   │   ├── PerformanceCancelled.java
-│   │   └── SettlePerformanceCancellation.java
-│   └── luma/
-│       ├── api/
-│       │   ├── ImportLumaEvent.java
-│       │   ├── LumaImportId.java
-│       │   └── model/
-│       │       ├── LumaImport.java
-│       │       └── LumaEvent.java
-│       ├── privateapi/AcceptLumaImport.java
-│       └── request/FetchLumaEvent.java
+│   └── privateapi/
+│       ├── PerformanceCancelled.java
+│       └── SettlePerformanceCancellation.java
 ├── booking/
 │   ├── BookingEndpoint.java
 │   ├── ReservationDeadlines.java
@@ -157,13 +148,12 @@ src/main/java/io/fluxzero/ticketing/
 `Money` is a payment value reused by catalogue prices, reservations and billing. These domains
 may reference one another's typed IDs and state when a transaction requires it. A package
 boundary does not turn the app into separate services or change the [Model graph](model.md).
-`Payment` has no Stripe dependency. Stripe adapts the payment API; Luma adapts the catalogue
-API. Each external call remains in a specific local command/query handler using Fluxzero web
+`Payment` has no Stripe dependency. Stripe adapts the payment API. Each external call remains in a specific local command/query handler using Fluxzero web
 requests. `common` contains only a generic precondition and HTTP response validation, without
 business policy or an HTTP client layer.
 
 Tests mirror the domain and adapter packages, including booking, delivery, admission, operations,
-wallets, Stripe and Luma. The booking journey tests also exercise payments and billing together.
+wallets and Stripe. The booking journey tests also exercise payments and billing together.
 Shared fixture setup lives in test-only `support`.
 The root package registers current message and value types through `@RegisterType`.
 

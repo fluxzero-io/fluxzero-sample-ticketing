@@ -20,17 +20,12 @@ import io.fluxzero.ticketing.catalog.api.HallId;
 import io.fluxzero.ticketing.catalog.api.PerformanceId;
 import io.fluxzero.ticketing.catalog.api.VenueId;
 import io.fluxzero.ticketing.catalog.api.model.Event;
-import io.fluxzero.ticketing.catalog.api.model.EventDetails;
 import io.fluxzero.ticketing.catalog.api.model.Performance;
 import io.fluxzero.ticketing.catalog.api.model.Venue;
-import io.fluxzero.ticketing.catalog.luma.api.LumaImportId;
-import io.fluxzero.ticketing.catalog.luma.api.model.LumaEvent;
-import io.fluxzero.ticketing.catalog.luma.privateapi.AcceptLumaImport;
 import io.fluxzero.ticketing.payment.api.RecordPaymentSuccess;
 import io.fluxzero.ticketing.payment.api.model.Money;
 import io.fluxzero.ticketing.support.TicketingTestSupport;
 import java.time.Duration;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,7 +42,6 @@ class ModelDeletionTest extends TicketingTestSupport {
     private static final HallId HALL = new HallId("concertgebouw-main");
     private static final EventId EVENT = new EventId("night-lights");
     private static final ReservationId HOLD = new ReservationId("pending-deadline");
-    private static final String SOURCE_ID = "luma-cal_fixture:evt-deletion";
 
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void deletingAHoldCancelsItsOwnedDeadlineWithoutADeadlineObserver(boolean async) {
@@ -69,8 +63,7 @@ class ModelDeletionTest extends TicketingTestSupport {
             before.putAll(purchaseValues());
             for (Id<?> id : List.of(VENUE, HALL, new HallId("concertgebouw-recital"),
                     io.fluxzero.ticketing.catalog.DemoCatalog.MAIN_PLAN, io.fluxzero.ticketing.catalog.DemoCatalog.RECITAL_PLAN, SHOW,
-                    new PerformanceId("night-lights-matinee"), HOLD,
-                    new PerformanceId(SOURCE_ID), new LumaImportId(SOURCE_ID))) {
+                    new PerformanceId("night-lights-matinee"), HOLD)) {
                 before.put(id, Fluxzero.loadModel(id).get());
             }
             OPERATOR.apply(() -> Fluxzero.sendCommandAndWait(new DeleteVenue(VENUE)));
@@ -79,7 +72,6 @@ class ModelDeletionTest extends TicketingTestSupport {
                     f.cache().clear();
                     before.forEach(ModelDeletionTest::assertDeletedWithHistory);
                     assertNotNull(Fluxzero.loadModel(EVENT).get());
-                    assertNotNull(Fluxzero.loadModel(new EventId(SOURCE_ID)).get());
                     assertNotNull(Fluxzero.loadModel(GA).get());
                     assertEquals(List.of(GA), Fluxzero.loadGraph(EVENT).childModels(
                             Performance.class).stream()
@@ -149,11 +141,7 @@ class ModelDeletionTest extends TicketingTestSupport {
     }
 
     private TestFixture completeGraph(boolean async) {
-        var source = new LumaEvent("evt-deletion", "cal_fixture", new EventDetails("Imported programme", "Fictional"),
-                NOW.plus(Duration.ofDays(2)), ZoneId.of("Europe/Amsterdam"), "https://luma.com/deletion-fixture");
         return pending(async)
-                .givenCommandsByUser(OPERATOR, new AcceptLumaImport(new LumaImportId(SOURCE_ID), new EventId(SOURCE_ID),
-                        new PerformanceId(SOURCE_ID), io.fluxzero.ticketing.catalog.DemoCatalog.MAIN_PLAN, source, Map.of("stalls", new Money(3500, "EUR"))))
                 .givenCommandsByUser(PAYMENTS,
                         new RecordPaymentSuccess(P, "capture-deletion", new Money(7000, "EUR")))
                 .givenCommandsByUser(BILLING, new DraftInvoice(I, R), new IssueInvoice(I))

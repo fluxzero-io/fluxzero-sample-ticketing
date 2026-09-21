@@ -26,13 +26,11 @@ fake values and intercept the actual Fluxzero web requests; no live account is n
 | `ticketing.stripe.accountId` | `TICKETING_STRIPE_ACCOUNTID` | Stable identity of the merchant account owning that key |
 | `ticketing.stripe.environment` | `TICKETING_STRIPE_ENVIRONMENT` | `test` (default) or `live`; must match returned objects |
 | `ticketing.stripe.webhookSecret` | `TICKETING_STRIPE_WEBHOOKSECRET` | Signing secret for this endpoint/account/environment |
-| `ticketing.luma.apiKey` | `TICKETING_LUMA_APIKEY` | Luma key with manage access to the selected calendar |
-| `ticketing.luma.calendarId` | `TICKETING_LUMA_CALENDARID` | Only calendar accepted by the import |
 
 The configured Stripe account label must belong to the supplied key. Phase 2 supports one
 direct merchant account per application configuration, card payments in EUR and full refunds.
 Stripe Connect, partial refunds, disputes, subscriptions and additional currencies are outside
-this example. Luma currently requires a Plus subscription to create an API key.
+this example.
 
 Fluxzero's outbound request transport includes authentication headers. Treat its namespace,
 request history and administrative tools as privileged. `Checkout.clientSecret` is returned
@@ -190,29 +188,6 @@ retry a definitively failed refund from the order detail. Recovery targets the d
 and a repeated retry keeps the same next-attempt identity. A refund does not automatically rewrite
 an issued invoice; the billing commands still own credit notes.
 
-## Luma import
-
-Live-calendar qualification is deferred: Luma requires Plus for API keys, and this example
-has not qualified against a paid calendar. The fixture suite verifies controlled HTTP
-contracts, mapping and domain behavior; it is not evidence of a successful live API import.
-
-`ImportLumaEvent(externalId, seatingPlanId, prices)` requires `OPERATOR`. Its `FetchLumaEvent` query
-calls `GET https://public-api.luma.com/v1/events/get?event_id=...` with `x-luma-api-key`.
-This is the current flat event response, not the older singular endpoint/envelope.
-Only managed, in-person Luma events in the configured calendar are accepted.
-
-The operator explicitly selects an existing local hall and its section prices. The source
-calendar/event identity determines stable local programme, performance and import IDs.
-`AcceptLumaImport` validates even direct command submissions and commits all three records
-atomically. Bad prices, missing sections or an invalid hall produce no partial catalogue.
-Source metadata is retained without guest/contact records.
-
-An identical import is a no-op. A changed snapshot, seating-plan mapping or price set is rejected for
-explicit reconciliation; no existing reservation moves silently. A reimport selecting another plan is rejected even when its section names match. Luma's capacity and remaining
-spots never determine local inventory. Demo layouts continue to carry their demonstration
-notice. This phase does not publish events back to Luma, synchronize guests or edit imported
-performances automatically.
-
 ## API sources and qualification
 
 Official contracts checked on 16 September 2026:
@@ -222,13 +197,11 @@ Official contracts checked on 16 September 2026:
 - [Idempotent requests and key retention](https://docs.stripe.com/api/idempotent_requests)
 - [Refund creation](https://docs.stripe.com/api/refunds/create) and [refund states](https://docs.stripe.com/api/refunds/object)
 - [Webhook signature and delivery behavior](https://docs.stripe.com/webhooks)
-- [Luma API access](https://docs.luma.com/reference/getting-started-with-your-api)
-- [Current Luma event retrieval contract](https://docs.luma.com/reference/get_v1-events-get)
 
 Verification uses real Fluxzero `TestFixture` handlers with controlled external responses in
 both synchronous and asynchronous modes. A separate managed-runtime test reconstructs stored
-provider intent, refund history and Luma mapping through a fresh application/client, then
-completes the refund without another POST. This does not claim live Stripe/Luma account
+provider intent and refund history through a fresh application/client, then
+completes the refund without another POST. This does not claim live Stripe account
 qualification or persistence across a runtime/database restart.
 
 The [customer UI and authenticated HTTP adapters](ui.md) include owner checks and the raw-body

@@ -84,6 +84,7 @@ public final class ApplePass {
                     "primaryFields", List.of(field("event", "EVENT", pass.title())),
                     "secondaryFields", List.of(field("hall", "VENUE", pass.hall()), field("section", "SECTION", pass.section())),
                     "auxiliaryFields", List.of(field("seat", "PLACE", pass.seat()),
+                            field("ticketType", "TICKET", pass.ticket().admission().ticketTypeName()),
                             field("date", "START", pass.startsAt().atZone(pass.timeZone()).format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm z", java.util.Locale.ENGLISH)))),
                     "backFields", List.of(field("demo", "DEMONSTRATION", "Not valid for real venue entry. Admission checks current ticket status online."))));
             var files = new LinkedHashMap<String, byte[]>();

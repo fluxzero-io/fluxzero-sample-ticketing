@@ -28,4 +28,19 @@ public record Section(@NotBlank String id, @NotBlank String name, @NotNull Admis
         return seats == null || seats.stream().anyMatch(java.util.Objects::isNull)
                 || seats.stream().map(Seat::id).distinct().count() == seats.size();
     }
+    @JsonIgnore
+    @AssertTrue(message = "Seat links must identify a neighbour in the same row or a wheelchair space for a companion")
+    public boolean isSeatLinkValid() {
+        if (seats == null || seats.stream().anyMatch(java.util.Objects::isNull)) return true;
+        for (Seat seat : seats) {
+            if (seat.nextSeatId() != null && seats.stream().noneMatch(other -> other.id().equals(seat.nextSeatId())
+                    && !other.id().equals(seat.id()) && other.row().equals(seat.row()))) return false;
+            if (seat.kind() == Seat.Kind.COMPANION) {
+                if (seats.stream().noneMatch(other -> other.id().equals(seat.companionFor())
+                        && other.kind() == Seat.Kind.WHEELCHAIR)) return false;
+            } else if (seat.companionFor() != null) return false;
+        }
+        return true;
+    }
+
 }

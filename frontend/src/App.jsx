@@ -70,8 +70,8 @@ export function App() {
           >
             My tickets
           </a>
-          {access?.admission && !access?.manage && <a className={page === "staff" || page === "admission" ? "active" : ""} href="#/staff">Entrance</a>}
-          {access?.manage && <a className={["operations", "operations-new", "order", "admission"].includes(page) ? "active" : ""} href="#/operations">Operations</a>}
+          {access?.admission && <a className={page === "staff" || page === "admission" ? "active" : ""} href="#/staff">Entrance</a>}
+          {access?.manage && <a className={["operations", "operations-new", "order"].includes(page) ? "active" : ""} href="#/operations">Operations</a>}
         </nav>
         {session?.authenticated ? (
           <button className="account" onClick={logout} aria-label="Sign out">

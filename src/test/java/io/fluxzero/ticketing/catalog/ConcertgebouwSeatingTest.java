@@ -25,6 +25,13 @@ class ConcertgebouwSeatingTest extends TicketingTestSupport {
                     var stalls = layout.sections().getFirst();
                     var balcony = layout.sections().getLast();
                     assertEquals(62, balcony.capacity());
+                    assertEquals("9-1", seat(stalls, "9-2").companionFor());
+                    assertEquals("10-24", seat(stalls, "10-23").companionFor());
+                    assertNull(seat(stalls, "13-7").nextSeatId());
+                    assertNull(seat(stalls, "13-12").nextSeatId());
+                    assertNull(seat(balcony, "1-9").nextSeatId());
+                    assertNull(seat(balcony, "5-2").nextSeatId());
+                    assertEquals("1-2", seat(stalls, "1-1").nextSeatId());
                     assertEquals(30, stalls.seats().stream().filter(s -> s.row().equals("0")).count());
                     assertEquals(Seat.Kind.WHEELCHAIR, seat(stalls, "9-1").kind());
                     assertEquals(Seat.Kind.COMPANION, seat(stalls, "9-2").kind());
@@ -59,7 +66,7 @@ class ConcertgebouwSeatingTest extends TicketingTestSupport {
 
     @ParameterizedTest @ValueSource(booleans = {false, true})
     void invalidCoordinatesAreRejectedThroughTheDomainCommand(boolean async) {
-        var invalid = new Seat("1-1", "1", "1", new SeatPosition(101, 50), Seat.Kind.STANDARD);
+        var invalid = new Seat("1-1", "1", "1", new SeatPosition(101, 50), Seat.Kind.STANDARD, null, null);
         fixture(async).whenCommandByUser(OPERATOR, new RegisterSeatingPlan(new SeatingPlanId("invalid-coordinates"),
                         new HallId("concertgebouw-main"), new SeatingPlanDetails("Invalid", "1", DemoCatalog.NOTICE,
                         List.of(new Section("stalls", "Stalls", AdmissionMode.RESERVED_SEATING, 1, List.of(invalid))))))

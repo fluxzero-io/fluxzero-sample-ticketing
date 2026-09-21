@@ -1223,3 +1223,12 @@ dialog p {
 .schedule-form .choice-option { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); color: #eee; }
 .choice-option:has(input:checked) { border-color: var(--accent); }
 .choice-option input { min-height: auto; }
+
+.together-tools { display: flex; align-items: end; gap: 1rem; margin: 1rem 0; flex-wrap: wrap; }
+.together-tools label { display: grid; gap: .5rem; }
+.together-tools select, .ticket-types select { padding: .65rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--surface); color: inherit; min-height: 44px; font: inherit; }
+.suggested-seats { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.suggested-seats p { flex-basis: 100%; }
+.ticket-types { border: 0; border-top: 1px solid var(--line); padding: 1rem 0; margin: 1rem 0; }
+.ticket-types label { display: flex; gap: .75rem; justify-content: space-between; align-items: center; margin: .5rem 0; }
+.ticket-types select { max-width: 65%; }

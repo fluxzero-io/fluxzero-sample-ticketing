@@ -281,7 +281,7 @@ export function Purchase({ id }) {
             {r.admissions.map((a, i) => (
               <div key={i}>
                 <span>
-                  {a.seatId ? `Seat ${a.seatId}` : "General admission"}
+                  {a.seatId ? `Seat ${a.seatId}` : "General admission"} · {a.ticketTypeName || "Standard"}
                   <small>
                     {show?.performance.layout.sections.find(
                       (s) => s.id === a.sectionId,

@@ -12,6 +12,7 @@ export function NewPerformance() {
   const [plan, setPlan] = useState(null);
   const [startsAt, setStartsAt] = useState("");
   const [prices, setPrices] = useState({});
+  const [youth, setYouth] = useState(false);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState(null);
   const { data: catalog, error } = useLiveResource(`/api/operations/catalog?eventOffset=${eventOffset}&planOffset=${planOffset}`);
@@ -20,6 +21,8 @@ export function NewPerformance() {
     try {
       const performanceId = await post("/api/operations/performances", {
         performanceId: id.current, eventId: event.eventId, seatingPlanId: plan.id, startsAt,
+        ticketTypes: [{ id: "standard", name: "Standard", eligibility: "All visitors", discountPercent: 0 },
+          ...(youth ? [{ id: "youth", name: "Under 18", eligibility: "Age under 18 on the event date; proof may be requested at entry", discountPercent: 50 }] : [])],
         sectionPrices: Object.fromEntries(plan.sections.map(section => [section.id, {
           minorUnits: Math.round(Number(prices[section.id]) * 100), currency: "EUR",
         }])),
@@ -56,6 +59,9 @@ export function NewPerformance() {
               onChange={e => setPrices({ ...prices, [section.id]: e.target.value })} /></span>
           </label>)}
         </fieldset>
+        <label className="choice-option"><input type="checkbox" checked={youth} onChange={e => setYouth(e.target.checked)} />
+          Offer Under 18 tickets · 50% off the section price
+        </label>
       </>}
       <button className="primary" disabled={busy || !event || !plan}>{busy ? "Scheduling…" : "Schedule performance"}</button>
     </form>}

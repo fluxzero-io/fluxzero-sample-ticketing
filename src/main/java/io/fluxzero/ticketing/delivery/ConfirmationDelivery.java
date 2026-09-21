@@ -13,18 +13,21 @@ import java.time.Instant;
 @Stateful
 @Consumer(name = "confirmation-delivery", threads = 4, minIndex = 0, errorHandler = ForeverRetryingErrorHandler.class)
 public record ConfirmationDelivery(@EntityId @Association ReservationId reservationId, String recipient,
-                                   Instant acceptedAt, int attempts, String problem, Instant retryAt) {
+                                   Instant acceptedAt, int attempts, String problem, Instant retryAt, String stoppedReason) {
     @HandleEvent static ConfirmationDelivery start(ConfirmationRequested event) {
-        return new ConfirmationDelivery(event.reservationId(), event.recipient(), null, 0, null, null);
+        return new ConfirmationDelivery(event.reservationId(), event.recipient(), null, 0, null, null, null);
     }
     @HandleEvent ConfirmationDelivery duplicate(ConfirmationRequested event) { return this; }
     @HandleEvent ConfirmationDelivery accepted(ConfirmationAccepted event) {
-        return new ConfirmationDelivery(reservationId, recipient, event.acceptedAt(), attempts, null, null);
+        return new ConfirmationDelivery(reservationId, recipient, event.acceptedAt(), attempts, null, null, null);
     }
     @HandleEvent ConfirmationDelivery failed(ConfirmationFailed event) {
-        return acceptedAt != null ? this : new ConfirmationDelivery(reservationId, recipient, null, attempts + 1, event.problem(), event.retryAt());
+        return acceptedAt != null || stoppedReason != null ? this : new ConfirmationDelivery(reservationId, recipient, null, attempts + 1, event.problem(), event.retryAt(), null);
+    }
+    @HandleEvent ConfirmationDelivery stopped(ConfirmationStopped event) {
+        return acceptedAt != null ? this : new ConfirmationDelivery(reservationId, recipient, null, attempts, null, null, event.reason());
     }
     @HandleEvent ConfirmationDelivery retry(RetryConfirmation event) {
-        return acceptedAt != null ? this : new ConfirmationDelivery(reservationId, recipient, null, attempts, null, null);
+        return acceptedAt != null || stoppedReason != null ? this : new ConfirmationDelivery(reservationId, recipient, null, attempts, null, null, null);
     }
 }

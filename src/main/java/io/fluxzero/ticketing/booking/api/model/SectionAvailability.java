@@ -4,4 +4,6 @@ import io.fluxzero.ticketing.catalog.api.model.AdmissionMode;
 import io.fluxzero.ticketing.payment.api.model.Money;
 
 public record SectionAvailability(String id, String name, AdmissionMode mode, Money price,
-                                  int remaining) {}
+                                  int remaining, java.util.List<TicketPrice> ticketPrices) {
+    public record TicketPrice(String id, String name, String eligibility, Money price) {}
+}

@@ -44,7 +44,7 @@ export function ManagedOrder({ id }) {
         <section className="operation-card"><h2>Confirmation email</h2>
           {order.delivery ? <>
             <p>{order.delivery.email}</p>
-            <p>{order.delivery.acceptedAt ? "Sent" : order.delivery.problem ? "Delivery needs attention" : reservation.status === "CONFIRMED" ? "Preparing email" : "Sent after payment confirmation"}</p>
+            <p>{order.delivery.acceptedAt ? "Sent" : order.delivery.stoppedReason ? "Confirmation stopped · booking cancelled" : order.delivery.problem ? "Delivery needs attention" : reservation.status === "CONFIRMED" ? "Preparing email" : "Sent after payment confirmation"}</p>
             {order.delivery.problem && <button className="secondary" disabled={busy} onClick={() => act(
               `/api/operations/orders/${id}/retry-delivery`, {}, "Delivery retry requested")}>Retry delivery</button>}
           </> : <p>No confirmation email requested.</p>}

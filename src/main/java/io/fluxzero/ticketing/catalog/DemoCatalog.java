@@ -17,6 +17,7 @@ import io.fluxzero.ticketing.catalog.api.model.HallDetails;
 import io.fluxzero.ticketing.catalog.api.model.PerformanceDetails;
 import io.fluxzero.ticketing.catalog.api.model.Seat;
 import io.fluxzero.ticketing.catalog.api.model.Section;
+import io.fluxzero.ticketing.catalog.api.model.TicketType;
 import io.fluxzero.ticketing.catalog.api.model.VenueDetails;
 import io.fluxzero.ticketing.payment.api.model.Money;
 import java.time.Duration;
@@ -54,8 +55,8 @@ public final class DemoCatalog {
                 new CreateHall(main, concertgebouw, new HallDetails("Main Hall")),
                 new RegisterSeatingPlan(MAIN_PLAN, main, new SeatingPlanDetails("Demo seated", "1", NOTICE, List.of(
                         new Section("stalls", "Demo stalls", AdmissionMode.RESERVED_SEATING, 4,
-                                List.of(new Seat("A1", "A", "1"), new Seat("A2", "A", "2"),
-                                        new Seat("B1", "B", "1"), new Seat("B2", "B", "2")))))),
+                                List.of(new Seat("A1", "A", "1", null, Seat.Kind.STANDARD, "A2", null), new Seat("A2", "A", "2"),
+                                        new Seat("B1", "B", "1", null, Seat.Kind.STANDARD, "B2", null), new Seat("B2", "B", "2")))))),
                 new CreateHall(recital, concertgebouw, new HallDetails("Recital Hall (Kleine Zaal)")),
                 new RegisterSeatingPlan(RECITAL_PLAN, recital, ConcertgebouwRecitalHall.LAYOUT),
                 new CreateHall(ronda, tivoli, new HallDetails("Ronda")),
@@ -69,7 +70,9 @@ public final class DemoCatalog {
                 performance("night-lights-amsterdam", concert, MAIN_PLAN, firstPerformance, "stalls", 3500),
                 new SchedulePerformance(new PerformanceId("night-lights-matinee"), concert, RECITAL_PLAN,
                         new PerformanceDetails(firstPerformance.plus(Duration.ofDays(1)), ZoneId.of("Europe/Amsterdam"),
-                                Map.of("stalls", new Money(2500, "EUR"), "balcony", new Money(2000, "EUR")))),
+                                Map.of("stalls", new Money(2500, "EUR"), "balcony", new Money(2000, "EUR")),
+                                List.of(TicketType.STANDARD,
+                                        new TicketType("youth", "Under 18", "Age under 18 on the event date; proof may be requested at entry", 50)))),
                 performance("night-lights-utrecht", concert, RONDA_PLAN, firstPerformance.plus(Duration.ofDays(2)), "floor", 3000),
                 performance("future-makers", conference, FORUM_PLAN, firstPerformance.plus(Duration.ofDays(3)), "floor", 4500));
     }

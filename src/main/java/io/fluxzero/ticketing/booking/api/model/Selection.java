@@ -4,4 +4,7 @@ import io.fluxzero.sdk.web.ApiDoc;
 import jakarta.validation.constraints.NotBlank;
 
 /** Exactly one admission per entry; null seatId means general admission in sectionId. */
-public record Selection(@ApiDoc(required = true) @NotBlank String sectionId, String seatId) {}
+public record Selection(@ApiDoc(required = true) @NotBlank String sectionId, String seatId, String ticketType, boolean wheelchairAccessRequired) {
+    /** A standard ticket without an accessibility request. */
+    public Selection(String sectionId, String seatId) { this(sectionId, seatId, "standard", false); }
+}

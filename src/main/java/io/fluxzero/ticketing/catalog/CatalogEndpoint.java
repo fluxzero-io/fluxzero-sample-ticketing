@@ -27,4 +27,11 @@ public class CatalogEndpoint {
             @QueryParam("section") String section, @QueryParam("offset") Integer offset) {
         return Fluxzero.queryAndWait(new GetSeats(id, section, offset == null ? 0 : offset, 100));
     }
+    @HandleGet("/{id}/suggestions") GetSeatSuggestions.Page suggestions(@PathParam("id") PerformanceId id,
+            @QueryParam("section") String section, @QueryParam("quantity") Integer quantity,
+            @QueryParam("offset") Integer offset) {
+        return Fluxzero.queryAndWait(new GetSeatSuggestions(id, section, quantity == null ? 2 : quantity,
+                offset == null ? 0 : offset));
+    }
+
 }

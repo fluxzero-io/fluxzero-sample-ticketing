@@ -22,10 +22,11 @@ public final class ConcertgebouwRecitalHall {
                 StandardCharsets.UTF_8))) {
             reader.readLine();
             for (String line; (line = reader.readLine()) != null;) {
-                String[] values = line.split(",");
+                String[] values = line.split(",", -1);
                 var seat = new Seat(values[1] + "-" + values[2], values[1], values[2],
                         new SeatPosition(Double.parseDouble(values[3]), Double.parseDouble(values[4])),
-                        Seat.Kind.valueOf(values[5]));
+                        Seat.Kind.valueOf(values[5]), values[6].isEmpty() ? null : values[6],
+                        values[7].isEmpty() ? null : values[7]);
                 switch (values[0]) {
                     case "stalls" -> stalls.add(seat);
                     case "balcony" -> balcony.add(seat);

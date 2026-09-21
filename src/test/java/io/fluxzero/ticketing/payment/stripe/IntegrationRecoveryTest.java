@@ -9,8 +9,6 @@ import io.fluxzero.sdk.test.TestFixture;
 import io.fluxzero.ticketing.booking.ReservationDeadlines;
 import io.fluxzero.ticketing.booking.api.CancelReservation;
 import io.fluxzero.ticketing.catalog.DemoCatalog;
-import io.fluxzero.ticketing.catalog.luma.LumaTestSupport;
-import io.fluxzero.ticketing.catalog.luma.api.model.LumaImport;
 import io.fluxzero.ticketing.payment.api.StartPayment;
 import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
 import io.fluxzero.ticketing.payment.stripe.api.*;
@@ -43,10 +41,8 @@ class IntegrationRecoveryTest extends StripeTestSupport {
         String namespace = "stripe-recovery-" + UUID.randomUUID();
         Instant now = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
         var stripe = new RemoteStripe();
-        var luma = new LumaTestSupport.RemoteLuma();
-        var writer = connected(url, namespace, stripe, luma).atFixedTime(now)
+        var writer = connected(url, namespace, stripe).atFixedTime(now)
                 .givenCommandsByUser(OPERATOR, DemoCatalog.commands(now.plus(Duration.ofDays(1))).toArray())
-                .givenCommandsByUser(OPERATOR, LumaTestSupport.importEvent())
                 .givenCommandsByUser(ALICE, seats(R, "A1", "A2"), new StartPayment(P, R))
                 .givenCommandsByUser(PAYMENTS, new BeginStripePayment(P));
         stripe.intent.put("status", "succeeded").put("amount_received", 7000).put("latest_charge", "ch_fixture");
@@ -55,7 +51,7 @@ class IntegrationRecoveryTest extends StripeTestSupport {
                 .whenCommandByUser(PAYMENTS, new BeginStripeRefund(P, "recover-me")).expectSuccessfulResult().expectNoErrors();
         TestFixture.shutDownActiveFixtures();
         stripe.refund.put("status", "succeeded");
-        connected(url, namespace, stripe, luma).atFixedTime(now)
+        connected(url, namespace, stripe).atFixedTime(now)
                 .whenCommandByUser(PAYMENTS, new RefreshStripeRefund(P, "recover-me", null))
                 .expectSuccessfulResult().expectThat(f -> {
                     assertEquals(PaymentStatus.REFUNDED, payment().status());
@@ -63,7 +59,6 @@ class IntegrationRecoveryTest extends StripeTestSupport {
                     assertTrue(refund("recover-me").recorded());
                     assertEquals(1, stripe.refundCreates);
                     assertEquals(1, stripe.creates);
-                    assertEquals(1, Fluxzero.loadGraph(LumaTestSupport.IMPORTED).childModels(LumaImport.class).size());
                 }).expectNoErrors();
     }
     @Test
@@ -109,13 +104,11 @@ class IntegrationRecoveryTest extends StripeTestSupport {
             if (process.intentId() != null && !process.needsObservation()) completed.countDown();
         }
     }
-    TestFixture connected(String url, String namespace, RemoteStripe stripe, LumaTestSupport.RemoteLuma luma) {
+    TestFixture connected(String url, String namespace, RemoteStripe stripe) {
         return TestFixture.createAsync(builder().replaceIdentityProvider(ignored -> new UuidFactory()),
                 WebSocketClient.newInstance(WebSocketClient.ClientConfig.builder().runtimeBaseUrl(url).namespace(namespace)
-                        .name("stripe-recovery").build()), StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), new ReservationDeadlines(), stripe, luma)
+                        .name("stripe-recovery").build()), StripePaymentProcess.class, new StripePaymentEffects(), StripeRefundProcess.class, new StripeRefundEffects(), new ReservationDeadlines(), stripe)
                 .withProperty("ticketing.stripe.secretKey", "sk_test_fixture")
-                .withProperty("ticketing.stripe.accountId", "acct_fixture")
-                .withProperty("ticketing.luma.apiKey", "luma_fixture_key")
-                .withProperty("ticketing.luma.calendarId", "cal_fixture");
+                .withProperty("ticketing.stripe.accountId", "acct_fixture");
     }
 }

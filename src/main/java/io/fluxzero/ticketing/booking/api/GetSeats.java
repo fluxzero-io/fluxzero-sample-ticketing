@@ -9,6 +9,7 @@ import io.fluxzero.ticketing.booking.api.model.SeatPage;
 import io.fluxzero.ticketing.catalog.api.PerformanceId;
 import io.fluxzero.ticketing.catalog.api.model.AdmissionMode;
 import io.fluxzero.ticketing.catalog.api.model.Seat;
+import io.fluxzero.ticketing.catalog.api.model.SalesWindow;
 import jakarta.validation.constraints.*;
 import java.util.stream.Collectors;
 
@@ -27,7 +28,8 @@ public record GetSeats(@NotNull PerformanceId performanceId, @NotBlank String se
         int total = section.seats().size();
         var seats = section.seats().subList(Math.min(offset, total), (int) Math.min((long) offset + limit, total));
         var now = Fluxzero.currentTime();
-        boolean bookable = !performance.cancelled() && now.isBefore(performance.details().startsAt());
+        boolean bookable = !performance.cancelled() && SalesWindow.openAt(
+                Fluxzero.loadModel(performanceId, SalesWindow.class).get(), performance, now);
         var stocks = seats.isEmpty() ? java.util.Map.<String, SeatInventory>of() : Fluxzero.search(SeatInventory.class)
                 .match(performanceId, true, "performanceId").match(sectionId, true, "sectionId")
                 .match(seats.stream().map(Seat::id).toList(), true, "seatId")

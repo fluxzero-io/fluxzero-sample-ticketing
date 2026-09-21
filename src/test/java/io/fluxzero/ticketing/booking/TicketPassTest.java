@@ -55,6 +55,7 @@ class TicketPassTest extends TicketingTestSupport {
                         assertEquals(PDRectangle.A4.getHeight(), document.getPage(0).getMediaBox().getHeight());
                         String text = new PDFTextStripper().getText(document);
                         assertTrue(text.contains("Row A / Seat 1"));
+                        assertTrue(text.contains("Standard"));
                         assertTrue(text.contains("…"));
                         var image = new PDFRenderer(document).renderImageWithDPI(0, 120);
                         var source = new RGBLuminanceSource(image.getWidth(), image.getHeight(),

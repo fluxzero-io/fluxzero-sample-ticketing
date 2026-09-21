@@ -5,6 +5,7 @@ import io.fluxzero.sdk.tracking.handling.HandleCommand;
 import io.fluxzero.sdk.web.WebRequest;
 import io.fluxzero.sdk.web.WebRequestSettings;
 import io.fluxzero.ticketing.booking.api.ReservationId;
+import io.fluxzero.ticketing.booking.api.model.ReservationStatus;
 import io.fluxzero.ticketing.common.web.IntegrationFailure;
 import java.time.Duration;
 import java.util.List;
@@ -14,10 +15,12 @@ import static io.fluxzero.sdk.configuration.ApplicationProperties.requirePropert
 /** Local development delivery through Mailpit's real HTTP API. No SMTP relay is configured. */
 @LocalOnly
 public record SendConfirmationMail(ReservationId reservationId, String recipient) {
-    @HandleCommand void handle() {
-        String base = requireProperty("ticketing.mailpit.url");
+    @HandleCommand boolean handle() {
         var reservation = Fluxzero.loadModel(reservationId).get();
+        if (reservation == null || reservation.status() != ReservationStatus.CONFIRMED) return false;
         var performance = Fluxzero.loadModel(reservation.performanceId()).get();
+        if (performance == null || performance.cancelled()) return false;
+        String base = requireProperty("ticketing.mailpit.url");
         var event = Fluxzero.loadModel(performance.eventId()).get();
         String link = requireProperty("fluxzero.auth.external-base-url") + "/#/reservation/"
                 + java.net.URLEncoder.encode(reservationId.getFunctionalId(), java.nio.charset.StandardCharsets.UTF_8);
@@ -31,5 +34,6 @@ public record SendConfirmationMail(ReservationId reservationId, String recipient
                 .build();
         var response = Fluxzero.sendWebRequestAndWait(request, WebRequestSettings.builder().timeout(Duration.ofSeconds(10)).build());
         if (response.getStatus() != 200) throw new IntegrationFailure("Confirmation email was not accepted");
+        return true;
     }
 }

@@ -8,6 +8,7 @@ import io.fluxzero.ticketing.booking.api.model.Selection;
 import io.fluxzero.ticketing.catalog.api.model.AdmissionMode;
 import io.fluxzero.ticketing.catalog.api.model.Performance;
 import io.fluxzero.ticketing.catalog.api.model.Section;
+import io.fluxzero.ticketing.catalog.api.model.Seat;
 import io.fluxzero.ticketing.payment.api.model.Money;
 import java.time.Instant;
 import java.util.HashSet;
@@ -26,18 +27,29 @@ public final class ReservationRules {
     public static void validSelection(Performance performance, List<Selection> selection, Instant now) {
         require(!performance.cancelled(), "Performance is cancelled");
         require(now.isBefore(performance.details().startsAt()), "Booking closes at performance start");
-        Set<Selection> seats = new HashSet<>();
+        Set<List<String>> seats = new HashSet<>();
         for (Selection chosen : selection) {
+            performance.details().ticketType(chosen.ticketType());
             Section section = section(performance, chosen.sectionId());
             if (section.mode() == AdmissionMode.RESERVED_SEATING) {
                 require(section.seats().stream().anyMatch(s -> s.id().equals(chosen.seatId())), "Unknown seat");
-                require(seats.add(chosen), "The same seat cannot appear twice in a reservation");
+                var seat = section.seats().stream().filter(s -> s.id().equals(chosen.seatId())).findFirst().orElseThrow();
+                if (seat.kind() == Seat.Kind.WHEELCHAIR)
+                    require(chosen.wheelchairAccessRequired(), "Confirm that a wheelchair space is needed");
+                if (seat.kind() == Seat.Kind.COMPANION)
+                    require(selection.stream().anyMatch(s -> s.sectionId().equals(chosen.sectionId())
+                            && seat.companionFor().equals(s.seatId()) && s.wheelchairAccessRequired()),
+                            "A companion seat must be booked with its wheelchair space");
+                require(seats.add(List.of(chosen.sectionId(), chosen.seatId())), "The same seat cannot appear twice in a reservation");
             } else require(chosen.seatId() == null, "General admission does not select a seat");
         }
     }
     public static List<Admission> admissions(Performance performance, List<Selection> selections) {
-        return selections.stream().map(s -> new Admission(s.sectionId(), s.seatId(),
-                performance.details().sectionPrices().get(s.sectionId()))).toList();
+        return selections.stream().map(s -> {
+            var type = performance.details().ticketType(s.ticketType());
+            return new Admission(s.sectionId(), s.seatId(), type.price(performance.details().sectionPrices().get(s.sectionId())),
+                    type.id(), type.name());
+        }).toList();
     }
     public static Money total(List<Admission> admissions) {
         return new Money(admissions.stream().map(Admission::price).mapToLong(Money::minorUnits)

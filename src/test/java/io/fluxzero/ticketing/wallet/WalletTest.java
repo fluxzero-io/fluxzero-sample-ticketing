@@ -110,6 +110,7 @@ class WalletTest extends TicketingTestSupport {
             assertEquals("TESTTEAM01", pass.get("teamIdentifier").asText());
             assertFalse(pass.get("voided").asBoolean());
             assertEquals("Row A / Seat 1", pass.at("/eventTicket/auxiliaryFields/0/value").asText());
+            assertEquals("Standard", pass.at("/eventTicket/auxiliaryFields/1/value").asText());
             var icon = javax.imageio.ImageIO.read(new ByteArrayInputStream(files.get("icon@3x.png")));
             assertEquals(87, icon.getWidth());
             String code = pass.at("/barcodes/0/message").asText();

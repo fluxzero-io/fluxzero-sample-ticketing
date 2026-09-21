@@ -6,11 +6,11 @@ versioned seating plans, seat and section availability, tickets, payments and in
 rights and financial facts.
 
 **Core, integrations and responsive customer and organizer workspaces are implemented.** Browse the programme,
-choose seats or a standing section, hold tickets, pay through Stripe and manage your bookings.
+choose seats together or a standing section, mix eligible ticket types, hold tickets, pay through Stripe and manage your bookings.
 Operators can schedule performances, set sales windows, grant performance access, find and cancel orders,
 and follow retained payment and refund state.
 Payments remain provider independent; Stripe processes and refund attempts stay outside the
-core graph. Luma imports remain an operator action.
+core graph.
 
 ## Get started
 
@@ -63,7 +63,7 @@ external-runtime tests are skipped. The remaining tests use the real SDK through
 - [Real venue sources and demonstration data](docs/demo-data.md)
 - [Source-backed seating configuration](docs/seating.md)
 - [Product capabilities and remaining gaps](docs/product-capabilities.md)
-- [Stripe and Luma setup, commands and recovery](docs/integrations.md)
+- [Stripe setup, commands and recovery](docs/integrations.md)
 - [Testing and next phases](docs/development.md)
 
 Start with [`ReserveTickets`](src/main/java/io/fluxzero/ticketing/booking/api/ReserveTickets.java),

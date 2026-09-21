@@ -25,7 +25,7 @@ class OrganizerEndpointTest extends TicketingTestSupport {
                 .whenWebRequestByUser(OPERATOR, mutation("/api/operations/performances",
                         new OrganizerEndpoint.Schedule("clock-change", "night-lights",
                                 DemoCatalog.MAIN_PLAN.getFunctionalId(), LocalDateTime.parse("2030-10-27T02:30"),
-                                Map.of("stalls", new Money(4200, "EUR")))));
+                                Map.of("stalls", new Money(4200, "EUR")), java.util.List.of(io.fluxzero.ticketing.catalog.api.model.TicketType.STANDARD))));
         // Async web transport maps the exception to HTTP; local invocation exposes the original exception.
         if (async) result.expectWebResult(response -> response.getStatus() == 403);
         else result.expectExceptionalResult(io.fluxzero.sdk.tracking.handling.IllegalCommandException.class);
@@ -56,7 +56,7 @@ class OrganizerEndpointTest extends TicketingTestSupport {
                 }).andThen().whenWebRequestByUser(OPERATOR, mutation("/api/operations/performances",
                         new OrganizerEndpoint.Schedule(newPerformance.getFunctionalId(), "night-lights",
                                 DemoCatalog.MAIN_PLAN.getFunctionalId(), LocalDateTime.parse("2030-06-03T20:00"),
-                                Map.of("stalls", new Money(4200, "EUR")))))
+                                Map.of("stalls", new Money(4200, "EUR")), java.util.List.of(io.fluxzero.ticketing.catalog.api.model.TicketType.STANDARD))))
                 .expectWebResult(response -> response.getPayloadAs(PerformanceId.class).equals(newPerformance))
                 .expectThat(f -> {
                     Performance performance = Fluxzero.loadModel(newPerformance).get();

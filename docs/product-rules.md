@@ -123,8 +123,7 @@ There is no alternative in-memory implementation of this domain.
   repayment; the original capture remains in history.
 - **Delayed refund observation:** a finished attempt does not reopen. Contradictory terminal
   facts require explicit reconciliation rather than changing history automatically.
-- **Same Luma event imported twice:** stable source identity yields one local programme and
-  performance. Changed source details require an explicit decision before affecting sales.
+
 
 See [integration commands and protocol rules](integrations.md) for provider setup and recovery.
 
