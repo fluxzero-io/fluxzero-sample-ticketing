@@ -656,12 +656,12 @@ milestones:
     title: "Keep booking outcomes predictable under runtime contention"
     kind: "feature"
     status: "in_progress"
-    description: "Single-consumer qualification passes. The mixed-workload retry comparison\
-      \ confirms exhaustion at 3 and 10; 32 has a SYNC exhaustion in one run, while\
-      \ 100 avoids exhaustion in both observed runs. Latest 32/100 cases pass full\
-      \ stock, ticket, retained-money, refund and resale checks in both modes. An\
-      \ unexpected capacity refusal on cancellation remains open. Application defaults\
-      \ are unchanged."
+    description: "Controlled cancellation now retains its own result when an earlier\
+      \ booking is rejected. The three cancellation modes and twelve single-consumer\
+      \ pressure cases pass. Mixed workloads pass full stock, ticket, retained-money,\
+      \ refund and resale checks at retry budgets 32/100 in both modes; budgets 3/10\
+      \ still exhaust retries. Shared inventory across different consumers remains\
+      \ the open scaling boundary. Application defaults are unchanged."
     acceptance:
     - "Concurrent requests preserve exact stock and only expected capacity refusals\
       \ count as sold out."
@@ -672,7 +672,7 @@ milestones:
     - "Resolve technical failures and qualify all relevant inventory writers before\
       \ calling this qualification complete."
     createdAt: "2026-09-22T11:32:50.299225Z"
-    updatedAt: "2026-09-22T14:32:45.279440Z"
+    updatedAt: "2026-09-22T15:17:48.422958Z"
     history:
     - at: "2026-09-22T11:32:50.299225Z"
       status: "in_progress"
@@ -728,3 +728,13 @@ milestones:
         \ 3 received Section capacity exceeded, distinct from retry exhaustion. First-run\
         \ high-budget cases also exposed unexpected capacity refusals. No final product\
         \ qualification or production capacity claim."
+    - at: "2026-09-22T15:17:48.422958Z"
+      status: "in_progress"
+      verification: "SDK and TestServer 568f295a867, Dev Server 1.15.1: CancellationRaceTest\
+        \ 3/3 and RuntimePressureTest 12/12 pass. MixedInventoryPressureTest 4/8 pass\
+        \ (SYNC/ASYNC at 32/100). Every failed action in 3/10 cases correlates to\
+        \ its own exhausted commit, with no foreign capacity rejection and zero pending\
+        \ commits. Production validators, consumers and retry defaults are unchanged.\
+        \ SDK correction committed separately; broad SDK suite hit its 300-second\
+        \ fork timeout after 3819 completed cases without assertion failures; 216\
+        \ focused model/repository checks pass."
