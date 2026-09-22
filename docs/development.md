@@ -61,7 +61,7 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 | `WaitlistTest` | Paged private interest, staff offers, competing groups, expiry, decline and late capture without overselling |
 | `PartialRefundTest`, `PartialStripeRefundTest` | Ticket eligibility, exact partial repayments, cancellation during repayment and delayed provider acknowledgement |
 | `RuntimePressureTest` | Up to 256 concurrent callers and 2,048 requests over WebSockets; exact group outcomes, one-/two-section capacity, cancellation and resale with SDK transport batching preserved |
-| `MixedInventoryPressureTest` | Open qualification: competing booking, payment and operations consumers; currently fails on technical inventory conflicts before the complete financial/stock audit |
+| `MixedInventoryPressureTest` | Competing inventory writers with fixture-local 3/10/32/100 retry budgets, measured conflicts and full financial/stock audits; low-budget exhaustion and an unexpected cancellation refusal remain visible |
 | `PeakSalesTest` | Concurrent group demand, paused provider responses, resale, late captures and retryable failures; see [load testing](load-testing.md) |
 | `AutomaticRefundTest` | A core refund obligation starts the already-bound Stripe process without coupling payment state to Stripe |
 

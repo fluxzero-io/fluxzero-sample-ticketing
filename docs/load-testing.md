@@ -98,8 +98,26 @@ shared booking or allocation capacity error exactly. Cleanup releases surviving 
 production allocations, verifies empty stock and reserves a new group without erasing money.
 The fixture clock stays fixed so a slow run cannot accidentally release stock through expiry.
 
-On the current pin this test fails in both SYNC and ASYNC handling with technical commit conflicts
-between consumers. The final inventory and financial assertions are therefore not yet qualified.
-The passing single-consumer workload above does not cover this boundary: SDK batch coordination
-is local to a tracking batch, while these independent consumers can write the same inventory.
-The reproduction remains enabled, with no application retry loop or consumer regrouping.
+The test compares SDK retry budgets of 3, 10, 32 and 100 in both consumer modes. These
+are fixture-local settings; the application keeps its SDK defaults. Every action is attempted
+once by the test. Failed actions are collected while the remaining work runs, then fail the case.
+This permits comparable bounded measurements without treating a technical error as sold out.
+
+The shared transport observer records attempts and retryable/non-retryable conflicts per commit,
+while retaining the normal SDK batching capability and default conflict resolver. Measurements
+cover the concurrent wave only, excluding setup, the final audit and cleanup. Latency and
+completed operations per second include failures and expected capacity refusals; they are not
+successful-sale throughput. Cash actions can contain both a reservation and a payment command,
+so one operation is not necessarily one command or one commit.
+
+The comparison confirms retry exhaustion at the default budget of three. Ten also runs out;
+thirty-two has both passing cases and an observed SYNC exhaustion. A budget of one hundred
+avoids exhaustion in the observed runs. The latest runs at 32 and 100 reach and pass the complete
+inventory, retained-money, refund-obligation, ticket and resale assertions in both modes.
+These short runs do not select a production default or establish sustained capacity.
+
+A separate unexpected capacity refusal has also reached a cancellation command. Earlier cases
+at higher retry budgets encountered capacity refusals outside the expected acquisition path.
+Those remain failures, independently of the retry comparison; mixed-writer qualification is not
+complete. The reproduction stays enabled. No application retry loop, consumer regrouping or
+product validation change is used to make the matrix pass.

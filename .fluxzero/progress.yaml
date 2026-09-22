@@ -656,11 +656,12 @@ milestones:
     title: "Keep booking outcomes predictable under runtime contention"
     kind: "feature"
     status: "in_progress"
-    description: "All twelve single-consumer booking scenarios pass with explicit\
-      \ SYNC and ASYNC handling through 256 callers and 2,048 requests. The mixed\
-      \ workload now exposes technical stock conflicts between booking, payment and\
-      \ operations consumers at 32 callers. Final mixed financial and inventory outcomes\
-      \ remain unqualified."
+    description: "Single-consumer qualification passes. The mixed-workload retry comparison\
+      \ confirms exhaustion at 3 and 10; 32 has a SYNC exhaustion in one run, while\
+      \ 100 avoids exhaustion in both observed runs. Latest 32/100 cases pass full\
+      \ stock, ticket, retained-money, refund and resale checks in both modes. An\
+      \ unexpected capacity refusal on cancellation remains open. Application defaults\
+      \ are unchanged."
     acceptance:
     - "Concurrent requests preserve exact stock and only expected capacity refusals\
       \ count as sold out."
@@ -671,7 +672,7 @@ milestones:
     - "Resolve technical failures and qualify all relevant inventory writers before\
       \ calling this qualification complete."
     createdAt: "2026-09-22T11:32:50.299225Z"
-    updatedAt: "2026-09-22T14:20:28.353109Z"
+    updatedAt: "2026-09-22T14:32:45.279440Z"
     history:
     - at: "2026-09-22T11:32:50.299225Z"
       status: "in_progress"
@@ -711,3 +712,19 @@ milestones:
         \ on the two shared section inventories. The workload combines 188 cancellation,\
         \ capture, online, box-office and production actions. No retry, queue or consumer-routing\
         \ workaround; the failing reproduction stays enabled."
+    - at: "2026-09-22T14:27:46.652134Z"
+      status: "in_progress"
+      verification: "Retry-budget comparison explicitly requested. All 188 actions\
+        \ are allowed to finish per case; technical failures remain test failures.\
+        \ The transport observer preserves SDK batching and uses the unmodified default\
+        \ conflict resolver. Qualification pending the managed matrix result."
+    - at: "2026-09-22T14:32:45.279440Z"
+      status: "in_progress"
+      verification: "On matching SDK/TestServer d0885f1d708, all failed-conflict commits\
+        \ used exactly maxRetries+1 attempts and all measured conflicts allowed retry.\
+        \ Two diagnostic runs each execute all 188 actions with 32 callers. Latest\
+        \ matrix: 4/8 mixed cases pass (32 and 100 in both modes), 4 low-budget cases\
+        \ fail; the twelve original booking cases pass. A CancelReservation at budget\
+        \ 3 received Section capacity exceeded, distinct from retry exhaustion. First-run\
+        \ high-budget cases also exposed unexpected capacity refusals. No final product\
+        \ qualification or production capacity claim."

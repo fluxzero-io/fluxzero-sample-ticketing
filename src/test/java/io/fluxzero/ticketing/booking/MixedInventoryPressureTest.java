@@ -1,7 +1,9 @@
 package io.fluxzero.ticketing.booking;
 
+import io.fluxzero.common.api.modeling.ModelConflictPolicy;
 import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.sdk.common.UuidFactory;
+import io.fluxzero.sdk.modeling.ModelConflictResolver;
 import io.fluxzero.sdk.configuration.client.WebSocketClient;
 import io.fluxzero.sdk.test.TestFixture;
 import io.fluxzero.sdk.tracking.ConsumerHandlingMode;
@@ -19,7 +21,8 @@ import io.fluxzero.ticketing.payment.api.*;
 import io.fluxzero.ticketing.payment.api.model.*;
 import io.fluxzero.ticketing.support.RuntimeTestSupport;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.CsvSource;
+import java.util.regex.Pattern;
 import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -37,13 +40,15 @@ class MixedInventoryPressureTest extends RuntimeTestSupport {
     private static final int CAPACITY = 80, EXISTING = 40, ONLINE = 64, CASH = 32, PRODUCTION = 32;
 
     @ParameterizedTest
-    @EnumSource(value = ConsumerHandlingMode.class, names = {"SYNC", "ASYNC"})
-    void mixedWritersPreserveStockAndMoney(ConsumerHandlingMode mode) throws Exception {
+    @CsvSource({"SYNC,3", "ASYNC,3", "SYNC,10", "ASYNC,10",
+            "SYNC,32", "ASYNC,32", "SYNC,100", "ASYNC,100"})
+    void mixedWritersPreserveStockAndMoney(ConsumerHandlingMode mode, int maxRetries) throws Exception {
         var now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-        var client = WebSocketClient.newInstance(WebSocketClient.ClientConfig.builder().runtimeBaseUrl(runtimeUrl())
+        var client = new MeasuredClient(WebSocketClient.ClientConfig.builder().runtimeBaseUrl(runtimeUrl())
                 .namespace("ticketing-mixed-" + UUID.randomUUID()).name("ticketing-mixed").build());
         var plan = new SeatingPlanId("mixed-plan");
         TestFixture.createAsync(builder().replaceIdentityProvider(ignored -> new UuidFactory())
+                        .configureModelConflictHandling(ModelConflictPolicy.RETRY, ModelConflictResolver.retryIfAllowed(), maxRetries)
                         .configureDefaultConsumer(COMMAND, c -> c.toBuilder().handlingMode(mode).build()), client)
                 .atFixedTime(now)
                 .givenCommandsByUser(OPERATOR, DemoCatalog.commands(now.plus(Duration.ofDays(1))).toArray())
@@ -66,39 +71,64 @@ class MixedInventoryPressureTest extends RuntimeTestSupport {
                     var online = new ConcurrentHashMap<Integer, Boolean>();
                     var cash = new ConcurrentHashMap<Integer, Boolean>();
                     var production = new ConcurrentHashMap<Integer, Boolean>();
-                    var work = new ArrayList<Runnable>();
+                    var work = new ArrayList<Action>();
                     for (int i = 0; i < EXISTING; i++) {
                         int order = i;
-                        work.add(() -> ALICE.run(() -> Fluxzero.sendCommandAndWait(new CancelReservation(existing(order)))));
-                        if (i < EXISTING / 2) work.add(() -> PAYMENTS.run(() -> Fluxzero.sendCommandAndWait(capture(order))));
+                        work.add(new Action("CancelReservation " + existing(order),
+                                () -> ALICE.run(() -> Fluxzero.sendCommandAndWait(new CancelReservation(existing(order))))));
+                        if (i < EXISTING / 2) work.add(new Action("RecordPaymentSuccess " + payment(order),
+                                () -> PAYMENTS.run(() -> Fluxzero.sendCommandAndWait(capture(order)))));
                     }
                     for (int i = 0; i < ONLINE; i++) {
                         int order = i;
-                        work.add(() -> ALICE.run(() -> online.put(order,
-                                acquire(new ReserveTickets(online(order), SHOW, GROUP), BookingErrors.sectionCapacityExceeded))));
+                        work.add(new Action("ReserveTickets " + online(order), () -> ALICE.run(() -> online.put(order,
+                                acquire(new ReserveTickets(online(order), SHOW, GROUP), BookingErrors.sectionCapacityExceeded)))));
                     }
                     for (int i = 0; i < CASH; i++) {
                         int order = i;
-                        work.add(() -> OPERATOR.run(() -> {
+                        work.add(new Action("BoxOffice " + cash(order), () -> OPERATOR.run(() -> {
                             boolean accepted = acquire(new ReserveBoxOfficeTickets(cash(order), SHOW, ALICE.id(), GROUP),
                                     BookingErrors.sectionCapacityExceeded);
                             cash.put(order, accepted);
                             if (accepted) Fluxzero.sendCommandAndWait(receipt(order));
-                        }));
+                        })));
                     }
                     for (int i = 0; i < PRODUCTION; i++) {
                         int order = i;
-                        work.add(() -> OPERATOR.run(() -> production.put(order,
+                        work.add(new Action("BlockProductionInventory " + production(order), () -> OPERATOR.run(() -> production.put(order,
                                 acquire(new BlockProductionInventory(production(order), SHOW,
                                                 new ProductionHold.Details("Production " + order),
                                                 List.of(new ProductionHold.Position("floor", null, 1),
                                                         new ProductionHold.Position("balcony", null, 1))),
-                                        OperationsErrors.allocationCapacityExceeded))));
+                                        OperationsErrors.allocationCapacityExceeded)))));
                     }
                     Collections.shuffle(work, new Random(42));
+                    client.resetMeasurements();
                     long start = System.nanoTime();
-                    long[] latencies = runTogether(f, work, 32);
+                    Wave wave = runTogether(f, work, 32);
                     long elapsed = System.nanoTime() - start;
+                    long[] latencies = wave.latencies();
+                    Arrays.sort(latencies);
+                    var failedCommitAttempts = new TreeMap<String, Integer>();
+                    var commitId = Pattern.compile("Model commit (\\S+) conflicted");
+                    wave.failures().forEach(failure -> {
+                        var matcher = commitId.matcher(failure.getCause().toString());
+                        if (matcher.find()) failedCommitAttempts.put(matcher.group(1),
+                                client.attemptsByCommit.getOrDefault(matcher.group(1), new AtomicInteger()).get());
+                    });
+                    System.out.printf(Locale.ROOT,
+                            "MixedRetries mode=%s maxRetries=%d callers=32 operations=%d failures=%d elapsedMs=%.1f completedPerSec=%.1f p95Ms=%.2f p99Ms=%.2f commitAttempts=%d acceptedCommits=%d conflicts=%d nonRetryable=%d maxConflictsPerCommit=%d pending=%d failedCommitAttempts=%s%n",
+                            mode, maxRetries, work.size(), wave.failures().size(), elapsed / 1e6,
+                            work.size() * 1e9 / elapsed, percentile(latencies, .95), percentile(latencies, .99),
+                            client.attempts.get(), client.acceptedCommits.size(),
+                            client.conflicts.values().stream().mapToInt(AtomicInteger::get).sum(), client.nonRetryable.get(),
+                            client.conflicts.values().stream().mapToInt(AtomicInteger::get).max().orElse(0),
+                            client.pending.get(), failedCommitAttempts);
+                    wave.failures().forEach(failure -> System.out.printf("MixedFailure action=%s cause=%s%n",
+                            failure.getMessage(), failure.getCause()));
+                    assertEquals(0, client.pending.get(), "All observed commit calls must finish");
+                    assertAll("Every action must complete without technical failure",
+                            wave.failures().stream().map(failure -> () -> { throw failure; }));
                     assertEquals(ONLINE, online.size());
                     assertEquals(CASH, cash.size());
                     assertEquals(PRODUCTION, production.size());
@@ -130,8 +160,8 @@ class MixedInventoryPressureTest extends RuntimeTestSupport {
                     auditStock(now, winners(online), winners(cash), winners(production));
                     Arrays.sort(latencies);
                     System.out.printf(Locale.ROOT,
-                            "MixedInventory mode=%s callers=32 operations=%d online=%d cash=%d production=%d captured=%d refundRequired=%d elapsedMs=%.1f completedPerSec=%.1f p95Ms=%.2f p99Ms=%.2f%n",
-                            mode, work.size(), winners(online), winners(cash), winners(production),
+                            "MixedInventory mode=%s maxRetries=%d callers=32 operations=%d online=%d cash=%d production=%d captured=%d refundRequired=%d elapsedMs=%.1f completedPerSec=%.1f p95Ms=%.2f p99Ms=%.2f%n",
+                            mode, maxRetries, work.size(), winners(online), winners(cash), winners(production),
                             (EXISTING + winners(cash)) * TOTAL.minorUnits(), EXISTING * TOTAL.minorUnits(),
                             elapsed / 1e6, work.size() * 1e9 / elapsed, percentile(latencies, .95), percentile(latencies, .99));
                     // Release every surviving group and resell once; financial facts must survive the cleanup.
@@ -163,10 +193,17 @@ class MixedInventoryPressureTest extends RuntimeTestSupport {
         }
     }
 
-    private static long[] runTogether(Fluxzero fixture, List<Runnable> work, int concurrency) throws Exception {
+    private record Action(String description, Runnable execute) {
+        void run() { execute.run(); }
+    }
+
+    private record Wave(long[] latencies, List<Throwable> failures) {}
+
+    private static Wave runTogether(Fluxzero fixture, List<Action> work, int concurrency) throws Exception {
         var next = new AtomicInteger();
         var start = new CountDownLatch(1);
         var latencies = new long[work.size()];
+        var failures = new ConcurrentLinkedQueue<Throwable>();
         var workers = Executors.newVirtualThreadPerTaskExecutor();
         try {
             var tasks = new ArrayList<Future<?>>();
@@ -175,8 +212,13 @@ class MixedInventoryPressureTest extends RuntimeTestSupport {
                 for (int j; (j = next.getAndIncrement()) < work.size();) {
                     int index = j;
                     long before = System.nanoTime();
-                    fixture.apply(f -> { work.get(index).run(); return null; });
-                    latencies[index] = System.nanoTime() - before;
+                    try {
+                        fixture.apply(f -> { work.get(index).run(); return null; });
+                    } catch (RuntimeException | AssertionError failure) {
+                        failures.add(new AssertionError(work.get(index).description(), failure));
+                    } finally {
+                        latencies[index] = System.nanoTime() - before;
+                    }
                 }
                 return null;
             }));
@@ -188,7 +230,7 @@ class MixedInventoryPressureTest extends RuntimeTestSupport {
             assertTrue(workers.awaitTermination(10, TimeUnit.SECONDS), "Mixed pressure workers must stop");
         }
         assertTrue(Arrays.stream(latencies).allMatch(n -> n > 0));
-        return latencies;
+        return new Wave(latencies, List.copyOf(failures));
     }
 
     private static void auditExistingPayments() {
