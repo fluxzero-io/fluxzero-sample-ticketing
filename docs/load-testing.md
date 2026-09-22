@@ -70,7 +70,7 @@ favor of its own read-set coordination. Payment, cancellation, box-office and al
 are not made serial merely by this booking key. Atomic stock checks remain essential.
 
 All twelve SYNC and ASYNC cases pass with the application and development TestServer pinned to SDK commit
-`d0885f1d708`. Each of these cases returns exactly half successful reservations and half explicit
+`568f295a867`. Each of these cases returns exactly half successful reservations and half explicit
 capacity refusals, with no runtime-accepted reservation missing its successful caller result.
 There are no pending commits at the outcome check. Cancellation and resale preserve the
 exact occupied counts, including groups spanning two sections.
@@ -116,8 +116,14 @@ avoids exhaustion in the observed runs. The latest runs at 32 and 100 reach and 
 inventory, retained-money, refund-obligation, ticket and resale assertions in both modes.
 These short runs do not select a production default or establish sustained capacity.
 
-A separate unexpected capacity refusal has also reached a cancellation command. Earlier cases
-at higher retry budgets encountered capacity refusals outside the expected acquisition path.
-Those remain failures, independently of the retry comparison; mixed-writer qualification is not
-complete. The reproduction stays enabled. No application retry loop, consumer regrouping or
-product validation change is used to make the matrix pass.
+`CancellationRaceTest` controls the same race without load. It pauses a new booking's actual
+store call, evaluates cancellation of an existing group, then lets a competing application
+fill the remaining section capacity. The new booking receives the exact capacity refusal;
+the cancellation succeeds, frees its own places, and leaves the competing reservation intact.
+The test passes with default, SYNC and ASYNC consumer handling. It delays transport only;
+all decisions and commits use the actual SDK. No application retry loop, consumer regrouping
+or relaxed product validation is involved.
+
+The mixed-writer matrix remains a qualification probe: its low-budget cases fail explicitly
+on conflict exhaustion rather than hiding technical failures as capacity refusals. Choosing
+how the different sales and payment consumers share inventory remains a separate scaling decision.

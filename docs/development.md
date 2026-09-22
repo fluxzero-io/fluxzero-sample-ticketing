@@ -86,7 +86,7 @@ discovery. Cancellation reactions and continuation use durable events. Inventory
 its allocation history. Financial and reservation history remain event sourced.
 
 The app and development TestServer use the same local SDK build, pinned to commit
-`d0885f1d708`. See the [local SDK prerequisite](#local-sdk-prerequisite-for-this-development-branch).
+`568f295a867`. See the [local SDK prerequisite](#local-sdk-prerequisite-for-this-development-branch).
 A published SDK 2 release must replace this local dependency before publishing the example.
 
 A reservation touches at most twelve inventory selections. Seat claims are independent;
@@ -137,8 +137,8 @@ for the remaining customer and operator workflows. Nothing is published or deplo
 
 ## Local SDK prerequisite for this development branch
 
-Build SDK commit `d0885f1d708` in a separate checkout using Java 25. Set the root and
-module Maven versions to `2.0.0-d0885f1d708-SNAPSHOT`, then install the matching artifacts:
+Build SDK commit `568f295a867` in a separate checkout using Java 25. Set the root and
+module Maven versions to `2.0.0-568f295a867-SNAPSHOT`, then install the matching artifacts:
 
 ```sh
 ./mvnw -B -pl sdk,test-server,proxy,fluxzero-bom -am -DskipTests -Dmaven.javadoc.skip=true install
