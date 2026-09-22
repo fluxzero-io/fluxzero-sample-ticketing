@@ -70,7 +70,10 @@ are not made serial merely by this booking key. Atomic stock checks remain essen
 **This stronger qualification remains incomplete.** Unrouted requests exposed retry exhaustion.
 With explicit routing, the test also observed a runtime-accepted reservation whose caller
 received a capacity refusal. The observer records committed reservation identities and pending
-commit counts to distinguish this result mismatch from a request still in flight. The exact
-SDK cause is not yet isolated. Keep the reproduction and exact expected outcomes; do not mask
+commit counts to distinguish this result mismatch from a request still in flight. An isolated SDK
+reproduction identified a nested command failure prematurely closing its entire message batch,
+including another command whose commit was already submitted. A qualified SDK fix is still
+required. The current observer also hides the optional transport-batching interface, so its rates
+are not representative of normal SDK batching. Keep the reproduction and exact expected outcomes; do not mask
 technical failures as sold out, loosen capacity assertions or add application retries. No
 maximum-concurrency or production-capacity claim follows from these runs.
