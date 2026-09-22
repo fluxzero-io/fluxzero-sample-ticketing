@@ -12,6 +12,7 @@ import io.fluxzero.sdk.persisting.eventsourcing.client.EventStoreClient;
 import io.fluxzero.sdk.persisting.eventsourcing.client.ModelCommitBatchingClient;
 import io.fluxzero.sdk.persisting.eventsourcing.client.ModelCommitBatchingClient.ModelCommitBatch;
 import io.fluxzero.sdk.test.TestFixture;
+import io.fluxzero.sdk.tracking.ConsumerHandlingMode;
 import io.fluxzero.sdk.tracking.handling.IllegalCommandException;
 import io.fluxzero.ticketing.booking.api.*;
 import io.fluxzero.ticketing.booking.api.model.*;
@@ -31,15 +32,19 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import static io.fluxzero.common.MessageType.COMMAND;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /** Closed-loop pressure over WebSockets into the managed runtime, never the application demo namespace. */
 class RuntimePressureTest extends TicketingTestSupport {
     @ParameterizedTest
-    @CsvSource({"8,256,false", "32,512,false", "128,1024,false", "256,2048,false",
-            "32,512,true", "256,2048,true"})
-    void contendedBookingsPreserveEveryPlace(int concurrency, int requests, boolean multipleSections) throws Exception {
+    @CsvSource({"SYNC,8,256,false", "SYNC,32,512,false", "SYNC,128,1024,false", "SYNC,256,2048,false",
+            "SYNC,32,512,true", "SYNC,256,2048,true",
+            "ASYNC,8,256,false", "ASYNC,32,512,false", "ASYNC,128,1024,false", "ASYNC,256,2048,false",
+            "ASYNC,32,512,true", "ASYNC,256,2048,true"})
+    void contendedBookingsPreserveEveryPlace(ConsumerHandlingMode handlingMode, int concurrency, int requests,
+                                            boolean multipleSections) throws Exception {
         String url = ApplicationProperties.getProperty("ticketing.test.runtimeUrl");
         Path sessionFile = Path.of(".fluxzero/dev/session.json");
         if (url == null && Files.isRegularFile(sessionFile)) {
@@ -57,7 +62,8 @@ class RuntimePressureTest extends TicketingTestSupport {
         List<Selection> selection = List.of(new Selection("floor", null), new Selection(multipleSections ? "balcony" : "floor", null));
         var client = new MeasuredClient(WebSocketClient.ClientConfig.builder().runtimeBaseUrl(url)
                 .namespace("ticketing-pressure-" + UUID.randomUUID()).name("ticketing-pressure").build());
-        TestFixture.createAsync(builder().replaceIdentityProvider(ignored -> new UuidFactory()), client)
+        TestFixture.createAsync(builder().replaceIdentityProvider(ignored -> new UuidFactory())
+                        .configureDefaultConsumer(COMMAND, config -> config.toBuilder().handlingMode(handlingMode).build()), client)
                 .atFixedTime(now)
                 .givenCommandsByUser(OPERATOR, DemoCatalog.commands(now.plus(Duration.ofDays(1))).toArray())
                 .givenCommandsByUser(OPERATOR,
@@ -102,8 +108,8 @@ class RuntimePressureTest extends TicketingTestSupport {
                         assertTrue(workers.awaitTermination(10, TimeUnit.SECONDS), "Pressure workers must stop");
                         var unacknowledged = new TreeSet<>(client.committedReservations);
                         accepted.forEach(buyer -> unacknowledged.remove(new ReservationId("order-" + buyer).toString()));
-                        System.out.printf("RuntimePressure diagnostics concurrency=%d sections=%d completed=%d accepted=%d commitAttempts=%d conflicts=%d nonRetryable=%d maxConflictsPerCommit=%d%n",
-                                concurrency, sections.size(), Arrays.stream(latencies).filter(n -> n > 0).count(), accepted.size(), client.attempts.get(),
+                        System.out.printf("RuntimePressure diagnostics mode=%s concurrency=%d sections=%d completed=%d accepted=%d commitAttempts=%d conflicts=%d nonRetryable=%d maxConflictsPerCommit=%d%n",
+                                handlingMode, concurrency, sections.size(), Arrays.stream(latencies).filter(n -> n > 0).count(), accepted.size(), client.attempts.get(),
                                 client.conflicts.values().stream().mapToInt(AtomicInteger::get).sum(), client.nonRetryable.get(),
                                 client.conflicts.values().stream().mapToInt(AtomicInteger::get).max().orElse(0));
                         System.out.printf("RuntimePressure completion pendingCommits=%d committedReservations=%d committedWithoutSuccess=%s%n",
@@ -115,8 +121,8 @@ class RuntimePressureTest extends TicketingTestSupport {
                     sections.forEach(s -> assertEquals(capacity, Fluxzero.loadModel(new SectionInventoryId(show, s.id())).get().occupiedAt(now)));
                     Arrays.sort(latencies);
                     System.out.printf(Locale.ROOT,
-                            "RuntimePressure concurrency=%d sections=%d requests=%d accepted=%d refused=%d elapsedMs=%.1f completedPerSec=%.1f p50Ms=%.2f p95Ms=%.2f p99Ms=%.2f maxMs=%.2f commitAttempts=%d%n",
-                            concurrency, sections.size(), requests, accepted.size(), requests - accepted.size(), elapsed / 1e6,
+                            "RuntimePressure mode=%s concurrency=%d sections=%d requests=%d accepted=%d refused=%d elapsedMs=%.1f completedPerSec=%.1f p50Ms=%.2f p95Ms=%.2f p99Ms=%.2f maxMs=%.2f commitAttempts=%d%n",
+                            handlingMode, concurrency, sections.size(), requests, accepted.size(), requests - accepted.size(), elapsed / 1e6,
                             requests * 1e9 / elapsed, percentile(latencies, .5), percentile(latencies, .95),
                             percentile(latencies, .99), latencies[requests - 1] / 1e6, client.attempts.get());
                     // Releasing and reselling a subset must not double-count capacity after contention.

@@ -656,10 +656,11 @@ milestones:
     title: "Keep booking outcomes predictable under runtime contention"
     kind: "feature"
     status: "in_progress"
-    description: "Routed group bookings preserve exact customer outcomes and stock\
-      \ in all six managed-runtime scenarios, through 256 concurrent callers and 2,048\
-      \ requests including two-section groups. Cancellation and resale pass. Sustained\
-      \ traffic and mixed inventory-writer qualification remain open."
+    description: "Explicit SYNC handling preserves exact booking outcomes and stock\
+      \ in six runtime scenarios through 256 callers and 2,048 requests. The same\
+      \ six scenarios with ASYNC handling fail on technical inventory conflicts, already\
+      \ at eight callers. Mixed inventory-writer qualification remains pending resolution\
+      \ of this boundary."
     acceptance:
     - "Concurrent requests preserve exact stock and only expected capacity refusals\
       \ count as sold out."
@@ -670,7 +671,7 @@ milestones:
     - "Resolve technical failures and qualify all relevant inventory writers before\
       \ calling this qualification complete."
     createdAt: "2026-09-22T11:32:50.299225Z"
-    updatedAt: "2026-09-22T13:17:03.504633Z"
+    updatedAt: "2026-09-22T13:27:02.495209Z"
     history:
     - at: "2026-09-22T11:32:50.299225Z"
       status: "in_progress"
@@ -685,3 +686,11 @@ milestones:
         \ received success or the exact capacity refusal; accepted commit identities\
         \ matched successful customers, pending commits were zero, and final stock\
         \ plus cancellation/resale checks passed."
+    - at: "2026-09-22T13:27:02.495209Z"
+      status: "in_progress"
+      verification: "Managed RuntimePressureTest against matching SDK and TestServer\
+        \ 104c8831cc0: 12 cases, six SYNC passes and six ASYNC failures. The first\
+        \ ASYNC case raises ModelCommitConflictException on the floor inventory; diagnostics\
+        \ record four retryable conflicts for a commit. No retry override, custom\
+        \ queue or relaxed refusal assertion. Aborted ASYNC runs do not qualify final\
+        \ stock or customer outcomes."
