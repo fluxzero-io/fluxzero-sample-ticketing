@@ -134,5 +134,6 @@ configuration and real-money payments remain outside the local example.
 
 Organizer tenancy/invitations, invoice issuance policy and downloadable legal invoice documents,
 refunds as customer self-service, seat-plan editing, resale, camera/offline admission scanning, deployment
-hardening and load qualification remain separate work. Waitlists are the next agreed sales flow.
+hardening and load qualification remain separate work. Customers join waitlists from event details and find time-limited offers in My tickets; managers
+choose suitable places from the performance workspace. Automatic offer notifications remain an extension.
 Domain-specific load qualification follows those flows.

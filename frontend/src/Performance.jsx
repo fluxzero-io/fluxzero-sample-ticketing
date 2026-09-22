@@ -1,3 +1,4 @@
+import { JoinWaitlist } from "./Waitlist";
 import React, { useState, useEffect, useRef } from "react";
 import {
   MapPin,
@@ -557,6 +558,7 @@ export function Performance({ id, session }) {
           )}
         </section>
       </div>
+      {show && <JoinWaitlist show={show} session={session} />}
     </section>
   );
 }

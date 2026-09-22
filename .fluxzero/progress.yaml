@@ -396,17 +396,30 @@ milestones:
   - id: "waitlists"
     title: "Join a sold-out performance waitlist"
     kind: "feature"
-    status: "planned"
-    description: ""
+    status: "done"
+    description: "Customers register section and group preferences. Organizers offer\
+      \ concrete places from shared stock; each offer is a normal expiring reservation.\
+      \ No automatic FIFO or email offer delivery is promised by this sample."
     acceptance:
     - "Customers can join and leave a waitlist."
     - "Released places are offered with a clear expiry and no overselling."
     createdAt: "2026-09-21T21:17:57.555966Z"
-    updatedAt: "2026-09-21T21:17:57.555966Z"
+    updatedAt: "2026-09-22T10:29:58.501762Z"
     history:
     - at: "2026-09-21T21:17:57.555966Z"
       status: "planned"
       verification: ""
+    - at: "2026-09-22T10:20:55.618458Z"
+      status: "in_progress"
+      verification: ""
+    - at: "2026-09-22T10:29:58.501762Z"
+      status: "done"
+      verification: "Sixteen synchronous/asynchronous TestFixture scenarios passed,\
+        \ including competing group offers, standing capacity, ordinary checkout,\
+        \ decline, expiry and late capture after resale. App preview verified joining,\
+        \ organizer offering A1/A2, visible price/deadline, ordinary checkout and\
+        \ declining the offer. Organizer-selected allocation is explicit; no automatic\
+        \ FIFO or notification claim."
   - id: "box-office"
     title: "Sell tickets at the box office"
     kind: "feature"

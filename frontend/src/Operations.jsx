@@ -1,3 +1,4 @@
+import { ManagedWaitlist } from "./Waitlist";
 import React, { useState } from "react";
 import { post, date, money } from "./api";
 import { ErrorMessage, Spinner } from "./ui";
@@ -64,6 +65,7 @@ export function PerformanceOperations({ id }) {
       </div>
       <BoxOffice id={id} show={show} />
       <OrderList id={id} />
+      <ManagedWaitlist id={id} show={show} />
       <ProductionAllocations id={id} show={show} />
       <div className="operations-grid">
         <SalesWindow view={view} id={id} onSaved={refresh} />

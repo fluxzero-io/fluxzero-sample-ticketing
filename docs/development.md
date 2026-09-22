@@ -58,6 +58,7 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 | `ConfirmationTest`, `WalletTest`, `StaffAccessTest` | Retained email delivery, signed wallet artifacts and revocable performance-scoped staff rights |
 | `OrganizerOperationsTest` | Sales-window boundaries, scheduling choices, bounded manager access, order lookup, cancellation and immediate revocation |
 | `ProductionAllocationTest`, `BoxOfficeTest`, `TicketTransferTest` | Shared inventory, retained offline receipts, accepted ownership changes and revoked old credentials |
+| `WaitlistTest` | Paged private interest, staff offers, competing groups, expiry, decline and late capture without overselling |
 | `PartialRefundTest`, `PartialStripeRefundTest` | Ticket eligibility, exact partial repayments, cancellation during repayment and delayed provider acknowledgement |
 | `AutomaticRefundTest` | A core refund obligation starts the already-bound Stripe process without coupling payment state to Stripe |
 

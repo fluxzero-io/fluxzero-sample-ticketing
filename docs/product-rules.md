@@ -184,3 +184,20 @@ A late or incorrectly sized receipt remains a financial fact and requires a refu
 A current owner can offer an unused ticket to another signed-in account. The invitation expires after 24 hours or at performance start, whichever comes first. Until acceptance, admission remains with the sender. The sender can cancel and the recipient can decline. Acceptance changes ownership atomically and increments the admission credential version, invalidating the previous QR, PDF and wallet code even if the ticket later returns to the original owner. Online entrance validation always checks the current version.
 
 Transfer moves admission only. The original buyer retains the purchase, payment and cancellation relationship; cancelling that purchase also voids transferred tickets. The recipient sees the event and selected admission before accepting. Admitted, voided or started-performance tickets cannot be transferred. Wallet passes already stored on a phone are not remotely refreshed; their old code is refused at online admission.
+
+## Waitlists
+
+A signed-in visitor can request up to twelve places in one section, with a ticket type and an
+explicit wheelchair-space preference. Joining does not allocate stock or promise a price.
+One request may be waiting per customer and section; retries cannot reopen a left or offered
+entry. A new request uses a new identity.
+
+Managers select the complete requested group from released stock. Existing customer holds,
+sales and production blocks win over a stale offer screen. The accepted offer fixes its prices
+and appears in My tickets as a normal reservation with at most fifteen minutes to pay, capped at
+performance start. Staff may offer before public sales open, as for box-office holds. Declining
+or expiry frees places; a late capture remains refundable money and cannot revive the offer.
+
+The sample uses organizer-selected offers, presented oldest-first. It does not promise automatic
+FIFO, queue admission, email notifications or automatic requeue after expiry. Visitors check
+My tickets for offers. Leaving after purchase is refused; purchased tickets use booking management.

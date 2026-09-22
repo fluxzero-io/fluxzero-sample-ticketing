@@ -1,3 +1,4 @@
+import { MyWaitlist } from "./Waitlist";
 import { OwnedTickets } from "./Transfers";
 import React, { useState } from "react";
 import { Ticket, ArrowRight } from "@phosphor-icons/react";
@@ -42,6 +43,7 @@ export function MyTickets({ session }) {
       ) : (
         <>
           <OwnedTickets account={session.name} />
+          <MyWaitlist onChanged={reload} />
           <h2>Your bookings</h2>
           <ErrorMessage error={error || moreError} retry={reload} />
           {!page && !error && <Spinner />}

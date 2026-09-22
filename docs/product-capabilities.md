@@ -47,7 +47,7 @@ It is a scope recommendation for this example, not a promise to reproduce every 
 | Organizer access | Explicit local operator allowlist plus revocable performance-scoped admission/manage grants and workspaces | Organizer/venue tenancy, invitations and separation between unrelated organizers |
 | Box office and reporting | Assisted sales share stock; cash/external-terminal receipts and offline refunds retain staff identity | Physical terminal integration, guest lists, sales/admission reports and exports |
 | Customer support | Managers search orders by order/customer, see payment state and cancel active purchases | Broader reconciliation actions, explanations of pending/late payments and auditable support notes |
-| Demand management | Exact bounded inventory transactions | Purchase limits across accounts, queue/waitlist policy, abuse controls and fair high-demand admission |
+| Demand management | Paged waitlist interest, organizer-selected group offers and normal expiring reservations | Automatic FIFO offers, notifications, purchase limits across accounts, on-sale queue and abuse controls |
 | Event information and communication | Title, description, venue, date and artwork | Doors/end time, age and entry restrictions, accessibility guidance, reminders, change notices and delivery preferences |
 | Rescheduling | Existing reservations cannot silently move | Explicit reschedule workflow, notifications and refund/acceptance choices |
 | Transfers and resale | Recipient-accepted transfer with immediate revocation of previous admission credentials | Resale and live updates to previously installed wallet passes |
@@ -65,7 +65,7 @@ It is a scope recommendation for this example, not a promise to reproduce every 
    and companion requests are validated as a group. Section prices and optional concession
    types share physical stock. Seat-specific price ranks and sightline information remain extensions.
 4. **Extended sales and after-sales.** Production blocks, box-office receipts, ticket-level
-   refunds and recipient-accepted transfers are implemented. Waitlists remain next; presales/codes
+   refunds and recipient-accepted transfers are implemented. Organizer-selected waitlist offers are implemented; presales/codes
    and rescheduling require further product decisions. Bundles, season passes, resale, dynamic
    pricing and a cross-event cart are optional product expansions, not baseline requirements
    for this reference app. A multi-seller marketplace would additionally need seller onboarding,

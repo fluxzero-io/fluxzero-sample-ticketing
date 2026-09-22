@@ -8,6 +8,7 @@ erDiagram
     EVENT ||--o{ PERFORMANCE : occurs_as
     PERFORMANCE ||--o| SALES_WINDOW : sells_during
     PERFORMANCE ||--o{ PRODUCTION_HOLD : reserves_for_operations
+    PERFORMANCE ||--o{ WAITLIST_ENTRY : receives_interest
     PERFORMANCE ||--o{ RESERVATION : receives
     PERFORMANCE ||--o{ SEAT_INVENTORY : allocates
     PERFORMANCE ||--o{ SECTION_INVENTORY : allocates
@@ -252,3 +253,21 @@ whereas the reservation command enforces group, accessibility and physical capac
 `Reservation.channel` distinguishes online and box-office sales. `BoxOfficeReceipt` is an independently retained companion of Payment, with receipt method, external reference and recording staff. It records an offline financial fact without introducing a payment-provider workflow into the graph.
 
 `TicketTransfer` is a ticket-scoped Model with a versioned current invitation, sender, recipient, deadline and accepted/cancelled status. Repeated invitations retain their event history without growing a list on Ticket. Ticket itself has searchable current ownership and a monotonic credential version; purchase ownership and financial records remain unchanged. Queries page owned tickets and incoming invitations directly.
+
+## Waitlist offers
+
+`WaitlistEntry` independently retains a customer's group preference under Performance. An active
+alias permits one waiting request per customer and section without scanning the queue. Offering
+places releases that waiting identity and stores a plain Reservation reference; the entry does
+not own or duplicate reservation, payment or expiry state. Customer status reads the referenced
+reservation and performance gate, so a delayed timer cannot make an expired offer look payable.
+
+`OfferWaitlistPlaces` atomically creates one normal online Reservation, claims at most twelve
+inventory positions and records the offer. It checks staff authority before interceptor replacement
+and reuses the ordinary group/accessibility rules. A duplicate exact offer keeps its deadline;
+changed selection cannot replace it. Leaving an unpaid offer releases the same inventory and
+retains the entry. Purchased tickets use the existing cancellation rules instead.
+
+Customer history and the organizer's waiting list page twenty entries. Staff choose groups from
+oldest-first interest; this is assisted allocation, not automatic FIFO, an on-sale queue or a
+fairness guarantee. Expired offers are not automatically requeued, and no offer email is sent.
