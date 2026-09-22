@@ -121,7 +121,7 @@ milestones:
   - id: "resume-after-session-expiry"
     title: "Sign in again when a session expires"
     kind: "feature"
-    status: "planned"
+    status: "in_progress"
     description: "Keep the current booking route and provide a clear sign-in action\
       \ when the server no longer recognizes the session, without repeatedly requesting\
       \ protected data."
@@ -132,11 +132,18 @@ milestones:
       \ expiry."
     - "Verify expired-session and revoked-permission behavior through the browser."
     createdAt: "2026-09-22T11:11:55.468448Z"
-    updatedAt: "2026-09-22T11:11:55.468448Z"
+    updatedAt: "2026-09-22T11:32:50.278382Z"
     history:
     - at: "2026-09-22T11:11:55.468448Z"
       status: "planned"
       verification: ""
+    - at: "2026-09-22T11:32:50.278382Z"
+      status: "in_progress"
+      verification: "Implemented 401 session invalidation, preserved routes and stopped\
+        \ 401/403 polling. Browser verified cross-tab logout, visible sign-in state\
+        \ and return to My tickets after reauthentication; logs show one concurrent\
+        \ set of rejected requests rather than continued polling. Browser verification\
+        \ of revoked permissions is still pending."
 - id: "payments-billing"
   title: "Payments and financial history"
   description: "Accept payment without confusing money received with a valid ticket.\
@@ -645,3 +652,26 @@ milestones:
         \ the story. Twenty-three local links and anchors resolve. The local concurrency\
         \ scenario is explicitly distinguished from production capacity; mail, wallet\
         \ and unpublished SDK boundaries remain visible."
+  - id: "runtime-pressure"
+    title: "Keep booking outcomes predictable under runtime contention"
+    kind: "feature"
+    status: "in_progress"
+    description: "Qualify the shared standing-section inventory over the managed runtime\
+      \ at increasing concurrency, retaining exact capacity and explicit business\
+      \ refusals."
+    acceptance:
+    - "Concurrent requests preserve exact stock and only expected capacity refusals\
+      \ count as sold out."
+    - "Record completed throughput, latency and actual commit conflicts across increasing\
+      \ pressure."
+    - "Resolve technical failures caused by exhausted conflict retries before calling\
+      \ this qualification complete."
+    createdAt: "2026-09-22T11:32:50.299225Z"
+    updatedAt: "2026-09-22T11:32:50.299225Z"
+    history:
+    - at: "2026-09-22T11:32:50.299225Z"
+      status: "in_progress"
+      verification: "The isolated WebSocket test exposes retry exhaustion: four retryable\
+        \ conflicts for one commit exceed the pinned SDK default of three retries.\
+        \ No retry override or application workaround was added; the failing reproduction\
+        \ is retained."
