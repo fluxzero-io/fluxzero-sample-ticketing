@@ -69,21 +69,16 @@ the pinned SDK's automatic Model handler bypasses the generic per-segment execut
 favor of its own read-set coordination. Payment, cancellation, box-office and allocation paths
 are not made serial merely by this booking key. Atomic stock checks remain essential.
 
-All six SYNC cases pass with the application and development TestServer pinned to SDK commit
-`104c8831cc0`. Each of these cases returns exactly half successful reservations and half explicit
+All twelve SYNC and ASYNC cases pass with the application and development TestServer pinned to SDK commit
+`d0885f1d708`. Each of these cases returns exactly half successful reservations and half explicit
 capacity refusals, with no runtime-accepted reservation missing its successful caller result.
 There are no pending commits at the outcome check. Cancellation and resale preserve the
 exact occupied counts, including groups spanning two sections.
-
-The six ASYNC cases currently fail with technical model-commit conflicts, including the
-eight-caller case. These failures are not accepted as capacity refusals. The failing tests
-remain enabled; retries and application execution have not been overridden. Because these
-runs abort, they do not qualify final inventory or customer outcomes under ASYNC handling.
 
 The observer preserves the delegate's optional `ModelCommitBatchingClient` interface and
 forwards both individual commits and SDK-owned transport batches. It observes results without
 substituting transport, commit scheduling or retry behavior.
 
-The passing results qualify this bounded SYNC workload. They do not establish maximum concurrency or
+The passing results qualify this bounded workload in both consumer handling modes. They do not establish maximum concurrency or
 production capacity, and the reported rates are short-run observations on a shared development
 host. Longer sustained traffic and mixed sales-channel workloads remain separate qualification.

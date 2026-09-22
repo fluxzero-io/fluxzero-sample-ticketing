@@ -656,11 +656,11 @@ milestones:
     title: "Keep booking outcomes predictable under runtime contention"
     kind: "feature"
     status: "in_progress"
-    description: "Explicit SYNC handling preserves exact booking outcomes and stock\
-      \ in six runtime scenarios through 256 callers and 2,048 requests. The same\
-      \ six scenarios with ASYNC handling fail on technical inventory conflicts, already\
-      \ at eight callers. Mixed inventory-writer qualification remains pending resolution\
-      \ of this boundary."
+    description: "All twelve explicit SYNC and ASYNC runtime booking scenarios preserve\
+      \ exact outcomes and stock through 256 callers and 2,048 requests, including\
+      \ two-section groups, cancellation and resale. Mixed inventory-writer qualification\
+      \ is next. Expected capacity refusals are also logged as SDK batch errors and\
+      \ remain visible for investigation."
     acceptance:
     - "Concurrent requests preserve exact stock and only expected capacity refusals\
       \ count as sold out."
@@ -671,7 +671,7 @@ milestones:
     - "Resolve technical failures and qualify all relevant inventory writers before\
       \ calling this qualification complete."
     createdAt: "2026-09-22T11:32:50.299225Z"
-    updatedAt: "2026-09-22T13:27:02.495209Z"
+    updatedAt: "2026-09-22T14:12:37.844163Z"
     history:
     - at: "2026-09-22T11:32:50.299225Z"
       status: "in_progress"
@@ -694,3 +694,11 @@ milestones:
         \ record four retryable conflicts for a commit. No retry override, custom\
         \ queue or relaxed refusal assertion. Aborted ASYNC runs do not qualify final\
         \ stock or customer outcomes."
+    - at: "2026-09-22T14:12:37.844163Z"
+      status: "in_progress"
+      verification: "Matching SDK and TestServer d0885f1d708: RuntimePressureTest\
+        \ passes all twelve cases with no skipped scenarios, zero observed commit\
+        \ conflicts and no committed reservation missing a successful caller result.\
+        \ Technical conflict assertions remain unchanged. Functional refusals produce\
+        \ batch-level ERROR logs despite correct results; this is not presented as\
+        \ clean operational qualification."
