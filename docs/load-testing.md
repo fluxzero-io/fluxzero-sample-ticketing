@@ -82,3 +82,24 @@ substituting transport, commit scheduling or retry behavior.
 The passing results qualify this bounded workload in both consumer handling modes. They do not establish maximum concurrency or
 production capacity, and the reported rates are short-run observations on a shared development
 host. Longer sustained traffic and mixed sales-channel workloads remain separate qualification.
+
+
+## Mixed inventory writers
+
+`MixedInventoryPressureTest` runs 32 callers across the actual booking, payment and operations
+command consumers. Forty existing two-place purchases occupy one place in each of two sections.
+Half already have captured payments; the other half race payment confirmation against cancellation.
+A shuffled wave of 188 operations combines those cancellations and confirmations with 64 new online
+bookings, 32 box-office purchases and 32 production allocations. All use the same section inventory.
+
+The intended assertions account for every accepted and refused group, held/sold/blocked stock,
+valid tickets, cash receipts, retained captures and refund obligations. Refusals must match the
+shared booking or allocation capacity error exactly. Cleanup releases surviving purchases and
+production allocations, verifies empty stock and reserves a new group without erasing money.
+The fixture clock stays fixed so a slow run cannot accidentally release stock through expiry.
+
+On the current pin this test fails in both SYNC and ASYNC handling with technical commit conflicts
+between consumers. The final inventory and financial assertions are therefore not yet qualified.
+The passing single-consumer workload above does not cover this boundary: SDK batch coordination
+is local to a tracking batch, while these independent consumers can write the same inventory.
+The reproduction remains enabled, with no application retry loop or consumer regrouping.

@@ -1,12 +1,10 @@
 package io.fluxzero.ticketing.booking;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fluxzero.common.api.modeling.CommitModels;
 import io.fluxzero.common.api.modeling.CommitModelsResult;
 import io.fluxzero.common.api.modeling.ModelCommitTarget;
 import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.sdk.common.UuidFactory;
-import io.fluxzero.sdk.configuration.ApplicationProperties;
 import io.fluxzero.sdk.configuration.client.WebSocketClient;
 import io.fluxzero.sdk.persisting.eventsourcing.client.EventStoreClient;
 import io.fluxzero.sdk.persisting.eventsourcing.client.ModelCommitBatchingClient;
@@ -20,24 +18,21 @@ import io.fluxzero.ticketing.catalog.DemoCatalog;
 import io.fluxzero.ticketing.catalog.api.*;
 import io.fluxzero.ticketing.catalog.api.model.*;
 import io.fluxzero.ticketing.payment.api.model.Money;
-import io.fluxzero.ticketing.support.TicketingTestSupport;
+import io.fluxzero.ticketing.support.RuntimeTestSupport;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import static io.fluxzero.common.MessageType.COMMAND;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /** Closed-loop pressure over WebSockets into the managed runtime, never the application demo namespace. */
-class RuntimePressureTest extends TicketingTestSupport {
+class RuntimePressureTest extends RuntimeTestSupport {
     @ParameterizedTest
     @CsvSource({"SYNC,8,256,false", "SYNC,32,512,false", "SYNC,128,1024,false", "SYNC,256,2048,false",
             "SYNC,32,512,true", "SYNC,256,2048,true",
@@ -45,14 +40,7 @@ class RuntimePressureTest extends TicketingTestSupport {
             "ASYNC,32,512,true", "ASYNC,256,2048,true"})
     void contendedBookingsPreserveEveryPlace(ConsumerHandlingMode handlingMode, int concurrency, int requests,
                                             boolean multipleSections) throws Exception {
-        String url = ApplicationProperties.getProperty("ticketing.test.runtimeUrl");
-        Path sessionFile = Path.of(".fluxzero/dev/session.json");
-        if (url == null && Files.isRegularFile(sessionFile)) {
-            var session = new ObjectMapper().readTree(sessionFile.toFile());
-            if (ProcessHandle.of(session.path("pid").asLong()).filter(ProcessHandle::isAlive).isPresent())
-                url = session.path("runtime").path("url").asText(null);
-        }
-        assumeTrue(url != null, "Requires fz dev or TICKETING_TEST_RUNTIMEURL");
+        String url = runtimeUrl();
         var now = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
         var show = new PerformanceId("pressure");
         var plan = new SeatingPlanId("pressure-plan");

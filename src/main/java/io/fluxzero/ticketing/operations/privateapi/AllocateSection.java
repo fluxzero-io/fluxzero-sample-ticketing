@@ -9,12 +9,13 @@ import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.Map;
 import static io.fluxzero.ticketing.common.Checks.require;
+import static io.fluxzero.ticketing.operations.api.OperationsErrors.allocationCapacityExceeded;
 
 public record AllocateSection(SectionInventoryId sectionInventoryId, PerformanceId performanceId,
                               int delta, int capacity, Instant decidedAt) {
     @AssertLegal void validate(@Nullable SectionInventory current) {
         var next = apply(current);
-        require(next.blocked() >= 0 && next.occupiedAt(decidedAt) <= capacity, "Section allocation exceeds available capacity");
+        require(next.blocked() >= 0 && next.occupiedAt(decidedAt) <= capacity, allocationCapacityExceeded);
     }
     @Apply(automaticHandling = AutomaticModelHandling.DISABLED)
     SectionInventory apply(@Nullable SectionInventory current) {

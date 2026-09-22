@@ -656,11 +656,11 @@ milestones:
     title: "Keep booking outcomes predictable under runtime contention"
     kind: "feature"
     status: "in_progress"
-    description: "All twelve explicit SYNC and ASYNC runtime booking scenarios preserve\
-      \ exact outcomes and stock through 256 callers and 2,048 requests, including\
-      \ two-section groups, cancellation and resale. Mixed inventory-writer qualification\
-      \ is next. Expected capacity refusals are also logged as SDK batch errors and\
-      \ remain visible for investigation."
+    description: "All twelve single-consumer booking scenarios pass with explicit\
+      \ SYNC and ASYNC handling through 256 callers and 2,048 requests. The mixed\
+      \ workload now exposes technical stock conflicts between booking, payment and\
+      \ operations consumers at 32 callers. Final mixed financial and inventory outcomes\
+      \ remain unqualified."
     acceptance:
     - "Concurrent requests preserve exact stock and only expected capacity refusals\
       \ count as sold out."
@@ -671,7 +671,7 @@ milestones:
     - "Resolve technical failures and qualify all relevant inventory writers before\
       \ calling this qualification complete."
     createdAt: "2026-09-22T11:32:50.299225Z"
-    updatedAt: "2026-09-22T14:12:37.844163Z"
+    updatedAt: "2026-09-22T14:20:28.353109Z"
     history:
     - at: "2026-09-22T11:32:50.299225Z"
       status: "in_progress"
@@ -702,3 +702,12 @@ milestones:
         \ Technical conflict assertions remain unchanged. Functional refusals produce\
         \ batch-level ERROR logs despite correct results; this is not presented as\
         \ clean operational qualification."
+    - at: "2026-09-22T14:20:28.353109Z"
+      status: "in_progress"
+      verification: "SDK and TestServer d0885f1d708 resolve the original ASYNC contention\
+        \ reproduction: 12/12 booking cases pass, also after extracting shared runtime\
+        \ discovery. MixedInventoryPressureTest compiles but fails both explicit modes:\
+        \ SYNC on CancelReservation and ASYNC on RecordPaymentSuccess, each conflicting\
+        \ on the two shared section inventories. The workload combines 188 cancellation,\
+        \ capture, online, box-office and production actions. No retry, queue or consumer-routing\
+        \ workaround; the failing reproduction stays enabled."
