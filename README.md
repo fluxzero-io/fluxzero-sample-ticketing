@@ -1,24 +1,28 @@
 # Fluxzero Ticketing
 
-**A complete evening out, from choosing seats to checking tickets at the door.**
+A working ticketing example built with **version 2 of the Fluxzero Java SDK**. It includes
+seat selection, temporary group reservations, payments, refunds, ticket delivery and entrance
+checks, with a customer UI and an organizer workspace.
 
-This sample shows how a product built with **Fluxzero 2.0** can handle the things that make
-real ticketing interesting: groups booking together, the last available seat, a slow payment,
-a change of plans and a busy entrance. It includes a working customer app and organizer workspace.
+The example shows how to build these features around their product rules, including what
+happens when many people book at once. You and your coding agent describe the behavior;
+Fluxzero provides the storage, message handling, scheduling and coordination of concurrent
+changes. Application code connects those capabilities to the ticketing rules.
 
-You can explore it with your coding agent, even if you do not write code yourself. Start with
-the product below, then [try it locally](#try-it-locally).
+You can use this repository to understand the approach, try the flows and build on them.
+You do not need to read Java to follow the product model below.
 
 ![Browse fictional shows at real venues](docs/images/discover.png)
 
-## How the product fits together
+## The product model
 
 A venue contains halls. Each hall has a seating plan. An event can have several performances,
 each with its own date, place and availability. Visitors reserve places for one performance;
 a successful purchase gives them tickets. Payments, returns and invoices keep their own history.
 
-This connected picture is called the **model graph**. It describes the actual business objects
-in the app, so a new feature has a clear place to belong.
+These are Fluxzero **Models**: business objects with their own identity and lifecycle.
+Their relationships form the **model graph**. The graph below reflects the application's
+model, so both a builder and an agent can use it to work out where a feature belongs.
 
 ```mermaid
 flowchart TD
@@ -43,22 +47,51 @@ These distinctions matter in everyday situations. If a payment arrives after a r
 has expired, the money is recorded and a refund is required. The expired reservation does not
 come back to life, and the next buyer keeps their seats.
 
-## What you can do
+## What is built
 
-| As a visitor | As an organizer |
+| Feature | Behavior in this app |
 | --- | --- |
-| Discover shows by place and date | Schedule performances and set sales windows |
-| Choose numbered seats or a standing section | Sell at the box office from the same available stock |
-| Find seats together and choose ticket types | Hold places for production and release them later |
-| Reserve a whole group for up to fifteen minutes | Offer suitable places to people on the waitlist |
-| Pay online when Stripe is configured | Find orders and return selected unused tickets |
-| Download PDF tickets and open their QR codes | Cancel a performance and follow the settlement |
-| Transfer a ticket for another customer to accept | Grant staff access and check tickets at the entrance |
+| Venues and performances | Multiple venues, halls and seating plans; performances with dates, prices and sales windows. |
+| Seat and section selection | Numbered seats or general admission, adjacent-seat suggestions, ticket types and wheelchair/companion places. |
+| Reservations | Hold a whole group for up to fifteen minutes. Reserve all requested places together, or reject the request. Expiry and cancellation release availability. |
+| Payments and refunds | Stripe checkout, recorded box-office receipts, partial returns and cancellation refunds. Payment history remains separate from reservation validity. |
+| Tickets and admission | Downloadable PDF tickets, QR codes, accepted transfers and online check-in that refuses a second admission. |
+| Organizer operations | Schedule performances, find orders, block production places, make box-office sales, offer waitlist places and settle cancellations. |
+| Delivery and wallets | Confirmation emails captured in a local inbox, plus Apple Wallet pass and Google Wallet save-link generation. Real phone installation needs issuer configuration. |
+| Invoicing | Invoices and full credit notes with their own history in the core. Billing screens and invoice delivery are not implemented. |
 
-Confirmation email is captured in a local inbox. Apple and Google Wallet integrations are
-included; installing passes on a real phone requires your own issuer configuration. Invoices
-and full credit notes have their own lifecycle in the core; an invoice editor and delivery
-flow are not yet part of the UI.
+## How the rules become an application
+
+Take a request such as: **“Reserve these three seats for fifteen minutes. If one is no longer
+available, reserve none of them.”** In the code, that is a `ReserveTickets` command. It checks
+the sales rules and describes the reservation and inventory changes that must happen together.
+Fluxzero commits those changes as one operation and detects competing changes before accepting
+them. The application does not need its own database transaction or locking implementation.
+
+The same approach carries through the rest of the app. An expiry command releases a hold;
+a payment confirmation records money received and checks whether tickets may still be issued;
+a check-in command records admission only when the ticket is valid and unused. Fluxzero supplies
+persistent Models, their relationships and history, message delivery and scheduled commands.
+The application supplies the decisions: how long a hold lasts, who may cancel it and when money
+must be returned.
+
+To add a feature, start with its business concepts, commands and rules, then ask your agent
+to demonstrate them through scenarios. For example: reserve a group, advance time past
+the deadline, let another customer book, then confirm the first payment. The tests use the
+same application handlers through Fluxzero's `TestFixture`, including controlled payment-provider
+responses.
+
+## Concurrent bookings
+
+Many customers can request the same places at once. A displayed availability count is only a
+preview; the booking decision must check the current inventory. A group must be accepted in
+full or refused, and a late payment must not reclaim places already allocated to someone else.
+
+Model boundaries keep that decision small. A booking changes one reservation and the inventory
+for its selected seats or sections. It does not read or rewrite all earlier reservations for
+the performance. Different seats have separate inventory; buyers of standing tickets share
+the capacity of their section. Fluxzero coordinates the competing changes, while the application
+expresses the capacity and ownership rules.
 
 ## What has been demonstrated
 
@@ -82,10 +115,13 @@ those twenty places again while the payment provider is still paused. After the 
 ten temporary failures are retried, the cancelled purchases are refunded and the replacement
 reservations remain intact.
 
-That demonstrates correct outcomes under a short burst of concurrent demand. It does **not**
-establish how many customers a production deployment can serve per second. The
-[load-test explanation](docs/load-testing.md) describes the measurements and their limits;
-the [verification guide](docs/development.md#verification) maps other behaviors to their tests.
+This checks the business outcomes under a short burst; it is not a production throughput
+measurement. A larger test against the development runtime sends up to 2,048 requests with
+256 concurrent callers. **That qualification is still open:** it exposed an SDK batch-completion
+bug, and must be rerun with the v2 fix before drawing scaling conclusions.
+
+The [load-test explanation](docs/load-testing.md) describes both tests and their limits.
+The [verification guide](docs/development.md#verification) maps the other behaviors to their tests.
 
 ## Try it locally
 
@@ -158,19 +194,19 @@ the rest of that order returns only the remaining amount.
 
 ![A retained payment with a partial refund and a cancellation remainder](docs/images/refunds.png)
 
-## Make it your own
+## Extend it with your agent
 
-Use the app as a starting point for a conversation with your agent. For example:
+Start with the behavior you want to add. For example:
 
 - “Add doors-open time and age guidance to each performance, and show them before booking.”
 - “Let an organizer export an admission list for a performance they manage.”
 - “Design a rescheduling flow that lets customers keep their tickets or request a refund.”
 
-These are ideas for extensions, not features already delivered. Ask your agent to explain the
-product rule, add it to the appropriate part of the graph and demonstrate both the happy path
-and what happens when the action cannot be completed.
+These extensions are not implemented yet. Ask your agent to identify the affected Models,
+write the rules and demonstrate them with scenarios before adding the screens. Include what
+happens when two people act at once, time runs out or an external service responds late.
 
-## Integration and production boundaries
+## Local defaults and optional setup
 
 | Area | Included in the example | Requires additional setup or work |
 | --- | --- | --- |
