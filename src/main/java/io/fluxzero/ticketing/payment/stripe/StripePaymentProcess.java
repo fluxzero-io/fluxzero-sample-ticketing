@@ -70,9 +70,21 @@ public record StripePaymentProcess(@EntityId @Association PaymentId paymentId, M
         if (refundAuthorization != null && refundAuthorization.refundId().equals(event.refundId())) return this;
         // Exact lookup keeps old command redelivery idempotent without retaining or scanning attempt history here.
         if (Fluxzero.getDocument(event.refundId(), StripeRefundProcess.class).isPresent()) return this;
-        require(refundAuthorization == null, "An unresolved refund attempt already exists");
+        if (refundAuthorization != null) {
+            var previous = Fluxzero.loadModel(refundAuthorization.businessRefundId()).get();
+            // Core settlement is the durable permission for the next business repayment.
+            // A delayed provider acknowledgement must not block a later cancellation remainder.
+            require(previous != null && previous.completed()
+                    && !refundAuthorization.businessRefundId().equals(event.businessRefundId()),
+                    "An unresolved refund attempt already exists");
+        }
         require(chargeId != null && account.reference(chargeId).equals(event.captureReference()), "Refund identifies another capture");
-        require(captured.equals(event.amount()), "Refund amount differs from the capture");
+        var repayment = Fluxzero.loadModel(event.businessRefundId()).get();
+        require(repayment != null && repayment.paymentId().equals(paymentId) && repayment.amount().equals(event.amount()),
+                "Refund differs from the core repayment obligation");
+        if (repayment.completed()) return this;
+        require(captured.currency().equals(event.amount().currency()) && event.amount().minorUnits() <= captured.minorUnits(),
+                "Refund exceeds the capture");
         return withRefundAuthorization(event).withRefundDispatched(false).withLatestRefundId(event.refundId());
     }
     @HandleEvent StripePaymentProcess dispatched(RefundAuthorized event) {

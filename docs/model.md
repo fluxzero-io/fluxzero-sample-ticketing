@@ -18,6 +18,7 @@ erDiagram
     TICKET ||--o| CHECK_IN : admits_once
     TICKET ||--o| TICKET_TRANSFER : offers_ownership
     PAYMENT ||--o| BOX_OFFICE_RECEIPT : records_offline_receipt
+    PAYMENT ||--o{ REFUND : repays
     RESERVATION ||--o{ PAYMENT : has_attempts
     RESERVATION ||--o{ INVOICE : bills
     INVOICE ||--o| CREDIT_NOTE : corrects
@@ -43,6 +44,7 @@ require a child to remain active after its parent is deleted.
 | Reservation | `ReservationId`, authenticated customer and complete priced selection | Held → confirmed, expired or cancelled; confirmed → cancelled |
 | Ticket | `TicketId`, reservation, explicit performance, customer and admission | Issued only on accepted payment; valid → void |
 | Payment | `PaymentId`, reservation, expected and actual amounts | Pending → failed or captured; captured → refund required → refunded |
+| Refund | `RefundId`, paying attempt, exact amount and selected ticket references | Requested → completed; provider attempts remain outside the graph |
 | Invoice | `InvoiceId`, reservation and paying attempt, frozen lines and total | Draft → issued or void; issued → credited |
 | CreditNote | `CreditNoteId`, original invoice, full amount and reason | Issued correction with its own retained history |
 
@@ -174,6 +176,18 @@ identity while retaining the original model and history. A late capture of an ol
 does not remove a newer attempt's alias.
 
 
+`Refund` is a business obligation under Payment, not a provider attempt. It retains the exact
+amount, reason, returned ticket references and independently confirmed repayment. Its globally
+unique external reference prevents one payout from completing two obligations. Payment retains
+the original capture, cumulative amount owed/returned and at most one pending Refund identity.
+
+`RefundTickets` voids only the selected unused tickets and releases their stock in the same
+bounded transaction that creates the repayment. Full cancellation releases only remaining valid
+tickets. If a partial repayment is already in flight, cancellation raises the total obligation
+without changing that repayment; confirmation creates one exact remainder. There is no mutable
+list of provider attempts on either Model. Each order has at most twelve ticket refunds plus a
+cancellation remainder, so the organizer repayment history is bounded independently of retries.
+
 ## Integration transactions
 
 `StripePaymentProcess` and `StripeRefundProcess` use `@Stateful` execution memory outside this graph.
@@ -210,9 +224,9 @@ inventory, tickets and refund obligations cannot diverge by entry point. Individ
 orders cannot be cancelled from the support desk. Whole-performance cancellation remains a
 separate operator decision with its own settlement lifecycle.
 
-Stripe observes entry into `PaymentStatus.REFUND_REQUIRED` through event-bound `Graph<Payment>`
-and `previous()`. This includes a rejected late capture as well as cancellation. It starts a
-stable, durable full-refund attempt only for payments already bound to a Stripe process.
+Stripe observes a new `Payment.pendingRefundId` through event-bound `Graph<Payment>` and
+`previous()`. This includes a rejected late capture, selected ticket returns and cancellation.
+It starts a stable attempt for that repayment only for payments already bound to a Stripe process.
 Support can check a pending attempt, resume failed execution or start one new attempt after
 terminal provider failure. The displayed attempt identifies the action; repeated clicks cannot
 create additional attempts. Provider details stay in the integration, outside the core graph.

@@ -3,7 +3,7 @@
 The example supports discovering performances, selecting seats or standing admissions,
 atomic temporary group holds, authenticated checkout, payment confirmation, ticket display
 and releasing unpaid holds. Organizer operations cover scheduling, sales windows, scoped access,
-order search, cancellation and full-refund progress. Inventory and financial lifecycles are separate. A source-backed
+order search, cancellation, ticket-level returns and retained repayment progress. Inventory and financial lifecycles are separate. A source-backed
 Recital Hall configuration complements the small illustrative venues.
 
 The following boundaries matter before presenting this as an operational ticketing product.
@@ -42,8 +42,8 @@ It is a scope recommendation for this example, not a promise to reproduce every 
 | Checkout | EUR card payments, retries and retained provider state | Buyer/contact details, clear fee/tax breakdown, production merchant configuration and payment-method expansion |
 | Fulfilment | Retried confirmation email, owner-only QR ticket, downloadable PDF, signed Apple pass and Google Wallet save link | Optional production email provider, issuer/device qualification and live wallet updates |
 | Admission | Scoped staff desk, explicit gate, signed code, atomic one-time check-in and duplicate/cancelled-ticket rejection | Camera and offline scanning need explicit conflict and re-entry policies |
-| Cancellation and refunds | Managers can find and cancel active orders; captured payments retain their refund obligation and a bound Stripe process starts one durable full-refund attempt | Refund policy display, customer cancellation requests, ticket-level partial refunds and production refund qualification |
-| Invoicing | Independent invoice and credit-note lifecycle in the core | Billing details, issue/delivery workflow, invoice download and jurisdiction-specific tax/numbering configuration |
+| Cancellation and refunds | Managers cancel active orders or return unused tickets; exact repayments and cancellation remainders retain the capture and use independent Stripe attempts | Refund policy display, customer cancellation requests and production refund qualification |
+| Invoicing | Independent invoice and credit-note lifecycle in the core | Partial credit notes, billing details, issue/delivery workflow, invoice download and jurisdiction-specific tax/numbering configuration |
 | Organizer access | Explicit local operator allowlist plus revocable performance-scoped admission/manage grants and workspaces | Organizer/venue tenancy, invitations and separation between unrelated organizers |
 | Box office and reporting | Assisted sales share stock; cash/external-terminal receipts and offline refunds retain staff identity | Physical terminal integration, guest lists, sales/admission reports and exports |
 | Customer support | Managers search orders by order/customer, see payment state and cancel active purchases | Broader reconciliation actions, explanations of pending/late payments and auditable support notes |
@@ -64,9 +64,9 @@ It is a scope recommendation for this example, not a promise to reproduce every 
 3. **Seat and ticket choice delivered.** Paged suggestions follow explicit adjacency; wheelchair
    and companion requests are validated as a group. Section prices and optional concession
    types share physical stock. Seat-specific price ranks and sightline information remain extensions.
-4. **Extend sales and after-sales deliberately.** Consider presales/codes, waitlists, box-office
-   sales, partial refunds, rescheduling and transfers. Transfers need recipient acceptance and
-   revocation of the previous admission credential. Bundles, season passes, resale, dynamic
+4. **Extended sales and after-sales.** Production blocks, box-office receipts, ticket-level
+   refunds and recipient-accepted transfers are implemented. Waitlists remain next; presales/codes
+   and rescheduling require further product decisions. Bundles, season passes, resale, dynamic
    pricing and a cross-event cart are optional product expansions, not baseline requirements
    for this reference app. A multi-seller marketplace would additionally need seller onboarding,
    settlement and dispute operations; multiple venue records alone do not provide that product.

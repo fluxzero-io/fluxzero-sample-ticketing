@@ -58,7 +58,7 @@ class StripeRefundIsolationTest extends StripeTestSupport {
                     assertEquals(2, remote.refundCreates);
                     assertEquals(1, remote.refundKeys.size());
                     assertEquals(PaymentStatus.REFUND_REQUIRED, payment().status());
-                    assertTrue(Fluxzero.loadGraph(P).children().isEmpty());
+                    assertEquals(1, Fluxzero.loadGraph(P).childModels(io.fluxzero.ticketing.payment.api.model.Refund.class).size());
                 });
     }
 }

@@ -13,6 +13,6 @@ public record StripeRefund(String attemptId, String operationKey, Instant reques
         REQUESTED, PENDING, REQUIRES_ACTION, SUCCEEDED, FAILED, CANCELLED;
         public boolean terminal() { return this == SUCCEEDED || this == FAILED || this == CANCELLED; }
     }
-    public boolean blocksAnotherAttempt() { return status != Status.FAILED && status != Status.CANCELLED; }
+    public boolean blocksAnotherAttempt() { return status != Status.FAILED && status != Status.CANCELLED && !(status == Status.SUCCEEDED && recorded); }
     public boolean needsObservation() { return !requestedObservation.equals(completedObservation); }
 }

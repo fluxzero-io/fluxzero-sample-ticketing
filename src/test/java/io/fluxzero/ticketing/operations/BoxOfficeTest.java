@@ -17,6 +17,12 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BoxOfficeTest extends TicketingTestSupport {
+    @ParameterizedTest @ValueSource(booleans={false,true})
+    void onlinePaymentHasNoBoxOfficeReceipt(boolean async) {
+        paid(async).whenExecuting(f -> assertNull(Fluxzero.loadModel(P,BoxOfficeReceipt.class).get()))
+                .expectSuccessfulResult();
+    }
+
     TestFixture boxOffice(boolean async) { return fixture(async).givenCommandsByUser(IDENTITY,new RecordSignedInPerson("alice","Alice")); }
     ReserveBoxOfficeTickets hold() { return new ReserveBoxOfficeTickets(R,SHOW,"alice",List.of(new Selection("stalls","A1"))); }
     RecordBoxOfficePayment cash() { return new RecordBoxOfficePayment(R,BoxOfficeReceipt.Method.CASH,"receipt-1",new Money(3500,"EUR")); }
@@ -43,7 +49,7 @@ class BoxOfficeTest extends TicketingTestSupport {
                     assertEquals(PaymentStatus.REFUND_REQUIRED,Fluxzero.loadModel(cash().paymentId()).get().status());
                     assertTrue(Fluxzero.loadGraph(R).childModels(Ticket.class).isEmpty());
                     assertEquals(new ReservationId("online"),Fluxzero.loadModel(new SeatInventoryId(SHOW,"stalls","A1")).get().reservationId());
-                }).andThen().whenCommandByUser(OPERATOR,new RecordBoxOfficeRefund(cash().paymentId(),"return-1"))
+                }).andThen().whenCommandByUser(OPERATOR,new RecordBoxOfficeRefund(io.fluxzero.ticketing.payment.api.RefundId.remaining(cash().paymentId(), 0),"return-1"))
                 .expectSuccessfulResult().expectThat(f -> assertEquals(PaymentStatus.REFUNDED,Fluxzero.loadModel(cash().paymentId()).get().status()));
     }
     @ParameterizedTest @ValueSource(booleans={false,true})
@@ -63,14 +69,14 @@ class BoxOfficeTest extends TicketingTestSupport {
     @ParameterizedTest @ValueSource(booleans={false,true})
     void cancellingACashSaleRequiresASeparateRefundAttestation(boolean async) {
         boxOffice(async).givenCommandsByUser(OPERATOR,hold(),cash(),new CancelManagedReservation(R))
-                .whenCommandByUser(ALICE,new RecordBoxOfficeRefund(cash().paymentId(),"return-1")).expectExceptionalResult()
-                .andThen().whenCommandByUser(OPERATOR,new RecordBoxOfficeRefund(cash().paymentId(),"return-1")).expectSuccessfulResult()
-                .andThen().whenCommandByUser(OPERATOR,new RecordBoxOfficeRefund(cash().paymentId(),"return-1")).expectSuccessfulResult()
+                .whenCommandByUser(ALICE,new RecordBoxOfficeRefund(io.fluxzero.ticketing.payment.api.RefundId.remaining(cash().paymentId(), 0),"return-1")).expectExceptionalResult()
+                .andThen().whenCommandByUser(OPERATOR,new RecordBoxOfficeRefund(io.fluxzero.ticketing.payment.api.RefundId.remaining(cash().paymentId(), 0),"return-1")).expectSuccessfulResult()
+                .andThen().whenCommandByUser(OPERATOR,new RecordBoxOfficeRefund(io.fluxzero.ticketing.payment.api.RefundId.remaining(cash().paymentId(), 0),"return-1")).expectSuccessfulResult()
                 .expectThat(f -> {
                     var payment=Fluxzero.loadModel(cash().paymentId()).get();
                     assertEquals(new Money(3500,"EUR"),payment.captured());
                     assertEquals("return-1",payment.refundReference());
-                    assertEquals("operator",Fluxzero.loadModel(cash().paymentId(),BoxOfficeReceipt.class).get().refundRecordedBy());
+                    assertEquals("operator",Fluxzero.loadModel(io.fluxzero.ticketing.payment.api.RefundId.remaining(cash().paymentId(), 0)).get().confirmedBy());
                 });
     }
     @ParameterizedTest @ValueSource(booleans={false,true})

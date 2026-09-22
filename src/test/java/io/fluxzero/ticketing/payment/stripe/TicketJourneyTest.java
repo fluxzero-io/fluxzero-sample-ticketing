@@ -53,7 +53,7 @@ class TicketJourneyTest extends StripeTestSupport {
                 }).andThen().givenCommandsByUser(OPERATOR, new SetGateOpen(SHOW, true),
                         new CheckInTicket(new TicketId("alice-order:1"), SHOW))
                 .whenQueryByUser(OPERATOR, new GetManagedReservation(R, 0))
-                .expectResult((GetManagedReservation.View order) -> order.admitted() == 1
+                .expectResult((GetManagedReservation.View order) -> order.admittedTicketIds().size() == 1
                         && order.tickets().size() == 2 && order.delivery().acceptedAt() != null
                         && order.payments().size() == 1)
                 .andThen().whenCommandByUser(OPERATOR, new CheckInTicket(new TicketId("alice-order:1"), SHOW))

@@ -12,7 +12,7 @@ import java.time.Instant;
 public final class StripeRefundEvents {
     private StripeRefundEvents() {}
     public record RefundRequested(@RoutingKey PaymentId paymentId, String attemptId, String operationKey,
-                                  Instant requestedAt, Money amount, String captureReference) {
+                                  Instant requestedAt, Money amount, String captureReference, io.fluxzero.ticketing.payment.api.RefundId businessRefundId) {
         public StripeRefundId refundId() { return StripeRefundId.of(paymentId, attemptId); }
     }
     public record RefundAuthorized(@RoutingKey PaymentId paymentId, StripeRefundId refundId,

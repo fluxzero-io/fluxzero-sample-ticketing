@@ -28,8 +28,8 @@ fake values and intercept the actual Fluxzero web requests; no live account is n
 | `ticketing.stripe.webhookSecret` | `TICKETING_STRIPE_WEBHOOKSECRET` | Signing secret for this endpoint/account/environment |
 
 The configured Stripe account label must belong to the supplied key. Phase 2 supports one
-direct merchant account per application configuration, card payments in EUR and full refunds.
-Stripe Connect, partial refunds, disputes, subscriptions and additional currencies are outside
+direct merchant account per application configuration, card payments in EUR and full or ticket-level partial refunds.
+Stripe Connect, disputes, subscriptions and additional currencies are outside
 this example.
 
 Fluxzero's outbound request transport includes authentication headers. Treat its namespace,
@@ -179,14 +179,21 @@ current provider state. They do not create duplicate tickets or count pending re
 completed. A successful payment after expiry records captured funds as `REFUND_REQUIRED`;
 resold seats remain with their new owner.
 
-`StripeRefundRequests` observes the committed transition into `REFUND_REQUIRED`, including late
-captures, and sends `BeginStripeRefund` with a stable first-attempt identity for bound Stripe
-payments. The provider process independently authorizes and executes the refund. Verified
+`StripeRefundRequests` observes each committed pending business Refund identity, including late
+captures, selected returns and cancellation remainders. It sends `BeginStripeRefund` with a stable
+first-attempt identity derived from that Refund for bound Stripe payments. The provider process independently authorizes and executes the refund. Verified
 notifications or explicit reconciliation refresh pending provider outcomes; status polling in
 the UI reads local state only. Managers can check pending refunds, resume interrupted work and
 retry a definitively failed refund from the order detail. Recovery targets the displayed attempt,
 and a repeated retry keeps the same next-attempt identity. A refund does not automatically rewrite
 an issued invoice; the billing commands still own credit notes.
+
+Each Stripe attempt carries the corresponding core `RefundId` and its exact amount. Full
+cancellation during a pending partial refund does not change that provider request. Once its
+core repayment is recorded, a new obligation for the remainder may obtain authorization even
+if the old process acknowledgement is still arriving. A delayed release targets only its own
+attempt and cannot clear the new authorization. This keeps progress independent of consumer
+ordering while allowing at most one unresolved monetary obligation per payment.
 
 ## API sources and qualification
 

@@ -21,7 +21,7 @@
    The cancellation moves from `NONE` to `SETTLING` to `SETTLED`; the last state describes admission
    settlement, while refunds and credits retain their own lifecycle. The purchase view exposes cancellation even before
    its ticket statuses finish updating. New payment and invoice actions are blocked immediately.
-   Partial cancellation and commercial cancellation windows need explicit policies before launching a real service. Online admission is one-time; a customer cannot cancel a booking after any ticket in it has been admitted.
+   Staff may return selected unused tickets under the partial-refund policy below; commercial cancellation windows remain a deployment decision. Online admission is one-time; a customer cannot cancel a booking after any ticket in it has been admitted.
 6. Availability queries are advisory. `GetAvailability` exposes section names, remaining
    capacity, prices, sales status and the selected seating plan’s source/demonstration notice. `GetSeats` returns a stable page
    of up to 100 seats in a chosen section, including each seat's availability, row and number.
@@ -61,14 +61,35 @@ attempt is rejected for reconciliation. Capture references and refund references
 globally unique aliases: one provider transaction cannot settle two payment models.
 A late failure notification cannot overwrite a capture.
 
-`ConfirmRefund` records a provider's completed **full** refund of the actual captured amount.
-Marking money as `REFUND_REQUIRED` does not claim that a bank transfer happened. The capture
-reference, amount, timestamp and earlier failure reason remain after refund. Partial refunds,
-chargebacks and multiple currencies are later extensions. Phase 2 supplies provider
-reconciliation for the supported full-payment/refund flow.
-When a bound Stripe payment enters `REFUND_REQUIRED`, the Stripe adapter starts one stable durable
-refund attempt automatically. Other payment providers are untouched and can react with their own
-adapter. Provider acceptance, pending state and completed repayment remain separate facts.
+`ConfirmRefund` acknowledges the exact amount of a separately identified `Refund`. An obligation
+is not evidence that money was returned. The capture reference, amount, timestamp and earlier
+failure reason remain intact. Confirmations are idempotent only for the same amount/reference;
+one external refund reference cannot complete two obligations.
+
+For each new pending repayment, a bound Stripe adapter starts a stable durable attempt. Other
+providers can react independently. Failed provider attempts retry the same business obligation;
+they do not create another amount owed. Provider acceptance, pending state and completed repayment
+remain separate facts. Chargebacks and multiple currencies are outside the example.
+
+### Partial returns
+
+Managers can return one or more unused tickets from a confirmed purchase. The exact frozen ticket
+prices determine the refund; arbitrary money amounts are not accepted. Selected tickets become
+void and release their stock atomically with the new obligation. Other tickets, the original
+purchase total and capture remain unchanged. Repayment belongs to the original buyer even when
+a ticket was transferred. Admitted tickets cannot be returned through this flow. A wheelchair
+space cannot be returned while its matching companion admission remains valid.
+
+One repayment per payment may be outstanding at a time. If the entire purchase is cancelled while
+a partial repayment is pending, that repayment keeps its identity and amount. Once it completes,
+the remaining captured amount becomes a new obligation. Completing a EUR 35 refund on a cancelled
+EUR 70 purchase therefore creates a second EUR 35 repayment, never a new EUR 70 refund. Repeated
+confirmations cannot increase the cumulative returned amount. Standing stock is released only
+for tickets that are still valid, so partial then full cancellation cannot release it twice.
+
+The organizer workspace shows pending amounts and each completed repayment separately. Cashiers
+attest each exact offline payout; Stripe confirms its own repayments. The sample exposes staff
+returns, not an unrestricted customer partial-refund policy.
 
 ## Invoicing is a separate lifecycle
 
@@ -80,7 +101,9 @@ invoice cannot be edited or voided.
 After cancellation, billing issues a full credit note against the issued invoice. The invoice
 keeps its original lines, total and issue time; its state becomes credited. A draft for a
 cancelled purchase cannot be issued and should be voided. Refund confirmation and credit-note
-issuance are independent facts, so either may happen first.
+issuance are independent facts, so either may happen first. Ticket-level refunds do not rewrite
+an issued invoice. The sample billing flow supports full credit notes only; partial invoice
+credits remain a separate extension.
 
 These are illustrative commercial documents. Tax calculation, legal numbering, seller/buyer
 billing details, delivery and jurisdiction-specific requirements are not implemented.
@@ -105,6 +128,8 @@ The current product exposes cancellation and financial correction, without delet
 | Failed attempt followed by two captures | Fail first, start second, capture second, capture first | One purchase; surplus capture requires refund |
 | Cancel invoiced purchase | `CancelReservation`, `CreditInvoice`, `ConfirmRefund` | Voided tickets, retained invoice plus credit, retained refunded payment |
 | Organizer closes sales | `ConfigureSalesWindow`, then `ReserveTickets` | New hold refused; an earlier unexpired hold may still enter payment |
+| Return one of two tickets | `RefundTickets`, `ConfirmRefund` | Selected ticket void, other ticket valid, original capture retained and exact repayment recorded |
+| Cancel during a partial refund | `RefundTickets`, `CancelReservation`, confirm each repayment | Pending partial amount retained; only the remainder is subsequently owed |
 | Manager cancels a paid order | `CancelManagedReservation` | Inventory released, tickets void, capture retained and refund process started |
 
 The tests execute these messages through Fluxzero's command/query gateways and `TestFixture`.

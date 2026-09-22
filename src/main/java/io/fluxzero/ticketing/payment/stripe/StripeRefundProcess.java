@@ -21,11 +21,11 @@ import static io.fluxzero.ticketing.common.Checks.require;
 @Stateful @With
 @Consumer(name = "stripe-refunds", threads = 4, minIndex = 0, errorHandler = ForeverRetryingErrorHandler.class)
 public record StripeRefundProcess(@EntityId @Association StripeRefundId refundId, PaymentId paymentId,
-                                  ProviderAccount account, String intentId, String chargeId,
+                                  ProviderAccount account, String intentId, String chargeId, io.fluxzero.ticketing.payment.api.RefundId businessRefundId,
                                   StripeRefund refund, StripeProblem problem, boolean released) {
     @HandleEvent static StripeRefundProcess start(RefundAuthorized event) {
         var request = event.request();
-        return new StripeRefundProcess(event.refundId(), event.paymentId(), event.account(), event.intentId(), event.chargeId(),
+        return new StripeRefundProcess(event.refundId(), event.paymentId(), event.account(), event.intentId(), event.chargeId(), request.businessRefundId(),
                 new StripeRefund(request.attemptId(), request.operationKey(), request.requestedAt(), request.amount(),
                         request.operationKey(), null, null, StripeRefund.Status.REQUESTED, null, false), null, false);
     }

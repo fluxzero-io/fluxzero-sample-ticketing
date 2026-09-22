@@ -12,6 +12,7 @@ import io.fluxzero.ticketing.booking.api.model.TicketStatus;
 import io.fluxzero.ticketing.payment.api.*;
 import io.fluxzero.ticketing.payment.api.model.Money;
 import io.fluxzero.ticketing.payment.api.model.Payment;
+import io.fluxzero.ticketing.payment.api.model.Refund;
 import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -34,7 +35,13 @@ public record PaymentCaptured(@NotNull PaymentId paymentId, @NotNull Reservation
     }
     @Apply(automaticHandling = AutomaticModelHandling.DISABLED) Payment payment(Payment payment) {
         return payment.withStatus(accepted ? PaymentStatus.SUCCEEDED : PaymentStatus.REFUND_REQUIRED)
-                .withCaptureReference(captureReference).withCaptured(amount).withCapturedAt(receivedAt);
+                .withCaptureReference(captureReference).withCaptured(amount).withCapturedAt(receivedAt)
+                .withRefundTarget(accepted ? 0 : amount.minorUnits())
+                .withPendingRefundId(accepted ? null : RefundId.remaining(paymentId, 0));
+    }
+    @Apply(automaticHandling = AutomaticModelHandling.DISABLED) List<Refund> refunds() {
+        return accepted ? List.of() : List.of(new Refund(RefundId.remaining(paymentId, 0), paymentId,
+                amount, "Capture could not confirm admission", List.of(), receivedAt, null, null, null));
     }
     @Apply(automaticHandling = AutomaticModelHandling.DISABLED) Reservation reservation(Reservation reservation) {
         if (accepted) return reservation.withStatus(ReservationStatus.CONFIRMED).withPaidBy(paymentId);

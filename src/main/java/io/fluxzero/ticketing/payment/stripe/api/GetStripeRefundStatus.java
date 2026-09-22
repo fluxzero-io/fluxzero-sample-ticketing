@@ -21,6 +21,11 @@ public record GetStripeRefundStatus(@NotNull PaymentId paymentId) implements Req
         if (payment == null) return null;
         var refund = payment.latestRefundId() == null ? null
                 : Fluxzero.getDocument(payment.latestRefundId(), StripeRefundProcess.class).orElse(null);
+        var core = Fluxzero.loadModel(paymentId).get();
+        if (core != null && core.pendingRefundId() != null && refund != null
+                && !core.pendingRefundId().equals(refund.businessRefundId())) {
+            return new View("Preparing refund", "Waiting for the payment service", null, Action.NONE);
+        }
         if (refund == null) {
             if (payment.problem() != null && payment.refundAuthorization() != null) {
                 return new View("Needs attention", payment.problem().reason(),

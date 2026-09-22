@@ -19,7 +19,9 @@ public record BeginStripeRefund(@NotNull PaymentId paymentId, @NotBlank String a
     @HandleCommand void handle() {
         var payment = Fluxzero.loadModel(paymentId).get();
         require(payment != null && payment.status() == PaymentStatus.REFUND_REQUIRED, "No refund is due");
+        var refund = Fluxzero.loadModel(payment.pendingRefundId()).get();
+        require(refund != null && !refund.completed(), "No refund is due");
         Fluxzero.get().eventGateway().publish(Guarantee.STORED, new StripeRefundEvents.RefundRequested(
-                paymentId, attemptId, Fluxzero.generateId(), Fluxzero.currentTime(), payment.captured(), payment.captureReference())).join();
+                paymentId, attemptId, Fluxzero.generateId(), Fluxzero.currentTime(), refund.amount(), payment.captureReference(), refund.refundId())).join();
     }
 }

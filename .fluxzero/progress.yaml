@@ -410,16 +410,14 @@ milestones:
   - id: "box-office"
     title: "Sell tickets at the box office"
     kind: "feature"
-    status: "in_progress"
-    description: "Cash sale, transfer and refund journeys are verified and committed.\
-      \ Broader order-detail verification exposed an SDK alias-fallback defect when\
-      \ reading an absent BoxOfficeReceipt for an online payment; qualification remains\
-      \ open until that boundary is corrected."
+    status: "done"
+    description: "Cash and external-terminal receipts share authoritative stock. Refund\
+      \ payouts are recorded separately, with preserved receipt and staff identity."
     acceptance:
     - "Authorized staff can sell from the same stock as online customers."
     - "Sales retain payment, ticket and financial history."
     createdAt: "2026-09-21T21:17:57.561520Z"
-    updatedAt: "2026-09-21T22:35:57.404403Z"
+    updatedAt: "2026-09-22T10:11:25.170060Z"
     history:
     - at: "2026-09-21T21:17:57.561520Z"
       status: "planned"
@@ -435,20 +433,28 @@ milestones:
     - at: "2026-09-21T22:35:57.404403Z"
       status: "in_progress"
       verification: ""
+    - at: "2026-09-22T10:11:25.170060Z"
+      status: "done"
+      verification: "SDK 119060b1101 resolves absent companion lookup. All 123 selected\
+        \ regressions passed, including the four previously blocked scenarios. Fourteen\
+        \ box-office scenarios pass across sync and async execution; browser verification\
+        \ retained a EUR 70 receipt and two separate EUR 35 repayments after partial\
+        \ then full cancellation."
   - id: "partial-refunds"
     title: "Refund part of an order"
     kind: "feature"
-    status: "in_progress"
-    description: "Core work is in progress with eight passing sync/async behavior\
-      \ scenarios. End-to-end qualification is blocked by the SDK companion/alias\
-      \ lookup defect recorded in the K23 dossier; the unfinished changes are not\
-      \ committed."
+    status: "done"
+    description: "Managers return selected unused tickets at their frozen prices.\
+      \ Each provider-independent Refund retains its exact amount and confirmation;\
+      \ full cancellation during repayment queues only the remainder. Stripe attempts\
+      \ remain outside the graph. Partial invoice credits are outside the sample billing\
+      \ scope."
     acceptance:
     - "Staff can refund eligible parts of a purchase."
     - "Total refunds cannot exceed captured money and affected admission rights are\
       \ explicit."
     createdAt: "2026-09-21T21:17:57.567733Z"
-    updatedAt: "2026-09-21T22:35:57.427755Z"
+    updatedAt: "2026-09-22T10:16:22.441485Z"
     history:
     - at: "2026-09-21T21:17:57.567733Z"
       status: "planned"
@@ -456,6 +462,15 @@ milestones:
     - at: "2026-09-21T22:25:36.201948Z"
       status: "in_progress"
       verification: ""
+    - at: "2026-09-22T10:16:22.441485Z"
+      status: "done"
+      verification: "Twelve synchronous/asynchronous core scenarios passed, including\
+        \ admission eligibility, accessible pairs, atomic stock release, identity\
+        \ protection, duplicate confirmation and cancellation remainder. Two controlled-Stripe\
+        \ scenarios passed for sequential partial/full repayments and delayed old\
+        \ acknowledgement. Browser completed EUR 35 partial then EUR 35 remainder\
+        \ with original EUR 70 receipt and both confirmations retained. SDK 119060b1101\
+        \ unblocked all four failing cases; its 123 selected regressions passed."
   - id: "ticket-transfers"
     title: "Transfer a ticket to another visitor"
     kind: "feature"

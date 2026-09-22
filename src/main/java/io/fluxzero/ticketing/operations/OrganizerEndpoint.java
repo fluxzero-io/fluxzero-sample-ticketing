@@ -132,6 +132,11 @@ public class OrganizerEndpoint {
         Fluxzero.sendCommandAndWait(new CancelManagedReservation(id));
     }
 
+    @HandlePost("/refunds") void refundTickets(RefundTickets command, WebRequest request) {
+        BrowserRequests.requireSameOrigin(request);
+        Fluxzero.sendCommandAndWait(command);
+    }
+
     public record Access(@NotBlank String subject, @NotNull Set<Permission> permissions) {}
 
     @HandleGet("/access") WebResponse workspaceAccess() {

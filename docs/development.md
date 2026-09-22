@@ -57,6 +57,8 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 | `AdmissionTest`, `TicketPassTest`, `AdmissionEndpointTest` | Current signed credentials, PDF/QR delivery, atomic one-time entry, cancellation boundaries and encoded ticket routes |
 | `ConfirmationTest`, `WalletTest`, `StaffAccessTest` | Retained email delivery, signed wallet artifacts and revocable performance-scoped staff rights |
 | `OrganizerOperationsTest` | Sales-window boundaries, scheduling choices, bounded manager access, order lookup, cancellation and immediate revocation |
+| `ProductionAllocationTest`, `BoxOfficeTest`, `TicketTransferTest` | Shared inventory, retained offline receipts, accepted ownership changes and revoked old credentials |
+| `PartialRefundTest`, `PartialStripeRefundTest` | Ticket eligibility, exact partial repayments, cancellation during repayment and delayed provider acknowledgement |
 | `AutomaticRefundTest` | A core refund obligation starts the already-bound Stripe process without coupling payment state to Stripe |
 
 The race test delays transport to the real SDK store; it does not implement substitute
@@ -79,9 +81,9 @@ Reservation and performance Models additionally maintain public documents for ca
 discovery. Cancellation reactions and continuation use durable events. Inventory uses current documents so a cold stock load does not replay
 its allocation history. Financial and reservation history remain event sourced.
 
-The SDK/testserver pin is a local build from `dd799f2d8ca`. It contains the required fixes for
+The SDK/testserver pin is a local build from `119060b1101`. It contains the required fixes for
 creation conflicts, nested deletion, fixture document revisions and document replay before the
-first consumer, plus compressed typed HTTP response handling. A published SDK containing these fixes is required before publishing this app.
+first consumer, compressed typed HTTP response handling and absent aliased-companion lookup. A published SDK containing these fixes is required before publishing this app.
 
 A reservation touches at most twelve inventory selections. Seat claims are independent;
 a free-admission section has one exact capacity counter with at most 900 active deadline buckets.
@@ -130,8 +132,8 @@ for the remaining customer and operator workflows. Nothing is published or deplo
 
 ## Local SDK prerequisite for this development branch
 
-Build SDK commit `dd799f2d8ca` in a separate checkout using Java 25. Set the root and
-module Maven versions to `2.0.0-dd799f2d8ca-SNAPSHOT`, then install the matching artifacts:
+Build SDK commit `119060b1101` in a separate checkout using Java 25. Set the root and
+module Maven versions to `2.0.0-119060b1101-SNAPSHOT`, then install the matching artifacts:
 
 ```sh
 ./mvnw -B -pl sdk,test-server,proxy,fluxzero-bom -am -DskipTests -Dmaven.javadoc.skip=true install

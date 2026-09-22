@@ -62,7 +62,7 @@ public class StripeRefundEffects {
                         response.status(), response.failureReason());
             }
             case RECORD_REFUND -> {
-                Fluxzero.sendCommandAndWait(new ConfirmRefund(process.paymentId(), process.account().reference(refund.externalId()), refund.amount()));
+                Fluxzero.sendCommandAndWait(new ConfirmRefund(process.businessRefundId(), process.account().reference(refund.externalId()), refund.amount()));
                 Fluxzero.commit().join();
                 yield new RefundRecorded(process.paymentId(), process.refundId(), refund.externalId());
             }

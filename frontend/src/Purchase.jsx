@@ -329,7 +329,10 @@ export function Purchase({ id }) {
               <h2>Payments</h2>
               {purchase.payments.map((p) => (
                 <div className="finance-row" key={p.paymentId}>
-                  <span>{p.status.replaceAll("_", " ")}</span>
+                  <span>{p.status === "SUCCEEDED" && p.refundedAmount > 0 ? "PARTIALLY REFUNDED" : p.status.replaceAll("_", " ")}
+                    {p.refundedAmount > 0 && <small>Returned {money({minorUnits:p.refundedAmount,currency:p.captured.currency})}</small>}
+                    {p.refundTarget > p.refundedAmount && <small>Refund due {money({minorUnits:p.refundTarget-p.refundedAmount,currency:p.captured.currency})}</small>}
+                  </span>
                   <strong>{money(p.captured || p.expected)}</strong>
                 </div>
               ))}
@@ -337,8 +340,7 @@ export function Purchase({ id }) {
                 (p) => p.status === "REFUND_REQUIRED",
               ) && (
                 <p className="notice">
-                  A payment arrived without valid admission. Your tickets remain
-                  unavailable; a refund is required.
+                  A repayment is pending. Your current ticket status is shown above.
                 </p>
               )}
             </section>

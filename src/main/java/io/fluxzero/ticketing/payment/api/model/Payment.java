@@ -7,6 +7,7 @@ import io.fluxzero.sdk.modeling.ModelPersistence;
 import io.fluxzero.sdk.modeling.Parent;
 import io.fluxzero.ticketing.booking.api.ReservationId;
 import io.fluxzero.ticketing.payment.api.PaymentId;
+import io.fluxzero.ticketing.payment.api.RefundId;
 import java.time.Instant;
 import lombok.With;
 
@@ -18,7 +19,7 @@ public record Payment(@EntityId PaymentId paymentId,
                       Money expected, PaymentStatus status,
                       @Alias(prefix = "capture:") String captureReference, Money captured,
                       Instant capturedAt, String failureReason,
-                      @Alias(prefix = "refund:") String refundReference, Instant refundedAt) {
+                      String refundReference, Instant refundedAt, long refundTarget, long refundedAmount, RefundId pendingRefundId) {
 
     @Alias(prefix = "pending-payment:")
     public String pendingReservation() {

@@ -44,16 +44,16 @@ class BoundaryTest extends TicketingTestSupport {
     void oneRefundCannotSettleTwoPaymentsAndRedeliveryIsIdempotent(boolean async) {
         var second = new PaymentId("second");
         var reservation2 = new ReservationId("second");
-        var refund = new ConfirmRefund(P, "one-refund", new Money(7000, "EUR"));
+        var refund = new ConfirmRefund(io.fluxzero.ticketing.payment.api.RefundId.remaining(P, 0), "one-refund", new Money(7000, "EUR"));
         paid(async).givenCommandsByUser(BOB, seats(reservation2, "B1", "B2"), new StartPayment(second, reservation2))
                 .givenCommandsByUser(PAYMENTS, new RecordPaymentSuccess(second, "capture-2", new Money(7000, "EUR")))
                 .givenCommandsByUser(ALICE, new CancelReservation(R))
                 .givenCommandsByUser(BOB, new CancelReservation(reservation2))
                 .givenCommandsByUser(PAYMENTS, refund)
                 .whenCommandByUser(PAYMENTS, refund).expectNoEvents()
-                .andThen().whenCommandByUser(PAYMENTS, new ConfirmRefund(P, "other-refund", new Money(7000, "EUR")))
+                .andThen().whenCommandByUser(PAYMENTS, new ConfirmRefund(io.fluxzero.ticketing.payment.api.RefundId.remaining(P, 0), "other-refund", new Money(7000, "EUR")))
                 .expectExceptionalResult(IllegalCommandException.class).expectNoEvents()
-                .andThen().whenCommandByUser(PAYMENTS, new ConfirmRefund(second, "one-refund", new Money(7000, "EUR")))
+                .andThen().whenCommandByUser(PAYMENTS, new ConfirmRefund(io.fluxzero.ticketing.payment.api.RefundId.remaining(second, 0), "one-refund", new Money(7000, "EUR")))
                 .expectExceptionalResult().expectNoEvents().expectThat(f ->
                         assertEquals(PaymentStatus.REFUND_REQUIRED, Fluxzero.loadModel(second).get().status()));
     }

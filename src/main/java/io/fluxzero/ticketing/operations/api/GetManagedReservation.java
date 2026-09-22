@@ -6,6 +6,7 @@ import io.fluxzero.sdk.tracking.handling.Request;
 import io.fluxzero.sdk.tracking.handling.authentication.RequiresUser;
 import io.fluxzero.sdk.tracking.handling.authentication.User;
 import io.fluxzero.ticketing.booking.api.ReservationId;
+import io.fluxzero.ticketing.booking.api.TicketId;
 import io.fluxzero.ticketing.booking.api.model.Reservation;
 import io.fluxzero.ticketing.booking.api.model.Ticket;
 import io.fluxzero.ticketing.admission.api.model.CheckIn;
@@ -14,9 +15,10 @@ import io.fluxzero.ticketing.access.api.model.TicketingUser;
 import io.fluxzero.ticketing.delivery.ConfirmationDelivery;
 import io.fluxzero.ticketing.delivery.api.model.ReceiptContact;
 import io.fluxzero.ticketing.payment.api.model.Payment;
-import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
+import io.fluxzero.ticketing.payment.api.model.Refund;
 import io.fluxzero.ticketing.payment.stripe.api.GetStripeRefundStatus;
 import io.fluxzero.ticketing.operations.StaffPermission;
+import io.fluxzero.ticketing.operations.api.model.BoxOfficeReceipt;
 import io.fluxzero.ticketing.operations.api.model.StaffAccess.Permission;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -28,9 +30,10 @@ import static io.fluxzero.ticketing.common.Checks.require;
 @RequiresUser
 public record GetManagedReservation(@NotNull ReservationId reservationId, @PositiveOrZero int offset)
         implements Request<GetManagedReservation.View> {
-    public record PaymentView(Payment payment, GetStripeRefundStatus.View refund, io.fluxzero.ticketing.operations.api.model.BoxOfficeReceipt boxOfficeReceipt) {}
+    public record PaymentView(Payment payment, GetStripeRefundStatus.View refund, BoxOfficeReceipt boxOfficeReceipt,
+                              Refund pendingRepayment, List<Refund> repayments) {}
     public record Delivery(String email, Instant acceptedAt, String problem, String stoppedReason) {}
-    public record View(Reservation reservation, GetProgramme.Show show, List<Ticket> tickets, int admitted,
+    public record View(Reservation reservation, GetProgramme.Show show, List<Ticket> tickets, List<TicketId> admittedTicketIds,
                        List<PaymentView> payments, boolean morePayments, Delivery delivery) {}
 
     @HandleQuery View handle(User user) {
@@ -43,12 +46,22 @@ public record GetManagedReservation(@NotNull ReservationId reservationId, @Posit
         ReceiptContact contact = Fluxzero.loadModel(reservationId, ReceiptContact.class).get();
         var delivery = Fluxzero.getDocument(reservationId, ConfirmationDelivery.class).orElse(null);
         return new View(reservation, GetProgramme.describe(Fluxzero.loadModel(reservation.performanceId()).get()),
-                graph.childModels("tickets", Ticket.class), graph.descendantModels("tickets/checkIns", CheckIn.class).size(),
-                payments.stream().limit(20).map(payment -> new PaymentView(payment,
-                        payment.status() == PaymentStatus.REFUND_REQUIRED || payment.status() == PaymentStatus.REFUNDED
-                                ? TicketingUser.SYSTEM.apply(() -> Fluxzero.queryAndWait(new GetStripeRefundStatus(payment.paymentId())))
-                                : null, Fluxzero.loadModel(payment.paymentId(),io.fluxzero.ticketing.operations.api.model.BoxOfficeReceipt.class).get())).toList(), payments.size() > 20,
+                graph.childModels("tickets", Ticket.class), graph.descendantModels("tickets/checkIns", CheckIn.class)
+                        .stream().map(CheckIn::ticketId).toList(),
+                payments.stream().limit(20).map(this::describePayment).toList(), payments.size() > 20,
                 contact == null ? null : new Delivery(contact.email(), delivery == null ? null : delivery.acceptedAt(),
                         delivery == null ? null : delivery.problem(), delivery == null ? null : delivery.stoppedReason()));
+    }
+
+    private PaymentView describePayment(Payment payment) {
+        var provider = payment.refundTarget() > 0
+                ? TicketingUser.SYSTEM.apply(() -> Fluxzero.queryAndWait(new GetStripeRefundStatus(payment.paymentId())))
+                : null;
+        var pending = payment.pendingRefundId() == null ? null : Fluxzero.loadModel(payment.pendingRefundId()).get();
+        // At most twelve ticket returns plus one cancellation remainder; provider attempts are separate.
+        List<Refund> repayments = Fluxzero.search(Refund.class).match(payment.paymentId(), true, "paymentId")
+                .sortBy("requestedAt").fetch(13);
+        return new PaymentView(payment, provider, Fluxzero.loadModel(payment.paymentId(), BoxOfficeReceipt.class).get(),
+                pending, repayments);
     }
 }

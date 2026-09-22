@@ -139,7 +139,7 @@ class TicketingTest extends TicketingTestSupport {
                     assertEquals(PaymentStatus.REFUND_REQUIRED, payment().status());
                     assertEquals(new Money(7000, "EUR"), payment().captured());
                     assertTrue(Fluxzero.loadGraph(R).childModels(Ticket.class).isEmpty());
-                }).andThen().whenCommandByUser(PAYMENTS, new ConfirmRefund(P, "refund-1", new Money(7000, "EUR")))
+                }).andThen().whenCommandByUser(PAYMENTS, new ConfirmRefund(io.fluxzero.ticketing.payment.api.RefundId.remaining(P, 0), "refund-1", new Money(7000, "EUR")))
                 .expectSuccessfulResult().expectThat(f -> {
                     assertEquals(PaymentStatus.REFUNDED, payment().status());
                     assertEquals("capture-1", payment().captureReference());
@@ -201,7 +201,7 @@ class TicketingTest extends TicketingTestSupport {
                     assertEquals(new Money(6900, "EUR"), payment().captured());
                     assertEquals(ReservationStatus.HELD, reservation().status());
                     assertTrue(Fluxzero.loadGraph(R).childModels(Ticket.class).isEmpty());
-                }).andThen().whenCommandByUser(PAYMENTS, new ConfirmRefund(P, "refund", new Money(7000, "EUR")))
+                }).andThen().whenCommandByUser(PAYMENTS, new ConfirmRefund(io.fluxzero.ticketing.payment.api.RefundId.remaining(P, 0), "refund", new Money(7000, "EUR")))
                 .expectExceptionalResult(IllegalCommandException.class).expectNoEvents();
     }
     @ParameterizedTest @ValueSource(booleans = {false, true})
@@ -220,7 +220,7 @@ class TicketingTest extends TicketingTestSupport {
                     assertEquals(2, invoice.lines().size());
                     assertEquals(1, Fluxzero.loadGraph(I).childModels(CreditNote.class).size());
                     assertEquals(InvoiceStatus.ISSUED, Fluxzero.loadModel(I).previous().get().status());
-                }).andThen().whenCommandByUser(PAYMENTS, new ConfirmRefund(P, "refunded", new Money(7000, "EUR")))
+                }).andThen().whenCommandByUser(PAYMENTS, new ConfirmRefund(io.fluxzero.ticketing.payment.api.RefundId.remaining(P, 0), "refunded", new Money(7000, "EUR")))
                 .expectSuccessfulResult().andThen().whenQueryByUser(ALICE, new GetReservation(R))
                 .expectResult((Purchase purchase) -> purchase.credits().size() == 1
                         && purchase.payments().getFirst().status() == PaymentStatus.REFUNDED);

@@ -9,7 +9,7 @@
   <properties>
     <spring-boot.version>3.5.16</spring-boot.version>
     <jetty.version>12.1.11</jetty.version>
-    <fluxzero.version>2.0.0-dd799f2d8ca-SNAPSHOT</fluxzero.version>
+    <fluxzero.version>2.0.0-119060b1101-SNAPSHOT</fluxzero.version>
     <java.version>25</java.version>
     <bouncycastle.version>1.86</bouncycastle.version>
     <pdfbox.version>3.0.8</pdfbox.version>

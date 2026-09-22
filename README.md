@@ -29,8 +29,8 @@ identity; no production credentials are needed to browse and reserve.
 The executable product scenarios are in
 [`TicketingTest`](src/test/java/io/fluxzero/ticketing/booking/TicketingTest.java).
 
-This development branch pins **`2.0.0-dd799f2d8ca-SNAPSHOT`**, built locally from SDK commit
-`dd799f2d8ca`, with its matching testserver and proxy. It includes fixes required by the
+This development branch pins **`2.0.0-119060b1101-SNAPSHOT`**, built locally from SDK commit
+`119060b1101`, with its matching testserver and proxy. It includes fixes required by the
 recovery, concurrency and compressed HTTP response scenarios. The snapshot must be installed in the local Maven
 repository before `fz dev`; it is not a published dependency. Before publishing the example,
 replace it with a released SDK containing those fixes. The CLI starter was generated with

@@ -79,6 +79,12 @@ data. Every list and search is paged, and private responses use `Cache-Control: 
 - Performance cancellation is deliberately restricted to global operators. The existing bounded
   settlement process closes sales immediately and cancels active reservations in separate commits.
 
+Managers can return selected unused tickets with a reason. The price is computed from the
+original admissions. Used tickets are excluded; accessible-pair and pending-repayment rules are
+rechecked by the command. Order details show the original capture, cumulative returned amount,
+current repayment and completed repayment history. Box-office payouts require a separate cashier
+attestation for each amount. Customer purchase details distinguish partial from complete refunds.
+
 Mutations use the same same-origin header and authenticated context as customer checkout. The UI
 shows an inline confirmation before cancellation and never accepts an operational role from JSON.
 
@@ -127,7 +133,6 @@ configuration and real-money payments remain outside the local example.
 ## Remaining product work
 
 Organizer tenancy/invitations, invoice issuance policy and downloadable legal invoice documents,
-refunds as customer self-service, seat-plan editing, ticket transfer/resale, camera/offline admission scanning, deployment
-hardening and load qualification remain separate work. Further product slices cover richer seat
-choice and pricing, allocations, waitlists and box-office sales. Domain-specific load qualification
-follows those flows.
+refunds as customer self-service, seat-plan editing, resale, camera/offline admission scanning, deployment
+hardening and load qualification remain separate work. Waitlists are the next agreed sales flow.
+Domain-specific load qualification follows those flows.

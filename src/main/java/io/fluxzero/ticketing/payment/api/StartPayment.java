@@ -28,6 +28,6 @@ public record StartPayment(@NotNull PaymentId paymentId, @NotNull ReservationId 
     }
     @Apply Payment apply(Reservation reservation) {
         return new Payment(paymentId, reservationId, reservation.total(), PaymentStatus.PENDING,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, 0, 0, null);
     }
 }

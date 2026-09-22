@@ -14,7 +14,7 @@ import java.util.Set;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static io.fluxzero.ticketing.payment.stripe.StripeRefundRequests.INITIAL_ATTEMPT;
+import static io.fluxzero.ticketing.payment.stripe.StripeRefundRequests.initialAttempt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class OrganizerRefundRecoveryTest extends StripeTestSupport {
@@ -32,14 +32,14 @@ class OrganizerRefundRecoveryTest extends StripeTestSupport {
                 .expectResult((GetManagedReservation.View view) -> view.payments().size() == 1
                         && view.payments().getFirst().refund().action() == Action.RETRY)
                 .andThen().whenExecuting(f -> remote.refundState = "succeeded").expectSuccessfulResult()
-                .andThen().whenCommandByUser(BOB, new RecoverManagedRefund(P, INITIAL_ATTEMPT))
+                .andThen().whenCommandByUser(BOB, new RecoverManagedRefund(P, initialAttempt(io.fluxzero.ticketing.payment.api.RefundId.remaining(P, 0))))
                 .expectSuccessfulResult().expectNoErrors()
-                .andThen().whenCommandByUser(BOB, new RecoverManagedRefund(P, INITIAL_ATTEMPT))
+                .andThen().whenCommandByUser(BOB, new RecoverManagedRefund(P, initialAttempt(io.fluxzero.ticketing.payment.api.RefundId.remaining(P, 0))))
                 .expectSuccessfulResult().expectNoErrors().expectThat(f -> {
                     assertEquals(PaymentStatus.REFUNDED, payment().status());
                     assertEquals(2, remote.refundCreates);
-                    assertEquals("FAILED", refund(INITIAL_ATTEMPT).status().name());
-                    assertEquals("SUCCEEDED", refundProcess("retry-" + refund(INITIAL_ATTEMPT).operationKey()).refund().status().name());
+                    assertEquals("FAILED", refund(initialAttempt(io.fluxzero.ticketing.payment.api.RefundId.remaining(P, 0))).status().name());
+                    assertEquals("SUCCEEDED", refundProcess("retry-" + refund(initialAttempt(io.fluxzero.ticketing.payment.api.RefundId.remaining(P, 0))).operationKey()).refund().status().name());
                 });
     }
 
@@ -52,13 +52,13 @@ class OrganizerRefundRecoveryTest extends StripeTestSupport {
         remote.intent.put("status", "succeeded").put("amount_received", 7000).put("latest_charge", "ch_fixture");
         fixture.givenCommandsByUser(PAYMENTS, new RefreshStripePayment(P, null))
                 .givenCommandsByUser(ALICE, new CancelReservation(R))
-                .whenCommandByUser(ALICE, new RecoverManagedRefund(P, INITIAL_ATTEMPT))
+                .whenCommandByUser(ALICE, new RecoverManagedRefund(P, initialAttempt(io.fluxzero.ticketing.payment.api.RefundId.remaining(P, 0))))
                 .expectExceptionalResult(UnauthorizedException.class)
                 .andThen().givenCommandsByUser(OPERATOR, new SetStaffAccess(SHOW, BOB.id(), Set.of()))
-                .whenCommandByUser(BOB, new RecoverManagedRefund(P, INITIAL_ATTEMPT))
+                .whenCommandByUser(BOB, new RecoverManagedRefund(P, initialAttempt(io.fluxzero.ticketing.payment.api.RefundId.remaining(P, 0))))
                 .expectExceptionalResult(UnauthorizedException.class)
                 .andThen().whenExecuting(f -> remote.refund.put("status", "succeeded")).expectSuccessfulResult()
-                .andThen().whenCommandByUser(OPERATOR, new RecoverManagedRefund(P, INITIAL_ATTEMPT))
+                .andThen().whenCommandByUser(OPERATOR, new RecoverManagedRefund(P, initialAttempt(io.fluxzero.ticketing.payment.api.RefundId.remaining(P, 0))))
                 .expectSuccessfulResult().expectNoErrors().expectThat(f -> {
                     assertEquals(PaymentStatus.REFUNDED, payment().status());
                     assertEquals(1, remote.refundCreates);

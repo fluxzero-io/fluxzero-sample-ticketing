@@ -34,7 +34,7 @@ class StripeRefundProcessTest extends StripeTestSupport {
                 .expectSuccessfulResult().expectThat(f -> {
                     assertEquals(PaymentStatus.REFUND_REQUIRED, payment().status());
                     assertEquals(StripeRefund.Status.PENDING, StripeTestSupport.refund("first").status());
-                    assertTrue(Fluxzero.loadGraph(P).children().isEmpty());
+                    assertEquals(1, Fluxzero.loadGraph(P).childModels(io.fluxzero.ticketing.payment.api.model.Refund.class).size());
                 }).expectNoErrors();
         remote.refund.put("status", "succeeded");
         phase.andThen().whenCommandByUser(PAYMENTS, new RefreshStripeRefund(P, "first", null))

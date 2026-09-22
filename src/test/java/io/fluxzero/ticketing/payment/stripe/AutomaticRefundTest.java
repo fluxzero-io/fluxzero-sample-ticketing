@@ -12,7 +12,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static io.fluxzero.ticketing.payment.stripe.StripeRefundRequests.INITIAL_ATTEMPT;
+import static io.fluxzero.ticketing.payment.stripe.StripeRefundRequests.initialAttempt;
 
 class AutomaticRefundTest extends StripeTestSupport {
     @ParameterizedTest @ValueSource(booleans = {false, true})
@@ -25,12 +25,12 @@ class AutomaticRefundTest extends StripeTestSupport {
                 .whenCommandByUser(ALICE, new CancelReservation(R))
                 .expectSuccessfulResult().expectNoErrors().expectThat(f -> {
                     assertEquals(PaymentStatus.REFUND_REQUIRED, payment().status());
-                    assertEquals(StripeRefund.Status.PENDING, refund(INITIAL_ATTEMPT).status());
+                    assertEquals(StripeRefund.Status.PENDING, refund(initialAttempt(io.fluxzero.ticketing.payment.api.RefundId.remaining(P, 0))).status());
                     assertEquals(1, remote.refundCreates);
                 }).andThen().whenExecuting(f -> {
                     remote.refund.put("status", "succeeded");
                 }).expectSuccessfulResult()
-                .andThen().givenCommandsByUser(PAYMENTS, new RefreshStripeRefund(P, INITIAL_ATTEMPT, null))
+                .andThen().givenCommandsByUser(PAYMENTS, new RefreshStripeRefund(P, initialAttempt(io.fluxzero.ticketing.payment.api.RefundId.remaining(P, 0)), null))
                 .whenCommandByUser(ALICE, new CancelReservation(R))
                 .expectSuccessfulResult().expectNoErrors().expectThat(f -> {
                     assertEquals(PaymentStatus.REFUNDED, payment().status());

@@ -6,7 +6,7 @@ query results and value objects live in `api.model`. Self-handling commands and 
 their Fluxzero handlers. Outgoing HTTP messages live in `payment.stripe.request`,
 separate from commands and queries intended for UI or endpoint adapters. They retain local
 Fluxzero dispatch and are not public application actions. Package names alone do not grant
-or enforce endpoint access. Internal workflow events and refund identities live in
+or enforce endpoint access. Internal workflow events and provider refund-attempt identities live in
 `payment.stripe.privateapi`; retained refund values live in its `model` subpackage. Internal inventory and accepted domain transitions live in each owning `privateapi`. Separate observers and domain rules sit beside the domain's API.
 
 | Domain | Responsibility |

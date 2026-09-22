@@ -67,15 +67,15 @@ export function BoxOfficePayment({ reservation, onSaved }) {
     <button className="primary" disabled={busy||!confirmed}>Record payment</button><ErrorMessage error={error}/>
   </form>;
 }
-export function BoxOfficeRefund({ payment, onSaved }) {
+export function BoxOfficeRefund({ repayment, onSaved }) {
   const [reference,setReference]=useState(()=>crypto.randomUUID()),[confirmed,setConfirmed]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(null);
   async function record(event) {
     event.preventDefault();setBusy(true);setError(null);
-    try {await post('/api/operations/box-office/refunds',{paymentId:payment.paymentId,reference});onSaved();}
+    try {await post('/api/operations/box-office/refunds',{refundId:repayment.refundId,reference});onSaved();}
     catch(failure){setError(failure);}finally{setBusy(false);}
   }
   return <form onSubmit={record}>
-    <p>Return {money(payment.captured)} using the original payment method.</p>
+    <p>Return {money(repayment.amount)} using the original payment method.</p>
     <label>Refund receipt<input required maxLength={200} value={reference} onChange={e=>setReference(e.target.value)}/></label>
     <label className="checkbox-row"><input type="checkbox" required checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>I have paid this refund</label>
     <button className="secondary" disabled={busy||!confirmed}>Record refund</button><ErrorMessage error={error}/>

@@ -1,34 +1,16 @@
 package io.fluxzero.ticketing.payment.api;
 
-import io.fluxzero.sdk.modeling.AssertLegal;
-import io.fluxzero.sdk.persisting.eventsourcing.Apply;
 import io.fluxzero.sdk.persisting.eventsourcing.InterceptApply;
-import io.fluxzero.sdk.tracking.handling.authentication.RequiresAnyRole;
-import io.fluxzero.ticketing.payment.api.model.Money;
-import io.fluxzero.ticketing.payment.api.model.Payment;
-import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
+import io.fluxzero.sdk.tracking.handling.authentication.*;
+import io.fluxzero.ticketing.payment.Refunds;
+import io.fluxzero.ticketing.payment.api.model.*;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import java.time.Instant;
+import jakarta.validation.constraints.*;
 
-import static io.fluxzero.ticketing.common.Checks.require;
-
-/** Acknowledge the full captured amount returned by a payment provider. */
+/** Acknowledge the exact business repayment completed by a provider. */
 @RequiresAnyRole("PAYMENTS")
-public record ConfirmRefund(@NotNull PaymentId paymentId, @NotBlank String refundReference,
-                            @NotNull @Valid Money amount) {
-    @InterceptApply Object deduplicate(Payment payment) {
-        if (payment.status() != PaymentStatus.REFUNDED) return this;
-        require(payment.refundReference().equals(refundReference) && payment.captured().equals(amount),
-                "Conflicting refund confirmation");
-        return null;
-    }
-    @AssertLegal void validate(Payment payment) {
-        require(payment.status() == PaymentStatus.REFUND_REQUIRED, "No refund is due");
-        require(payment.captured().equals(amount), "Refund must equal the captured amount");
-    }
-    @Apply Payment apply(Payment payment, Instant timestamp) {
-        return payment.withStatus(PaymentStatus.REFUNDED).withRefundReference(refundReference).withRefundedAt(timestamp);
+public record ConfirmRefund(@NotNull RefundId refundId, @NotBlank String refundReference, @NotNull @Valid Money amount) {
+    @InterceptApply Object decide(Refund refund, Payment payment, User user) {
+        return Refunds.complete(refund, payment, refundReference, amount, user.id());
     }
 }
