@@ -656,10 +656,10 @@ milestones:
     title: "Keep booking outcomes predictable under runtime contention"
     kind: "feature"
     status: "in_progress"
-    description: "Qualify routed group bookings against the managed runtime, including\
-      \ groups spanning sections. Qualification is paused on a mismatch between accepted\
-      \ reservation commits and customer capacity-refusal responses; no application\
-      \ workaround or retry override has been added."
+    description: "Routed group bookings preserve exact customer outcomes and stock\
+      \ in all six managed-runtime scenarios, through 256 concurrent callers and 2,048\
+      \ requests including two-section groups. Cancellation and resale pass. Sustained\
+      \ traffic and mixed inventory-writer qualification remain open."
     acceptance:
     - "Concurrent requests preserve exact stock and only expected capacity refusals\
       \ count as sold out."
@@ -670,7 +670,7 @@ milestones:
     - "Resolve technical failures and qualify all relevant inventory writers before\
       \ calling this qualification complete."
     createdAt: "2026-09-22T11:32:50.299225Z"
-    updatedAt: "2026-09-22T12:10:47.782089Z"
+    updatedAt: "2026-09-22T13:17:03.504633Z"
     history:
     - at: "2026-09-22T11:32:50.299225Z"
       status: "in_progress"
@@ -678,3 +678,10 @@ milestones:
         \ conflicts for one commit exceed the pinned SDK default of three retries.\
         \ No retry override or application workaround was added; the failing reproduction\
         \ is retained."
+    - at: "2026-09-22T13:17:03.504633Z"
+      status: "in_progress"
+      verification: "All six RuntimePressureTest cases passed with SDK and TestServer\
+        \ 2.0.0-104c8831cc0-SNAPSHOT, preserving SDK transport batching. Every request\
+        \ received success or the exact capacity refusal; accepted commit identities\
+        \ matched successful customers, pending commits were zero, and final stock\
+        \ plus cancellation/resale checks passed."
