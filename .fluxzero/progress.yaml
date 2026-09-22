@@ -515,7 +515,7 @@ milestones:
   - id: "production-mail"
     title: "Inspect ticket emails locally"
     kind: "feature"
-    status: "planned"
+    status: "done"
     description: "Mailpit is the supported sample delivery target. The user explicitly\
       \ chose a sample without an external mail provider; real inbox delivery is an\
       \ optional deployment extension."
@@ -524,15 +524,25 @@ milestones:
     - "Demonstrate retry and cancelled-order suppression without sending real email."
     - "Document the sample boundary and optional production adapter."
     createdAt: "2026-09-21T21:17:57.580851Z"
-    updatedAt: "2026-09-21T22:23:55.888829Z"
+    updatedAt: "2026-09-22T10:38:02.368529Z"
     history:
     - at: "2026-09-21T21:17:57.580851Z"
       status: "planned"
       verification: ""
+    - at: "2026-09-22T10:31:46.204277Z"
+      status: "in_progress"
+      verification: ""
+    - at: "2026-09-22T10:38:02.368529Z"
+      status: "done"
+      verification: "Documented the local Mailpit setup, account-free test boundary\
+        \ and optional provider extension. Existing managed ConfirmationTest and TicketJourneyTest\
+        \ evidence covers acceptance, retry and cancellation; prior local Stripe-to-Mailpit\
+        \ browser delivery remains documented in K20/K26. No real inbox delivery or\
+        \ new external account is claimed."
   - id: "physical-wallets"
     title: "Try locally signed wallet passes"
     kind: "feature"
-    status: "planned"
+    status: "done"
     description: "Qualify Apple and Google formats locally. Installation on physical\
       \ devices remains optional and requires user-owned issuer configuration."
     acceptance:
@@ -540,25 +550,49 @@ milestones:
     - "Revoke old admission codes after cancellation or transfer."
     - "Explain issuer requirements and distinguish local tests from device qualification."
     createdAt: "2026-09-21T21:17:57.584869Z"
-    updatedAt: "2026-09-21T22:23:55.908803Z"
+    updatedAt: "2026-09-22T10:38:02.391760Z"
     history:
     - at: "2026-09-21T21:17:57.584869Z"
       status: "planned"
       verification: ""
+    - at: "2026-09-22T10:31:46.228894Z"
+      status: "in_progress"
+      verification: ""
+    - at: "2026-09-22T10:38:02.391760Z"
+      status: "done"
+      verification: "All ten managed WalletTest cases passed across sync/async fixtures.\
+        \ Local Apple manifest/CMS and Google JWT signatures are verified; the new\
+        \ saved-pass transfer scenario rejects both old barcodes and issues distinct\
+        \ replacement pass identities. Physical-device installation remains optional\
+        \ and unqualified without issuer credentials."
   - id: "peak-sales"
     title: "Keep booking reliable during peak demand"
     kind: "feature"
-    status: "planned"
-    description: ""
+    status: "done"
+    description: "A bounded asynchronous TestFixture load scenario qualifies stock\
+      \ and financial behavior while provider responses are blocked or transiently\
+      \ fail. This is local domain evidence, not networked production capacity or\
+      \ FIFO fairness."
     acceptance:
     - "Concurrent buyers cannot oversell seats or sections."
     - "Measured latency and progress include slow or failing payment providers."
     createdAt: "2026-09-21T21:17:57.588804Z"
-    updatedAt: "2026-09-21T21:17:57.588804Z"
+    updatedAt: "2026-09-22T10:38:02.400626Z"
     history:
     - at: "2026-09-21T21:17:57.588804Z"
       status: "planned"
       verification: ""
+    - at: "2026-09-22T10:31:46.238124Z"
+      status: "in_progress"
+      verification: ""
+    - at: "2026-09-22T10:38:02.400626Z"
+      status: "done"
+      verification: "Managed PeakSalesTest passed: 64 concurrent two-place requests,\
+        \ exactly 40 accepted/24 refused against capacity 80; booking plus cancellation/resale\
+        \ completed while provider was blocked. Ten HTTP 503 outcomes recovered using\
+        \ stable operation keys. Forty captures produced 60 sold admissions, 20 protected\
+        \ replacement holds and ten exact refunds, with no overselling. Observed hold\
+        \ p95 was 181.91 ms in this local run; no production SLA is inferred."
   - id: "builder-guide"
     title: "Explain the example with screenshots"
     kind: "feature"

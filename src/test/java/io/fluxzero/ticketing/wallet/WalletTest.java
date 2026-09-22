@@ -86,6 +86,38 @@ class WalletTest extends TicketingTestSupport {
     }
 
     @ParameterizedTest @ValueSource(booleans = {false, true})
+    void savedWalletCodesAreRevokedAfterTransferAndReplacementPassesUseNewIdentities(boolean async) {
+        wallet(async).givenCommandsByUser(IDENTITY,
+                        new io.fluxzero.ticketing.access.privateapi.RecordSignedInPerson("bob", "Bob"))
+                .whenExecuting(f -> {
+                    var oldApple = apple(ALICE.apply(() -> Fluxzero.queryAndWait(new GetAppleWalletPass(TICKET))));
+                    var oldGoogle = google(ALICE.apply(() -> Fluxzero.queryAndWait(new GetGoogleWalletPass(TICKET))));
+                    ALICE.run(() -> Fluxzero.sendCommandAndWait(new io.fluxzero.ticketing.booking.api.OfferTicketTransfer(TICKET, "bob", 0)));
+                    BOB.run(() -> Fluxzero.sendCommandAndWait(new io.fluxzero.ticketing.booking.api.AcceptTicketTransfer(TICKET, 1)));
+                    for (String code : java.util.List.of(oldApple.at("/barcodes/0/message").asText(), oldGoogle.at("/barcode/value").asText())) {
+                        assertThrows(IllegalCommandException.class, () -> OPERATOR.run(() -> Fluxzero.sendCommandAndWait(new RedeemTicket(SHOW, code))));
+                    }
+                    var newApple = apple(BOB.apply(() -> Fluxzero.queryAndWait(new GetAppleWalletPass(TICKET))));
+                    var newGoogle = google(BOB.apply(() -> Fluxzero.queryAndWait(new GetGoogleWalletPass(TICKET))));
+                    assertNotEquals(oldApple.get("serialNumber"), newApple.get("serialNumber"));
+                    assertNotEquals(oldGoogle.get("id"), newGoogle.get("id"));
+                    OPERATOR.run(() -> Fluxzero.sendCommandAndWait(new RedeemTicket(SHOW, newGoogle.at("/barcode/value").asText())));
+                }).expectSuccessfulResult();
+    }
+    private static com.fasterxml.jackson.databind.JsonNode apple(byte[] archive) throws Exception {
+        try (var zip = new ZipInputStream(new ByteArrayInputStream(archive))) {
+            for (var entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
+                if (entry.getName().equals("pass.json")) return JSON.readTree(zip.readAllBytes());
+            }
+        }
+        throw new AssertionError("Apple pass has no pass.json");
+    }
+    private static com.fasterxml.jackson.databind.JsonNode google(String link) throws Exception {
+        String payload = link.substring(link.lastIndexOf('/') + 1).split("\\.")[1];
+        return JSON.readTree(Base64.getUrlDecoder().decode(payload)).at("/payload/eventTicketObjects/0");
+    }
+
+    @ParameterizedTest @ValueSource(booleans = {false, true})
     void applePackageHasVerifiableManifestSignatureAndUsableAdmissionCode(boolean async) {
         wallet(async).whenExecuting(f -> {
             byte[] archive = ALICE.apply(() -> Fluxzero.queryAndWait(new GetAppleWalletPass(TICKET)));

@@ -2,6 +2,24 @@
 
 After an accepted payment, each ticket has a signed admission code tied to its ticket identity and holder. The customer can open the QR ticket and download a PDF. An expired reservation does not receive admission rights merely because money arrived later.
 
+## Sample mode: no mail or wallet account required
+
+The default profile starts **Mailpit**, a local mailbox. It does not deliver to real inboxes.
+An external email-provider account is neither configured nor required. Use an example address
+such as `visitor@example.test`; inspect the result at the Mailpit URL shown in the environment's
+service status. The optional Stripe sandbox is a separate payment integration.
+
+To explore without any payment account, use **Operations → Box office** for a complete local
+purchase and ticket/entrance journey. Record a demonstration cash receipt only; no money moves.
+The automated `ConfirmationTest` scenarios exercise email acceptance, retry and cancellation
+with controlled Mailpit HTTP responses through Fluxzero. With the optional sandbox profile, the same journey delivers to the running local Mailpit
+mailbox. No real inbox delivery is claimed.
+
+The **Tests** page exposes `WalletTest`: it creates temporary local signing credentials and
+checks Apple packages, Google save links and admission revocation after transfer/cancellation.
+These test credentials are not Apple/Google issuer approvals. The app intentionally hides wallet
+buttons without issuer configuration; there is no fake “saved to your phone” success flow.
+
 ## Try the local journey
 
 1. Start the managed environment with `fz dev`. Mailpit must be installed (`brew install mailpit` on macOS); the environment owns its process and ports. It captures mail locally and has no outgoing relay.
@@ -10,7 +28,7 @@ After an accepted payment, each ticket has a signed admission code tied to its t
 4. Sign in as `demo-organizer` and open **Operations**. Choose a performance, open its entrance desk and open the gate. A connected QR scanner can type the code and press Enter; pasting the code is also supported. Camera scanning is not implemented.
 5. Scan once to admit. A second scan, a cancelled ticket, a ticket for another performance, a closed entrance or an unauthorized staff member is rejected.
 
-Find Mailpit's current URL in the managed service status. The mail workflow retains intent, records provider acceptance, retries temporary failures with the same Message-ID and stops automatic retries after ten failed attempts. Mailpit deduplicates that identity while the message remains in its mailbox. This is not a claim of exactly-once delivery across mailbox deletion or replacement. Production email delivery needs a configured provider adapter.
+Find Mailpit's current URL in the managed service status. The mail workflow retains intent, records provider acceptance, retries temporary failures with the same Message-ID and stops automatic retries after ten failed attempts. Mailpit deduplicates that identity while the message remains in its mailbox. This is not a claim of exactly-once delivery across mailbox deletion or replacement. For a deployed product, real inbox delivery is an optional extension requiring a provider adapter and verified sender.
 
 Before an outbound attempt, the delivery handler checks the current booking and performance.
 An observed cancellation stops confirmation delivery and cancels its retry schedule. That
