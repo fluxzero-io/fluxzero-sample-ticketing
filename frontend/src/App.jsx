@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { UserCircle, SignOut } from "@phosphor-icons/react";
-import { api, post, navigate, signIn } from "./api";
+import { api, post, navigate, signIn, SESSION_EXPIRED } from "./api";
 import { Icon, ErrorMessage } from "./ui";
 import { Discover } from "./Discover";
 import { Performance } from "./Performance";
@@ -27,9 +27,14 @@ export function App() {
         document.getElementById("main")?.focus({ preventScroll: true }),
       );
     };
+    const expired = () => setSession({ authenticated: false });
+    window.addEventListener(SESSION_EXPIRED, expired);
     window.addEventListener("hashchange", fn);
     api("/app/auth/session").then(setSession).catch(setSessionError);
-    return () => window.removeEventListener("hashchange", fn);
+    return () => {
+      window.removeEventListener("hashchange", fn);
+      window.removeEventListener(SESSION_EXPIRED, expired);
+    };
   }, []);
   async function logout() {
     try {
@@ -87,7 +92,12 @@ export function App() {
       </header>
       <ErrorMessage error={sessionError} />
       <main id="main" tabIndex="-1">
-        {page === "show" ? (
+        {session && !session.authenticated && ["reservation", "ticket", "staff", "admission", "operations", "operations-new", "order"].includes(page) ? (
+          <section className="wrap empty"><h1>Sign in to continue</h1>
+            <p>Your booking and ticket history are kept. Sign in to open this page again.</p>
+            <button className="primary" onClick={signIn}>Sign in</button>
+          </section>
+        ) : page === "show" ? (
           <Performance key={id} id={id} session={session} />
         ) : page === "reservation" ? (
           <Purchase key={id} id={id} />

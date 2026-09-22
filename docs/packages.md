@@ -177,3 +177,8 @@ proxy own HTTP encoding.
 Programme responses contain section identities, names and modes, not complete seat plans.
 Seat choices use the existing bounded `GetSeats` query. `Event` and `Venue` also publish searchable
 documents for indexed programme filtering by title and ancestor city.
+
+Expected contention refusals are shared through domain `BookingErrors`, `PaymentErrors` and
+`BillingErrors` interfaces. Commands and tests use the same `IllegalCommandException` constants;
+Fluxzero functional exception equality compares type and message, including after serialization.
+Concurrency tests check the particular expected refusal instead of accepting any illegal command.

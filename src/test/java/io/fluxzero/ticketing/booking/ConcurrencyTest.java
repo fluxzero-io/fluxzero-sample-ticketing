@@ -28,7 +28,7 @@ class ConcurrencyTest extends TicketingTestSupport {
     @org.junit.jupiter.params.ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
     void concurrentSeatRequestsHaveExactlyOneWinner(boolean async) {
         fixture(async).whenExecuting(f -> {
-            long wins = compete(12, i -> f.apply(fc -> ALICE.apply(() -> {
+            long wins = compete(12, io.fluxzero.ticketing.booking.api.BookingErrors.seatUnavailable, i -> f.apply(fc -> ALICE.apply(() -> {
                 Fluxzero.sendCommandAndWait(seats(new ReservationId("racer-" + i), "A1"));
                 return true;
             })));
@@ -41,7 +41,7 @@ class ConcurrencyTest extends TicketingTestSupport {
     @org.junit.jupiter.params.ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
     void concurrentGeneralAdmissionGroupsNeverExceedCapacity(boolean async) {
         fixture(async).whenExecuting(f -> {
-            assertEquals(2, compete(8, i -> f.apply(fc -> ALICE.apply(() -> {
+            assertEquals(2, compete(8, io.fluxzero.ticketing.booking.api.BookingErrors.sectionCapacityExceeded, i -> f.apply(fc -> ALICE.apply(() -> {
                 Fluxzero.sendCommandAndWait(floor(new ReservationId("ga-racer-" + i), 3));
                 return true;
             }))));
@@ -53,7 +53,7 @@ class ConcurrencyTest extends TicketingTestSupport {
     @org.junit.jupiter.params.ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
     void competingPaymentAttemptsCannotBothBePending(boolean async) {
         held(async).whenExecuting(f -> {
-            assertEquals(1, compete(8, i -> f.apply(fc -> ALICE.apply(() -> {
+            assertEquals(1, compete(8, io.fluxzero.ticketing.payment.api.PaymentErrors.paymentAlreadyPending, i -> f.apply(fc -> ALICE.apply(() -> {
                 Fluxzero.sendCommandAndWait(new StartPayment(new PaymentId("pay-racer-" + i), R));
                 return true;
             }))));
@@ -63,7 +63,7 @@ class ConcurrencyTest extends TicketingTestSupport {
     @org.junit.jupiter.params.ParameterizedTest @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
     void competingInvoicesHaveOneWinnerWithoutScanningHistory(boolean async) {
         pending(async).givenCommandsByUser(PAYMENTS, success()).whenExecuting(f -> {
-            assertEquals(1, compete(8, i -> f.apply(fc -> BILLING.apply(() -> {
+            assertEquals(1, compete(8, io.fluxzero.ticketing.billing.api.BillingErrors.invoiceAlreadyExists, i -> f.apply(fc -> BILLING.apply(() -> {
                 Fluxzero.sendCommandAndWait(new io.fluxzero.ticketing.billing.api.DraftInvoice(
                         new io.fluxzero.ticketing.billing.api.InvoiceId("invoice-racer-" + i), R));
                 return true;
@@ -85,7 +85,7 @@ class ConcurrencyTest extends TicketingTestSupport {
             assertTrue(Fluxzero.loadGraph(R).childModels(Ticket.class).stream().noneMatch(t -> t.status() == TicketStatus.VALID));
         }).expectSuccessfulResult().expectNoSchedules();
     }
-    private static long compete(int contenders, java.util.function.IntFunction<Boolean> action) throws Exception {
+    private static long compete(int contenders, IllegalCommandException expected, java.util.function.IntFunction<Boolean> action) throws Exception {
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             CountDownLatch ready = new CountDownLatch(contenders), start = new CountDownLatch(1);
             List<Future<Boolean>> futures = new ArrayList<>();
@@ -94,7 +94,7 @@ class ConcurrencyTest extends TicketingTestSupport {
                 futures.add(executor.submit(() -> {
                     ready.countDown(); assertTrue(start.await(5, TimeUnit.SECONDS));
                     try { return action.apply(contender); }
-                    catch (IllegalCommandException expectedConflict) { return false; }
+                    catch (IllegalCommandException failure) { assertEquals(expected, failure); return false; }
                 }));
             }
             assertTrue(ready.await(5, TimeUnit.SECONDS)); start.countDown();

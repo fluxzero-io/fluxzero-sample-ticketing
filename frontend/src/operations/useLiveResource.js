@@ -10,11 +10,12 @@ export function useLiveResource(url) {
   useEffect(() => {
     let active = true;
     let reading = false;
+    let denied = false;
     if (previousUrl.current !== url) setData(null);
     previousUrl.current = url;
     setError(null);
     async function read() {
-      if (reading || !url) return;
+      if (reading || denied || !url) return;
       reading = true;
       try {
         const value = await api(url);
@@ -22,7 +23,10 @@ export function useLiveResource(url) {
       } catch (failure) {
         if (active) {
           setError(failure);
-          if (failure.status === 401 || failure.status === 403) setData(null);
+          if (failure.status === 401 || failure.status === 403) {
+            denied = true;
+            setData(null);
+          }
         }
       } finally { reading = false; }
     }

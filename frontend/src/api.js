@@ -1,3 +1,5 @@
+export const SESSION_EXPIRED = "ticketing:session-expired";
+
 export async function api(path, options = {}) {
   const response = await fetch(path, {
     credentials: "same-origin",
@@ -10,6 +12,7 @@ export async function api(path, options = {}) {
     },
   });
   if (!response.ok) {
+    if (response.status === 401) window.dispatchEvent(new Event(SESSION_EXPIRED));
     const raw = await response.text();
     let message = raw;
     try {

@@ -57,7 +57,9 @@ class PeakSalesTest extends TicketingTestSupport {
                             f.apply(fc -> ALICE.apply(() -> {
                                 long before = System.nanoTime();
                                 try { Fluxzero.sendCommandAndWait(hold("buyer-" + buyer)); }
-                                catch (IllegalCommandException soldOut) { return null; }
+                                catch (IllegalCommandException failure) {
+                                    assertEquals(BookingErrors.sectionCapacityExceeded, failure); return null;
+                                }
                                 finally { timings.add(System.nanoTime() - before); }
                                 accepted.add(buyer);
                                 Fluxzero.sendCommandAndWait(new StartPayment(payment(buyer), order(buyer)));

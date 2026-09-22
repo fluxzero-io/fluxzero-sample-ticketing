@@ -9,6 +9,8 @@ a change of plans and a busy entrance. It includes a working customer app and or
 You can explore it with your coding agent, even if you do not write code yourself. Start with
 the product below, then [try it locally](#try-it-locally).
 
+![Browse fictional shows at real venues](docs/images/discover.png)
+
 ## How the product fits together
 
 A venue contains halls. Each hall has a seating plan. An event can have several performances,
@@ -40,8 +42,6 @@ inventory, staff access and the other supporting models.
 These distinctions matter in everyday situations. If a payment arrives after a reservation
 has expired, the money is recorded and a refund is required. The expired reservation does not
 come back to life, and the next buyer keeps their seats.
-
-![Browse fictional shows at real venues](docs/images/discover.png)
 
 ## What you can do
 

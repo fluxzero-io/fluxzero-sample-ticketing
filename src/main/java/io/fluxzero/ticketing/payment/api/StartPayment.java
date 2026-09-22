@@ -13,6 +13,7 @@ import io.fluxzero.ticketing.payment.api.model.PaymentStatus;
 import jakarta.validation.constraints.NotNull;
 
 import static io.fluxzero.ticketing.booking.ReservationRules.owner;
+import static io.fluxzero.ticketing.payment.api.PaymentErrors.*;
 import static io.fluxzero.ticketing.common.Checks.require;
 
 /** Create one active payment attempt, priced from the held reservation. */
@@ -24,7 +25,7 @@ public record StartPayment(@NotNull PaymentId paymentId, @NotNull ReservationId 
         require(reservation.channel() == io.fluxzero.ticketing.booking.api.model.SalesChannel.ONLINE, "Pay this booking at the box office");
         require(reservation.holdsAt(Fluxzero.currentTime()), "An active hold is required to start payment");
         require(Fluxzero.loadGraph("pending-payment:" + reservationId, Payment.class).get() == null,
-                "A payment attempt is already pending");
+                paymentAlreadyPending);
     }
     @Apply Payment apply(Reservation reservation) {
         return new Payment(paymentId, reservationId, reservation.total(), PaymentStatus.PENDING,

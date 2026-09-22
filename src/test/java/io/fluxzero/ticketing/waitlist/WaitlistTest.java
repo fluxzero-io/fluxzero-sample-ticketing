@@ -36,7 +36,10 @@ class WaitlistTest extends TicketingTestSupport {
                                     Fluxzero.sendCommandAndWait(new OfferWaitlistPlaces(id, offer().selection()));
                                     return true;
                                 }));
-                            } catch (io.fluxzero.sdk.tracking.handling.IllegalCommandException occupied) { return false; }
+                            } catch (io.fluxzero.sdk.tracking.handling.IllegalCommandException failure) {
+                                assertEquals(io.fluxzero.ticketing.booking.api.BookingErrors.seatUnavailable, failure);
+                                return false;
+                            }
                         })).toList();
                         start.countDown();
                         int wins = 0;

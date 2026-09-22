@@ -12,6 +12,7 @@ import io.fluxzero.ticketing.booking.api.model.ReservationStatus;
 import io.fluxzero.ticketing.catalog.api.model.Performance;
 import jakarta.validation.constraints.NotNull;
 
+import static io.fluxzero.ticketing.billing.api.BillingErrors.*;
 import static io.fluxzero.ticketing.common.Checks.require;
 
 /** Create a billing snapshot independently after the reservation is confirmed. */
@@ -21,7 +22,7 @@ public record DraftInvoice(@NotNull InvoiceId invoiceId, @NotNull ReservationId 
         require(!performance.cancelled(), "Performance is cancelled");
         require(reservation.status() == ReservationStatus.CONFIRMED, "Only confirmed reservations can be invoiced");
         require(Fluxzero.loadGraph("active-invoice:" + reservationId, Invoice.class).get() == null,
-                "Reservation already has an invoice");
+                invoiceAlreadyExists);
     }
     @Apply Invoice apply(Reservation reservation) {
         return new Invoice(invoiceId, reservationId, reservation.paidBy(), reservation.customerId(),
