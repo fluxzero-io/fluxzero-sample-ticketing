@@ -118,6 +118,25 @@ milestones:
         \ latest reported passing TicketingEndpointTest scenario: Refuses foreign\
         \ reservation. This records previously implemented behavior, not a new end-to-end\
         \ test run."
+  - id: "resume-after-session-expiry"
+    title: "Sign in again when a session expires"
+    kind: "feature"
+    status: "planned"
+    description: "Keep the current booking route and provide a clear sign-in action\
+      \ when the server no longer recognizes the session, without repeatedly requesting\
+      \ protected data."
+    acceptance:
+    - "An expired session updates the visible sign-in state and offers a return to\
+      \ the current route after sign-in."
+    - "Unauthorized polling stops; loss of permission does not masquerade as a session\
+      \ expiry."
+    - "Verify expired-session and revoked-permission behavior through the browser."
+    createdAt: "2026-09-22T11:11:55.468448Z"
+    updatedAt: "2026-09-22T11:11:55.468448Z"
+    history:
+    - at: "2026-09-22T11:11:55.468448Z"
+      status: "planned"
+      verification: ""
 - id: "payments-billing"
   title: "Payments and financial history"
   description: "Accept payment without confusing money received with a valid ticket.\
@@ -604,7 +623,7 @@ milestones:
     - "The guide distinguishes working capabilities, demo limitations and remaining\
       \ work."
     createdAt: "2026-09-21T21:17:57.592948Z"
-    updatedAt: "2026-09-22T10:44:03.343400Z"
+    updatedAt: "2026-09-22T11:11:55.494523Z"
     history:
     - at: "2026-09-21T21:17:57.592948Z"
       status: "planned"
@@ -619,3 +638,10 @@ milestones:
         \ checked local links. SDK snapshot prerequisite, local mail, optional Stripe\
         \ and wallet issuer/device boundaries are explicit. Screenshots were visually\
         \ inspected; nothing is published."
+    - at: "2026-09-22T11:11:55.494523Z"
+      status: "done"
+      verification: "Revised for first-time builders: the business graph precedes\
+        \ screenshots and setup; capabilities and demonstrated failure scenarios lead\
+        \ the story. Twenty-three local links and anchors resolve. The local concurrency\
+        \ scenario is explicitly distinguished from production capacity; mail, wallet\
+        \ and unpublished SDK boundaries remain visible."

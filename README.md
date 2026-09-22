@@ -1,147 +1,209 @@
 # Fluxzero Ticketing
 
-From finding a show to walking through the doors. A working ticketing app that shows what you
-can build with **Fluxzero 2.0**: real seat selection, shared inventory, payments, tickets and
-organizer tools, with the business rules behind them.
+**A complete evening out, from choosing seats to checking tickets at the door.**
 
-![Discover fictional shows at real venues](docs/images/discover.png)
+This sample shows how a product built with **Fluxzero 2.0** can handle the things that make
+real ticketing interesting: groups booking together, the last available seat, a slow payment,
+a change of plans and a busy entrance. It includes a working customer app and organizer workspace.
+
+You can explore it with your coding agent, even if you do not write code yourself. Start with
+the product below, then [try it locally](#try-it-locally).
+
+## How the product fits together
+
+A venue contains halls. Each hall has a seating plan. An event can have several performances,
+each with its own date, place and availability. Visitors reserve places for one performance;
+a successful purchase gives them tickets. Payments, returns and invoices keep their own history.
+
+This connected picture is called the **model graph**. It describes the actual business objects
+in the app, so a new feature has a clear place to belong.
+
+```mermaid
+flowchart TD
+    Venue --> Hall
+    Hall --> Plan[Seating plan]
+    Plan --> Show[Performance · date and time]
+    Event --> Show
+    Show --> Booking[Group reservation]
+    Show --> Waiting[Waitlist request]
+    Waiting -. can lead to .-> Booking
+    Booking --> Ticket[Admission tickets]
+    Booking --> Payment
+    Booking --> Invoice
+    Payment --> Refund[Return of money]
+```
+
+Read the solid arrows as “belongs under”; the dotted arrow connects a waitlist request to its
+offer. This is the main path through the product; the [full graph](docs/model.md) includes
+inventory, staff access and the other supporting models.
+
+These distinctions matter in everyday situations. If a payment arrives after a reservation
+has expired, the money is recorded and a refund is required. The expired reservation does not
+come back to life, and the next buyer keeps their seats.
+
+![Browse fictional shows at real venues](docs/images/discover.png)
+
+## What you can do
+
+| As a visitor | As an organizer |
+| --- | --- |
+| Discover shows by place and date | Schedule performances and set sales windows |
+| Choose numbered seats or a standing section | Sell at the box office from the same available stock |
+| Find seats together and choose ticket types | Hold places for production and release them later |
+| Reserve a whole group for up to fifteen minutes | Offer suitable places to people on the waitlist |
+| Pay online when Stripe is configured | Find orders and return selected unused tickets |
+| Download PDF tickets and open their QR codes | Cancel a performance and follow the settlement |
+| Transfer a ticket for another customer to accept | Grant staff access and check tickets at the entrance |
+
+Confirmation email is captured in a local inbox. Apple and Google Wallet integrations are
+included; installing passes on a real phone requires your own issuer configuration. Invoices
+and full credit notes have their own lifecycle in the core; an invoice editor and delivery
+flow are not yet part of the UI.
+
+## What has been demonstrated
+
+The automated scenarios exercise the app's actual booking and payment rules. They deliberately
+include things going wrong, as well as successful purchases.
+
+| Situation | What the scenarios check |
+| --- | --- |
+| Several buyers want the same seat | Exactly one reservation succeeds; a group never gets only part of its requested places. |
+| Different ticket types or sales channels compete | Online bookings, box-office sales and production blocks use the same stock. |
+| A reservation expires or is cancelled | Its places become available again. A late payment cannot take them back from a new buyer. |
+| A customer returns one ticket, then cancels the rest | Only the remaining amount is returned; the original payment and both refunds remain visible. |
+| A ticket changes hands | The recipient must accept. The previous QR code and codes inside saved wallet passes no longer grant entry. |
+| A ticket is scanned twice | The second admission is refused. |
+| The payment provider is slow or temporarily fails | Bookings can complete while provider responses wait; retries retain the same operation identity. |
+| Sales history grows | Creating a new reservation does not read or rewrite the full history of earlier bookings. |
+
+The combined pressure scenario starts **64 simultaneous requests for two places each**, against
+**80 available places**. It checks exactly **40 accepted groups**, then cancels ten and reserves
+those twenty places again while the payment provider is still paused. After the provider resumes,
+ten temporary failures are retried, the cancelled purchases are refunded and the replacement
+reservations remain intact.
+
+That demonstrates correct outcomes under a short burst of concurrent demand. It does **not**
+establish how many customers a production deployment can serve per second. The
+[load-test explanation](docs/load-testing.md) describes the measurements and their limits;
+the [verification guide](docs/development.md#verification) maps other behaviors to their tests.
 
 ## Try it locally
 
 Install the tools through [Fluxzero Get Started](https://fluxzero.io/get-started/), then open
 this repository in your coding agent. You can ask:
 
-> Start this ticketing app with the Fluxzero development environment. Help me try the customer
-> journey, then sign in as demo-organizer to explore the organizer tools.
+> Start this ticketing app with the Fluxzero development environment. Help me reserve two
+> seats together, then show me the organizer workspace as demo-organizer. Explain which
+> rules protect those seats while someone is paying.
 
-**This branch still requires a local SDK build.** It pins `2.0.0-119060b1101-SNAPSHOT`, which
-is not published. Follow the [SDK prerequisite](docs/development.md#local-sdk-prerequisite-for-this-development-branch)
-before starting. A released SDK containing these fixes must replace this pin before publication.
+**Temporary setup step:** this branch uses an unpublished Fluxzero SDK build,
+`2.0.0-119060b1101-SNAPSHOT`. Your agent must follow the
+[SDK prerequisite](docs/development.md#local-sdk-prerequisite-for-this-development-branch)
+first. A published SDK containing those fixes must replace it before this example is published.
 
 <details>
-<summary>Start from the terminal</summary>
+<summary>Terminal setup for developers</summary>
 
-Use Java 25, a current Node.js version supported by Vite, and Mailpit on your PATH
+Use Java 25, a Node.js version supported by the frontend dependencies, and Mailpit on your PATH
 (`brew install mailpit` on macOS). After installing the SDK prerequisite, run from this repository:
 
 ```sh
 fz dev
 ```
 
-Open the local URL printed by the environment. It starts the runtime, frontend, backend,
-local sign-in and Mailpit, seeds fictional performances, and manages reloads and affected tests.
-The local runtime is ephemeral; a restart can start a fresh demo. See
-[development and verification](docs/development.md) for configuration and test boundaries.
+Open the URL printed by the environment. It starts the app, local sign-in and Mailpit,
+seeds fictional performances, and manages reloads and affected tests. Devboard shows the
+app preview, recorded progress and test results. The local runtime is ephemeral; a restart
+can start a fresh demo. See [development](docs/development.md) for details.
 
 </details>
 
-No payment or email account is needed to explore the default local profile. Sign in with a
-local demo username to reserve seats. Use **`demo-organizer`** to unlock **Operations** and
-**Entrance**. The local sign-in service is for development only.
+No payment or email account is needed for the default local profile. Sign in with a local demo
+username to reserve places. Use **`demo-organizer`** for **Operations** and **Entrance**.
+Local sign-in is for development only.
 
-## Three things to try
+### 1. Choose real places
 
-### Find your places
+Open **Night Lights** in the Concertgebouw's **Recital Hall**. Choose stalls or balcony, use
+**Find together**, or switch to the row list. Select a ticket type for each visitor and reserve
+the group. You can watch the hold expire and see the places become available again.
 
-Open **Night Lights** in the Concertgebouw's **Recital Hall**. Pick the stalls or balcony,
-find adjacent seats, or switch to the row list. Choose a ticket type for each visitor and
-reserve the group together. The hold lasts up to fifteen minutes; an expired hold releases
-its places. Standing sections use the same checkout with a quantity instead of seat numbers.
+![Two adjacent seats selected in the Recital Hall](docs/images/seating.png)
 
-![Two selected seats in the source-backed Recital Hall layout](docs/images/seating.png)
+This layout contains **440 places**, based on the venue's July 2023 plan, including wheelchair
+and companion places. Other simplified layouts are explicitly labelled demonstrations.
+The venues are real; events, prices, availability and artwork are illustrative.
+[Venue sources](docs/demo-data.md) and [seating details](docs/seating.md).
 
-The Recital Hall layout contains **440 places**, based on the venue's July 2023 seating plan,
-including wheelchair and companion places. Other simplified layouts are labelled demonstrations.
-Venues are real; performances, prices, availability and artwork are illustrative.
-[Venue sources and layout details](docs/demo-data.md).
+If suitable places are unavailable, join the waitlist with a section and group size. Staff can
+offer a complete group; check **My tickets** to review and pay before the offer expires.
+Offers are chosen by staff. Automatic queue order and offer notifications are not implemented.
 
-Can't find suitable places? Join the waitlist with a section and group size. An organizer can
-offer a complete group through an ordinary expiring reservation. Review the offer in **My tickets**.
-Offers are selected by staff; the sample does not promise automatic FIFO allocation or send
-waitlist notifications.
+### 2. Sell a ticket and admit its owner
 
-### Run the show
+As **demo-organizer**, open a performance in **Operations** and make a box-office sale.
+Record a demo cash receipt to complete a purchase without a Stripe account. This records a
+staff acknowledgement; it does not move money. Open the issued ticket, download its PDF,
+and use **Entrance** to check its code. Try the same code twice.
 
-In **Operations**, open a performance to manage sales windows, protect production allocations,
-offer waitlist places and make box-office sales from the same stock as online sales.
-For an account-free local purchase, record a demo cash receipt in the box office; this records
-an acknowledgement and does not move money. Open the issued ticket, download its PDF, then
-use **Entrance** to check its code. A second scan is rejected.
+For online card checkout, enable the separate [Stripe sandbox profile](docs/integrations.md#stripe-sandbox-development-profile)
+with sandbox credentials. The default profile lets customers reserve, but cannot complete an
+online payment without that configuration.
 
-Organizers can also schedule performances, find orders, grant performance-specific staff access
-and cancel a performance. Customer ownership and staff permissions are enforced in the backend.
+### 3. Change plans
 
-### Change plans without losing the story
+Transfer a ticket to a customer who has signed in once. They accept it in **My tickets**; the
+old code stops working. Or open an order as its manager and return an unused ticket. Cancelling
+the rest of that order returns only the remaining amount.
 
-Transfer a ticket to another signed-in customer and let them accept it. The old admission code
-stops working. Or return selected unused tickets from the organizer's order view. A later
-cancellation refunds only the remaining amount, preserving the original payment and each return.
+![A retained payment with a partial refund and a cancellation remainder](docs/images/refunds.png)
 
-![A local cash order with a partial return and a cancellation remainder](docs/images/refunds.png)
+## Make it your own
 
-## What runs here
+Use the app as a starting point for a conversation with your agent. For example:
 
-| Capability | Local example | Optional external setup |
+- “Add doors-open time and age guidance to each performance, and show them before booking.”
+- “Let an organizer export an admission list for a performance they manage.”
+- “Design a rescheduling flow that lets customers keep their tickets or request a refund.”
+
+These are ideas for extensions, not features already delivered. Ask your agent to explain the
+product rule, add it to the appropriate part of the graph and demonstrate both the happy path
+and what happens when the action cannot be completed.
+
+## Integration and production boundaries
+
+| Area | Included in the example | Requires additional setup or work |
 | --- | --- | --- |
-| Discovery, reservations and operations | Seeded shows, seat maps, shared stock, waitlists, production blocks and box office | Your own catalogue and deployment |
-| Online payments and refunds | Provider-independent core; Stripe behavior tested with controlled responses | [Stripe sandbox profile](docs/integrations.md#stripe-sandbox-development-profile) and sandbox credentials |
-| Ticket delivery | Owned QR tickets, PDFs and confirmation messages captured locally in Mailpit | An outgoing email provider for real delivery |
-| Apple and Google Wallet | Signed artifact, ownership and credential-revocation tests | Apple Pass Type certificate and Google issuer credentials; physical-device qualification remains separate |
-| Admission | Online check-in with staff permissions and duplicate-entry protection | Camera/offline scanning and its conflict policy are extensions |
+| Payments | Provider-independent payment history, Stripe checkout/refund workflows and controlled-response tests | Sandbox credentials to try checkout; merchant setup and qualification for live money |
+| Email | Confirmation messages captured locally in Mailpit | An outgoing provider for real email delivery |
+| Wallets | Apple pass and Google save-link generation, signing and credential-revocation tests | Issuer credentials and physical-device qualification; live updates to installed passes |
+| Entrance | Online check-in and staff permissions | Camera scanning and offline admission policies |
+| Invoicing | Independent invoices and full credit notes in the core | Billing UI, delivery, partial credits and jurisdiction-specific tax/numbering |
+| Deployment | Local development and recovery scenarios | Production sizing, sustained traffic tests, tenant isolation and operational setup |
 
-Wallet buttons appear only when issuer configuration is available. Previously saved wallet
-codes are revoked on transfer; live updates to installed passes are not implemented.
-[Delivery, mail and wallet setup](docs/delivery.md).
+Wallet buttons appear only with issuer configuration. See [delivery and wallets](docs/delivery.md)
+for the distinction between locally verified artifacts and a pass installed on a real phone.
+The [capability inventory](docs/product-capabilities.md) describes further extensions such as
+rescheduling, promotions and high-demand sale queues.
 
-## Why this is a Fluxzero example
+<details>
+<summary>For developers: follow the behavior into the code</summary>
 
-The code starts with business actions: **reserve tickets**, **record a payment**, **offer places**,
-**return tickets**. Fluxzero connects those actions to models with their own identity and history.
-A reservation, payment and invoice remain different facts: money arriving late cannot bring
-an expired reservation back to life or take seats away from another visitor.
-
-```mermaid
-flowchart LR
-    Venue --> Hall
-    Hall --> Plan[Seating plan]
-    Event --> Performance
-    Performance -. uses .-> Plan
-    Performance --> Reservation
-    Performance --> Waitlist[Waitlist entry]
-    Waitlist -. offers .-> Reservation
-    Reservation --> Ticket
-    Reservation --> Payment
-    Reservation --> Invoice
-    Payment --> Refund
-```
-
-This is a simplified relationship map; the [full model graph](docs/model.md) explains ownership,
-references and transaction boundaries. A group reservation either gets all its places or none.
-Inventory changes stay bounded by the group, rather than rewriting a performance's entire sales
-history. Stripe's process state and provider attempts live outside this graph in `@Stateful`
+The domain uses Fluxzero Models, explicit commands and atomic changes across a bounded set of
+models. The graph expresses relationships without turning the entire performance history into
+one transaction. Stripe process state and provider attempts stay outside it in `@Stateful`
 handlers. Specific local commands and queries make external calls through Fluxzero's webrequest API.
+Tests use the real SDK and domain through `TestFixture`.
 
-Tests exercise the actual models through `TestFixture`, including conflicting bookings, expired
-holds, delayed payments, refunds and recovery. The [peak-sales scenario](docs/load-testing.md)
-adds concurrent group demand while the payment provider is paused, then injects temporary failures
-and checks recovery without overselling. It qualifies local behavior under pressure; it is not a
-production throughput claim.
-
-## Explore the implementation
-
-- [Product rules and example scenarios](docs/product-rules.md)
-- [Model graph and transaction boundaries](docs/model.md)
-- [Domain packages and source layout](docs/packages.md)
-- [Browser flows and organizer operations](docs/ui.md)
-- [Source-backed seating configuration](docs/seating.md)
-- [Stripe integration and recovery](docs/integrations.md)
-- [Development, verification and SDK prerequisite](docs/development.md)
-- [Further product possibilities and current gaps](docs/product-capabilities.md)
-
-Start in the code with [`ReserveTickets`](src/main/java/io/fluxzero/ticketing/booking/api/ReserveTickets.java),
+Start with [`ReserveTickets`](src/main/java/io/fluxzero/ticketing/booking/api/ReserveTickets.java),
 [`RecordPaymentSuccess`](src/main/java/io/fluxzero/ticketing/payment/api/RecordPaymentSuccess.java)
 and [`OfferWaitlistPlaces`](src/main/java/io/fluxzero/ticketing/waitlist/api/OfferWaitlistPlaces.java).
 
-This is a reference app, with deliberate extension points for production use: tenant isolation,
-merchant and issuer qualification, tax and invoice delivery, rescheduling, abuse controls and
-operational deployment. No GitHub publication or deployment is configured.
+- [Model graph and transaction boundaries](docs/model.md)
+- [Product rules and scenarios](docs/product-rules.md)
+- [Domain packages](docs/packages.md)
+- [Browser flows and organizer operations](docs/ui.md)
+- [Stripe integration and recovery](docs/integrations.md)
+- [Development and verification](docs/development.md)
+
+</details>

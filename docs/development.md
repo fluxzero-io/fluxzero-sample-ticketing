@@ -104,8 +104,9 @@ groups competing for capacity, expiry/capture races and cancellation over multip
 These tests use real SDK stores and observe actual commit requests. They establish correctness
 and bounded application work, not a production-runtime throughput SLA. Qualify on-sale traffic,
 latency, backpressure and deployment sizing against the chosen production runtime before launch.
-A domain-specific load test follows the completed UI, so it can exercise realistic browse,
-selection, payment and cancellation traffic together.
+The [peak-sales scenario](load-testing.md) combines concurrent holds, cancellation and resale
+with paused and failing provider responses. It uses the actual asynchronous SDK and domain
+inside one JVM; HTTP ingress and sustained networked-runtime capacity remain unmeasured.
 
 Hall-calendar collision checks, programme rescheduling, waiting rooms, seat-plan editing,
 ticket transfer/resale and camera or offline admission scanning are not implemented. Online
