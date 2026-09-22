@@ -2,6 +2,7 @@ package io.fluxzero.ticketing.booking.api;
 
 import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.sdk.persisting.eventsourcing.InterceptApply;
+import io.fluxzero.sdk.publishing.routing.RoutingKey;
 import io.fluxzero.sdk.tracking.handling.authentication.RequiresUser;
 import io.fluxzero.sdk.tracking.handling.authentication.User;
 import io.fluxzero.sdk.web.ApiDoc;
@@ -32,7 +33,7 @@ import static io.fluxzero.ticketing.common.Checks.require;
 
 /** Hold the complete selection for fifteen minutes, capped at performance start. */
 @RequiresUser
-public record ReserveTickets(@ApiDoc(required = true) @NotNull ReservationId reservationId, @ApiDoc(required = true) @NotNull PerformanceId performanceId,
+public record ReserveTickets(@ApiDoc(required = true) @NotNull ReservationId reservationId, @ApiDoc(required = true) @NotNull @RoutingKey PerformanceId performanceId,
                              @ApiDoc(required = true) @NotEmpty @Size(max = 12) List<@NotNull @Valid Selection> selection) {
     @InterceptApply
     Object decide(Performance performance, @Nullable SalesWindow salesWindow, User user, Instant sentAt) {

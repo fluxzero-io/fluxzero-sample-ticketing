@@ -50,8 +50,9 @@ do not make a sale fair.
 
 `RuntimePressureTest` drives 256–2,048 requests with 8, 32, 128 and 256 concurrent callers over
 WebSockets into the managed development runtime, in a unique namespace per case. Each caller
-has its own customer identity. All requests compete for one standing section; half should
-succeed, the rest must receive the explicit `BookingErrors.sectionCapacityExceeded` refusal.
+has its own customer identity. Requests compete for one standing section or reserve a group
+across two sections; half should succeed, the rest must receive the explicit
+`BookingErrors.sectionCapacityExceeded` refusal.
 Successful cases also cancel and resell a subset and verify the exact occupied count.
 
 The observer counts actual SDK commit requests and runtime conflict responses without replacing
@@ -59,9 +60,17 @@ storage or adding retries. Latency starts when a caller submits its command; rep
 includes both accepted requests and expected capacity refusals. This is closed-loop load, not a
 fixed arrival-rate or browser/HTTP-ingress test. The runtime and clients share the development Mac.
 
-**This stronger qualification currently exposes an unresolved limit.** On the pinned SDK,
-retryable inventory conflicts can exhaust the default three retries and surface as a technical
-failure. The test deliberately fails on that outcome rather than counting it as sold out or
-raising the retry limit. There is no reliable maximum-concurrency claim: scheduling can change
-which caller exhausts its attempts, even at lower concurrency. Keep the failing reproduction
-until the conflict/backpressure policy has been resolved and verified.
+`ReserveTickets` explicitly routes by performance, which also covers groups spanning sections.
+Its intercepted multi-model transaction has no automatically inferred routing key. This choice
+groups incoming bookings on a tracker; it is not a lock on all inventory writers. In particular,
+the pinned SDK's automatic Model handler bypasses the generic per-segment execution queue in
+favor of its own read-set coordination. Payment, cancellation, box-office and allocation paths
+are not made serial merely by this booking key. Atomic stock checks remain essential.
+
+**This stronger qualification remains incomplete.** Unrouted requests exposed retry exhaustion.
+With explicit routing, the test also observed a runtime-accepted reservation whose caller
+received a capacity refusal. The observer records committed reservation identities and pending
+commit counts to distinguish this result mismatch from a request still in flight. The exact
+SDK cause is not yet isolated. Keep the reproduction and exact expected outcomes; do not mask
+technical failures as sold out, loosen capacity assertions or add application retries. No
+maximum-concurrency or production-capacity claim follows from these runs.

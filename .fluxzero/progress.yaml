@@ -656,18 +656,21 @@ milestones:
     title: "Keep booking outcomes predictable under runtime contention"
     kind: "feature"
     status: "in_progress"
-    description: "Qualify the shared standing-section inventory over the managed runtime\
-      \ at increasing concurrency, retaining exact capacity and explicit business\
-      \ refusals."
+    description: "Qualify routed group bookings against the managed runtime, including\
+      \ groups spanning sections. Qualification is paused on a mismatch between accepted\
+      \ reservation commits and customer capacity-refusal responses; no application\
+      \ workaround or retry override has been added."
     acceptance:
     - "Concurrent requests preserve exact stock and only expected capacity refusals\
       \ count as sold out."
+    - "Customer success or refusal agrees with the reservation actually committed\
+      \ by the runtime."
     - "Record completed throughput, latency and actual commit conflicts across increasing\
       \ pressure."
-    - "Resolve technical failures caused by exhausted conflict retries before calling\
-      \ this qualification complete."
+    - "Resolve technical failures and qualify all relevant inventory writers before\
+      \ calling this qualification complete."
     createdAt: "2026-09-22T11:32:50.299225Z"
-    updatedAt: "2026-09-22T11:32:50.299225Z"
+    updatedAt: "2026-09-22T12:10:47.782089Z"
     history:
     - at: "2026-09-22T11:32:50.299225Z"
       status: "in_progress"
