@@ -117,8 +117,8 @@ reservations remain intact.
 
 This checks the business outcomes under a short burst; it is not a production throughput
 measurement. A larger test against the development runtime sends up to 2,048 requests with
-256 concurrent callers. **That qualification is still open:** it exposed an SDK batch-completion
-bug, and must be rerun with the v2 fix before drawing scaling conclusions.
+256 concurrent callers. These scenarios check reservation outcomes and inventory under contention;
+production capacity still depends on the deployment and its traffic pattern.
 
 The [load-test explanation](docs/load-testing.md) describes both tests and their limits.
 The [verification guide](docs/development.md#verification) maps the other behaviors to their tests.
@@ -132,16 +132,11 @@ this repository in your coding agent. You can ask:
 > seats together, then show me the organizer workspace as demo-organizer. Explain which
 > rules protect those seats while someone is paying.
 
-**Temporary setup step:** this branch uses an unpublished Fluxzero SDK build,
-`2.0.0-119060b1101-SNAPSHOT`. Your agent must follow the
-[SDK prerequisite](docs/development.md#local-sdk-prerequisite-for-this-development-branch)
-first. A published SDK containing those fixes must replace it before this example is published.
-
 <details>
 <summary>Terminal setup for developers</summary>
 
 Use Java 25, a Node.js version supported by the frontend dependencies, and Mailpit on your PATH
-(`brew install mailpit` on macOS). After installing the SDK prerequisite, run from this repository:
+(`brew install mailpit` on macOS). Run from this repository:
 
 ```sh
 fz dev
