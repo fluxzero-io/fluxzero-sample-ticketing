@@ -60,6 +60,7 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 | `ProductionAllocationTest`, `BoxOfficeTest`, `TicketTransferTest` | Shared inventory, retained offline receipts, accepted ownership changes and revoked old credentials |
 | `WaitlistTest` | Paged private interest, staff offers, competing groups, expiry, decline and late capture without overselling |
 | `PartialRefundTest`, `PartialStripeRefundTest` | Ticket eligibility, exact partial repayments, cancellation during repayment and delayed provider acknowledgement |
+| `PeakSalesTest` | Concurrent group demand, paused provider responses, resale, late captures and retryable failures; see [load testing](load-testing.md) |
 | `AutomaticRefundTest` | A core refund obligation starts the already-bound Stripe process without coupling payment state to Stripe |
 
 The race test delays transport to the real SDK store; it does not implement substitute

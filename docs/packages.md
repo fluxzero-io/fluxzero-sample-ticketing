@@ -13,6 +13,7 @@ or enforce endpoint access. Internal workflow events and provider refund-attempt
 | --- | --- |
 | `catalog` | Venues, halls, immutable seating-plan revisions, programmes, dated performances and independently managed sales windows |
 | `booking` | Inventory, availability, atomic group reservations, expiry, ownership and issued tickets |
+| `waitlist` | Private section/group interest and organizer offers using ordinary reservations |
 | `payment` | Provider-independent payment, capture and refund facts |
 | `billing` | Invoices and retained credit notes |
 | `access` | OIDC sign-in, browser sessions and trusted customer identity |

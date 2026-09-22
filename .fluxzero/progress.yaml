@@ -596,7 +596,7 @@ milestones:
   - id: "builder-guide"
     title: "Explain the example with screenshots"
     kind: "feature"
-    status: "planned"
+    status: "done"
     description: ""
     acceptance:
     - "English setup and illustrated journeys are understandable to technical and\
@@ -604,8 +604,18 @@ milestones:
     - "The guide distinguishes working capabilities, demo limitations and remaining\
       \ work."
     createdAt: "2026-09-21T21:17:57.592948Z"
-    updatedAt: "2026-09-21T21:17:57.592948Z"
+    updatedAt: "2026-09-22T10:44:03.343400Z"
     history:
     - at: "2026-09-21T21:17:57.592948Z"
       status: "planned"
       verification: ""
+    - at: "2026-09-22T10:38:48.155850Z"
+      status: "in_progress"
+      verification: ""
+    - at: "2026-09-22T10:44:03.343400Z"
+      status: "done"
+      verification: "English builder guide includes three real browser screenshots,\
+        \ customer/organizer/after-sales journeys, a simplified model graph and 21\
+        \ checked local links. SDK snapshot prerequisite, local mail, optional Stripe\
+        \ and wallet issuer/device boundaries are explicit. Screenshots were visually\
+        \ inspected; nothing is published."
