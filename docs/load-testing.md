@@ -45,3 +45,23 @@ Before a high-volume deployment, run the same demand pattern against the intende
 network and database, with sustained arrival rates and operational monitoring. An on-sale queue,
 account purchase limits and abuse controls are separate product choices; capacity checks alone
 do not make a sale fair.
+
+## Runtime pressure qualification
+
+`RuntimePressureTest` drives 256–2,048 requests with 8, 32, 128 and 256 concurrent callers over
+WebSockets into the managed development runtime, in a unique namespace per case. Each caller
+has its own customer identity. All requests compete for one standing section; half should
+succeed, the rest must receive the explicit `BookingErrors.sectionCapacityExceeded` refusal.
+Successful cases also cancel and resell a subset and verify the exact occupied count.
+
+The observer counts actual SDK commit requests and runtime conflict responses without replacing
+storage or adding retries. Latency starts when a caller submits its command; reported throughput
+includes both accepted requests and expected capacity refusals. This is closed-loop load, not a
+fixed arrival-rate or browser/HTTP-ingress test. The runtime and clients share the development Mac.
+
+**This stronger qualification currently exposes an unresolved limit.** On the pinned SDK,
+retryable inventory conflicts can exhaust the default three retries and surface as a technical
+failure. The test deliberately fails on that outcome rather than counting it as sold out or
+raising the retry limit. There is no reliable maximum-concurrency claim: scheduling can change
+which caller exhausts its attempts, even at lower concurrency. Keep the failing reproduction
+until the conflict/backpressure policy has been resolved and verified.
