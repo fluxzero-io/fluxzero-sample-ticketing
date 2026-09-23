@@ -758,11 +758,11 @@ milestones:
     title: "Keep ticket selection responsive during busy sales"
     kind: "feature"
     status: "in_progress"
-    description: "JFR identifies blocking console logging and repeated full diagnostic\
-      \ snapshots in the development environment, plus CPU-heavy in-memory search\
-      \ in the local Test Server. These make concurrent HTTP journeys too slow despite\
-      \ correct business outcomes. Fix at the owning layers and compare the unchanged\
-      \ HTTP scenarios afterward."
+    description: "Sales correctness passes against SDK origin/next/2.0 fac5159379d\
+      \ with Dev Server 1.15.3. The diagnostics snapshot bottleneck is resolved, but\
+      \ ordinary log writes still block child output and local in-memory search remains\
+      \ expensive. High-concurrency latency and one unreproduced read transport failure\
+      \ remain open."
     acceptance:
     - "Expected sold-out responses do not stall unrelated ticket browsing or successful\
       \ purchases through synchronous diagnostic work."
@@ -771,7 +771,7 @@ milestones:
     - "Preserve authentication, exact inventory, complete groups and retained financial\
       \ history; do not hide failures or change consumer/retry settings."
     createdAt: "2026-09-23T14:44:07.047032Z"
-    updatedAt: "2026-09-23T14:53:53.927531Z"
+    updatedAt: "2026-09-23T16:05:40.407705Z"
     history:
     - at: "2026-09-23T14:44:07.047032Z"
       status: "in_progress"
@@ -791,3 +791,13 @@ milestones:
         \ only with explicit sales mode and were not rerun. Logging corrections and\
         \ subsequent sales qualification remain open; local Test Server search optimization\
         \ is deferred pending a real-runtime qualification."
+    - at: "2026-09-23T16:05:40.407705Z"
+      status: "in_progress"
+      verification: "425 app behavior tests pass. Unmodified HTTP sales runs pass\
+        \ at 8, 32, 100 and 256 concurrent users with exact stock, cancellation/resale\
+        \ and cash/refund audits. No batch errors observed. Seated journey p95 at\
+        \ 256 is 6.597s, partially profiled. JFR shows 72.7% of local Test Server\
+        \ CPU samples in search and app stdout writes up to 392ms; ordinary synchronous\
+        \ Dev Server log writes remain. First read run had one fetch failure; four\
+        \ diagnostic repeats pass without request retries. Cause remains unknown;\
+        \ performance is not qualified."
