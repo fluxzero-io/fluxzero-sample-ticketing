@@ -1,7 +1,7 @@
 # Fluxzero Ticketing
 
-A working ticketing example built with **version 2 of the Fluxzero Java SDK**. It includes
-seat selection, temporary group reservations, payments, refunds, ticket delivery and entrance
+A working ticketing example built with **version 2 of the Fluxzero Java SDK**
+(currently `2.0.0-rc.20`). It includes seat selection, temporary group reservations, payments, refunds, ticket delivery and entrance
 checks, with a customer UI and an organizer workspace.
 
 The example shows how to build these features around their product rules, including what
@@ -109,18 +109,16 @@ include things going wrong, as well as successful purchases.
 | The payment provider is slow or temporarily fails | Bookings can complete while provider responses wait; retries retain the same operation identity. |
 | Sales history grows | Creating a new reservation does not read or rewrite the full history of earlier bookings. |
 
-The combined pressure scenario starts **64 simultaneous requests for two places each**, against
-**80 available places**. It checks exactly **40 accepted groups**, then cancels ten and reserves
-those twenty places again while the payment provider is still paused. After the provider resumes,
-ten temporary failures are retried, the cancelled purchases are refunded and the replacement
-reservations remain intact.
+The HTTP load scenarios sign in as customers and an organizer, then use the same web endpoints
+as the UI. They compete for standing places and the Recital Hall's seats, cancel and resell
+reservations, and combine online demand with box-office payments and production allocations.
+Afterward they check that every successful reservation exists, refused groups took no places,
+and refunds preserve the original payments. No alternative consumers or retry settings are used.
 
-This checks the business outcomes under a short burst; it is not a production throughput
-measurement. A larger test against the development runtime sends up to 2,048 requests with
-256 concurrent callers. These scenarios check reservation outcomes and inventory under contention;
-production capacity still depends on the deployment and its traffic pattern.
-
-The [load-test explanation](docs/load-testing.md) describes both tests and their limits.
+Separate behavior tests pause payment-provider responses to check late payments, retries and
+refund obligations deterministically. These complement the HTTP journeys; they are not an
+application throughput measurement. See [load testing](docs/load-testing.md) for running the
+scenarios and understanding their limits.
 The [verification guide](docs/development.md#verification) maps the other behaviors to their tests.
 
 ## Try it locally

@@ -60,8 +60,6 @@ build alongside it. CI uses the committed Maven wrapper with Java 25.
 | `ProductionAllocationTest`, `BoxOfficeTest`, `TicketTransferTest` | Shared inventory, retained offline receipts, accepted ownership changes and revoked old credentials |
 | `WaitlistTest` | Paged private interest, staff offers, competing groups, expiry, decline and late capture without overselling |
 | `PartialRefundTest`, `PartialStripeRefundTest` | Ticket eligibility, exact partial repayments, cancellation during repayment and delayed provider acknowledgement |
-| `RuntimePressureTest` | Up to 256 concurrent callers and 2,048 requests over WebSockets; exact group outcomes, one-/two-section capacity, cancellation and resale with SDK transport batching preserved |
-| `MixedInventoryPressureTest` | Competing inventory writers with fixture-local 3/10/32/100 retry budgets, measured conflicts and full financial/stock audits; low-budget exhaustion and an unexpected cancellation refusal remain visible |
 | `PeakSalesTest` | Concurrent group demand, paused provider responses, resale, late captures and retryable failures; see [load testing](load-testing.md) |
 | `AutomaticRefundTest` | A core refund obligation starts the already-bound Stripe process without coupling payment state to Stripe |
 
@@ -85,9 +83,8 @@ Reservation and performance Models additionally maintain public documents for ca
 discovery. Cancellation reactions and continuation use durable events. Inventory uses current documents so a cold stock load does not replay
 its allocation history. Financial and reservation history remain event sourced.
 
-The app and development TestServer use the same local SDK build, pinned to commit
-`568f295a867`. See the [local SDK prerequisite](#local-sdk-prerequisite-for-this-development-branch).
-A published SDK 2 release must replace this local dependency before publishing the example.
+The app and development TestServer use the published **Fluxzero SDK 2.0.0-rc.20**.
+No local SDK checkout or snapshot installation is required.
 
 A reservation touches at most twelve inventory selections. Seat claims are independent;
 a free-admission section has one exact capacity counter with at most 900 active deadline buckets.
@@ -107,11 +104,14 @@ These tests use real SDK stores and observe actual commit requests. They establi
 and bounded application work, not a production-runtime throughput SLA. Qualify on-sale traffic,
 latency, backpressure and deployment sizing against the chosen production runtime before launch.
 The [peak-sales scenario](load-testing.md) combines concurrent holds, cancellation and resale
-with paused and failing provider responses. It uses the actual asynchronous SDK and domain
-inside one JVM; HTTP ingress and sustained networked-runtime capacity remain unmeasured.
+with paused and failing provider responses in a behavior fixture. The separate
+[HTTP journeys](load-testing.md) exercise the running app through its normal login and web
+endpoints. They do not install consumers or change SDK retry settings. Sustained production
+capacity remains a deployment qualification task.
 
 Hall-calendar collision checks, programme rescheduling, waiting rooms, seat-plan editing,
-ticket transfer/resale and camera or offline admission scanning are not implemented. Online
+paid secondary resale and camera or offline admission scanning are not implemented. Ticket
+transfer with recipient acceptance is supported. Online
 admission with pasted codes and connected keyboard-style scanners is supported. Existing sold selections
 are never silently moved by catalogue updates; there is no layout-editing command.
 
@@ -134,15 +134,3 @@ API; the customer UI does not create or rewrite invoices.
 Production merchant qualification, deployment, organizer tenancy, offline/camera admission and
 production load qualification remain future work. See the [functional capability inventory](product-capabilities.md)
 for the remaining customer and operator workflows. Nothing is published or deployed.
-
-## Local SDK prerequisite for this development branch
-
-Build SDK commit `568f295a867` in a separate checkout using Java 25. Set the root and
-module Maven versions to `2.0.0-568f295a867-SNAPSHOT`, then install the matching artifacts:
-
-```sh
-./mvnw -B -pl sdk,test-server,proxy,fluxzero-bom -am -DskipTests -Dmaven.javadoc.skip=true install
-```
-
-This prepares the dependency only. Return to this app and let `fz dev` own its build and
-behavior tests. A published SDK with the required fixes will remove this development prerequisite.

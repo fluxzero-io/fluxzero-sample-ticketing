@@ -1,129 +1,86 @@
-# Booking under contention
+# HTTP ticketing journeys
 
-`PeakSalesTest` is a bounded, repeatable domain experiment through the real Fluxzero command
-handlers, Models and Stripe workflows. Only the external HTTP peer is controlled. It does not
-implement replacement stock, payments or retry logic.
+The load runner calls the **running application's web endpoints**, using ordinary OIDC login,
+opaque session cookies and the same origin/header checks as the UI. It creates no SDK clients,
+consumers, fixture handlers or alternative application. The app's normal routing, transactions,
+scheduling and conflict settings stay in effect.
 
-The scenario starts 64 concurrent requests for groups of two against one standing section with
-80 places. Stripe HTTP responses are held behind a barrier. All booking requests must finish
-while that barrier remains closed: forty groups succeed and twenty-four are refused. Ten held
-orders are cancelled and their twenty places reserved by other customers before the provider
-is allowed to respond.
+## Run locally
 
-The remote peer then returns ten temporary HTTP 503 failures after remembering the corresponding
-idempotent operations. The actual adapter records retryable work; advancing the fixture clock
-runs its schedules. Subsequent provider confirmation captures forty payments. Thirty purchases
-issue sixty tickets; the ten cancelled purchases automatically repay their captures. The twenty
-replacement holds remain intact. Assertions account for every request, captured amount, refund,
-provider operation identity and occupied place.
-
-The test reports hold latency percentiles and elapsed booking/resale time. It asserts bounded
-completion and exact domain outcomes, not hardware-specific latency thresholds or FIFO fairness.
-There are at most 64 concurrent client tasks, forty payment workflows and ten refund workflows.
-The provider barrier replaces wall-clock sleeping, so the scenario does not add long delays to CI.
-
-The existing `ConcurrencyTest` also exercises competing reserved seats and whole groups.
-`InventoryScaleTest` checks that retained booking history does not enlarge the next inventory
-transaction. These complement the combined provider-pressure experiment.
-
-## Running and interpreting
-
-During normal development, let `fz dev` select tests and inspect **Devboard → Tests**. Do not start
-another Maven process alongside it. With the managed environment stopped, a focused run is:
+Start the app with `fz dev` and wait until compilation, startup commands and any selected tests
+finish. Use the printed application URL. In another terminal, with Node.js 22 or newer:
 
 ```sh
-./mvnw -Dtest=PeakSalesTest test
+node load/journeys.mjs http://localhost:63024 8
 ```
 
-This uses an asynchronous `TestFixture` and the SDK's local runtime store in one JVM. It does not
-measure browser rendering, HTTP ingress, a networked production runtime, database durability,
-provider quotas or multi-machine throughput. Simulated time is used only for business deadlines
-and retries; reported operation latency uses the monotonic system clock. Exact per-run timing
-belongs in the work dossier, not a product performance promise.
+The last argument is concurrent journeys (1–256). Start at 8, then increase to 32, 128 and 256
+only after the preceding run passes. The runner uses standard Node HTTP APIs, with no extra
+packages. It does not build the app or start another test/application process.
 
-Before a high-volume deployment, run the same demand pattern against the intended runtime,
-network and database, with sustained arrival rates and operational monitoring. An on-sale queue,
-account purchase limits and abuse controls are separate product choices; capacity checks alone
-do not make a sale fair.
+Use the default local profile with the managed local identity provider. Each run signs in as
+`demo-organizer` and creates its own customer sessions and new performances through the
+organizer API. It only accepts a loopback URL and never submits Stripe payments. It requires
+the supplied demo programme and plans; it does not alter their capacities. Run while the app
+is stable: hot reload, other traffic and background builds affect measurements.
 
-## Runtime pressure qualification
+## Journeys and assertions
 
-`RuntimePressureTest` drives 256–2,048 requests with 8, 32, 128 and 256 concurrent callers over
-WebSockets into the managed development runtime, in a unique namespace per case. Each caller
-has its own customer identity. Requests compete for one standing section or reserve a group
-across two sections; half should succeed, the rest must receive the explicit
-`BookingErrors.sectionCapacityExceeded` refusal.
-Each scenario runs with explicit `SYNC` and `ASYNC` command-consumer handling. The
-asynchronous `TestFixture` alone does not select ASYNC consumer execution.
-Successful cases also cancel and resell a subset and verify the exact occupied count.
+- **Standing on-sale:** customers browse the programme, performance and availability, then
+  reserve two places. The deliberately tiny demo standing section fills exactly; remaining
+  requests receive the specific capacity refusal. Customers cancel, others reserve those
+  places, and the final availability returns to its starting value. This is an oversell check,
+  not evidence of high successful-sale throughput.
+- **Seated on-sale:** customers browse and book distinct pairs across the real 440-place
+  Recital Hall layout. Only standard seats participate; wheelchair and companion places remain
+  untouched. Competing requests for each pair must produce exactly one complete reservation.
+  The audit checks actual seat identities, every stored order and each section's availability.
+  Cancellation releases all accepted places.
+- **Mixed sales:** the organizer opens 80 standard stalls seats and withholds the others using
+  ordinary production allocations. Twenty box-office holds are prepared, ten already paid.
+  A wave interleaves their cancellation and remaining payment receipts with 64 online attempts,
+  32 box-office purchases and 16 production allocations against the same seats. The audit checks
+  held, sold and blocked stock; current tickets; all captures; refund obligations; completed
+  cash refunds; retained original receipts; and subsequent resale.
+- **Same adjacent seats:** many customers choose the same suggested pair. Exactly one wins.
+  After that customer cancels, a different reservation can take the pair.
 
-The observer counts actual SDK commit requests and runtime conflict responses without replacing
-storage or adding retries. Latency starts when a caller submits its command; reported throughput
-includes both accepted requests and expected capacity refusals. This is closed-loop load, not a
-fixed arrival-rate or browser/HTTP-ingress test. The runtime and clients share the development Mac.
+Every mutation is submitted once. A business refusal is accepted only when **both** the HTTP
+status and exact expected message match the application's contract. Timeouts, authentication
+failures, unexpected validation and technical errors fail the run. A timeout is not a sold-out
+result. Search-backed order lists may be polled briefly to allow indexing to catch up; writes
+are never retried by the runner. The stored order set must equal the successful HTTP results,
+so a committed reservation with an unsuccessful caller outcome cannot silently pass.
 
-`ReserveTickets` explicitly routes by performance, which also covers groups spanning sections.
-Its intercepted multi-model transaction has no automatically inferred routing key. This choice
-groups incoming bookings on a tracker; it is not a lock on all inventory writers. In particular,
-the pinned SDK's automatic Model handler bypasses the generic per-segment execution queue in
-favor of its own read-set coordination. Payment, cancellation, box-office and allocation paths
-are not made serial merely by this booking key. Atomic stock checks remain essential.
+Successful runs cancel their created performances after auditing and sign out. Orders and
+financial history remain available in the organizer workspace. Failed runs print their
+performance IDs and preserve the scenario for inspection. They never reset the runtime or
+remove history. A fresh ephemeral development runtime removes old demo data when needed.
 
-All twelve SYNC and ASYNC cases pass with the application and development TestServer pinned to SDK commit
-`568f295a867`. Each of these cases returns exactly half successful reservations and half explicit
-capacity refusals, with no runtime-accepted reservation missing its successful caller result.
-There are no pending commits at the outcome check. Cancellation and resale preserve the
-exact occupied counts, including groups spanning two sections.
+## Read the results
 
-The observer preserves the delegate's optional `ModelCommitBatchingClient` interface and
-forwards both individual commits and SDK-owned transport batches. It observes results without
-substituting transport, commit scheduling or retry behavior.
+The runner prints JSON lines with a run ID, phase timings, completed HTTP response counts,
+journey p50/p95/p99/max latency and exact business outcomes. Latency covers a whole journey,
+which can contain several HTTP requests. Throughput includes expected sold-out refusals;
+it is **not** tickets sold per second. Setup/login, outcome audits and final cleanup are outside
+the timed waves. The workload is closed-loop: each worker waits for its journey before starting
+another. It has no think time, fixed arrival rate or long soak period.
 
-The passing results qualify this bounded workload in both consumer handling modes. They do not establish maximum concurrency or
-production capacity, and the reported rates are short-run observations on a shared development
-host. Longer sustained traffic and mixed sales-channel workloads remain separate qualification.
+The client, app, proxy and development runtime share one machine. This measures short application
+bursts through HTTP, not browser rendering or production capacity. Stripe's remote latency,
+quotas and webhook delivery are outside this runner. Box-office payments are the existing
+staff-recorded cash workflow, not a substitute payment-provider implementation. No real money
+is collected or returned. Qualify a deployment separately with its actual runtime, storage,
+network, authentication service and payment provider.
 
+## Complementary behavior tests
 
-## Mixed inventory writers
+`TestFixture` tests remain responsible for precise business boundaries, including expiry,
+late Stripe confirmation, temporary provider failures, refund recovery and independent payment
+and invoice lifecycles. `PeakSalesTest` holds provider responses while other customers reserve
+released stock. `ConcurrencyTest` checks atomic groups; `InventoryScaleTest` checks bounded
+inventory work as retained history grows. These are domain regression tests, not the load runner.
 
-`MixedInventoryPressureTest` runs 32 callers across the actual booking, payment and operations
-command consumers. Forty existing two-place purchases occupy one place in each of two sections.
-Half already have captured payments; the other half race payment confirmation against cancellation.
-A shuffled wave of 188 operations combines those cancellations and confirmations with 64 new online
-bookings, 32 box-office purchases and 32 production allocations. All use the same section inventory.
-
-The intended assertions account for every accepted and refused group, held/sold/blocked stock,
-valid tickets, cash receipts, retained captures and refund obligations. Refusals must match the
-shared booking or allocation capacity error exactly. Cleanup releases surviving purchases and
-production allocations, verifies empty stock and reserves a new group without erasing money.
-The fixture clock stays fixed so a slow run cannot accidentally release stock through expiry.
-
-The test compares SDK retry budgets of 3, 10, 32 and 100 in both consumer modes. These
-are fixture-local settings; the application keeps its SDK defaults. Every action is attempted
-once by the test. Failed actions are collected while the remaining work runs, then fail the case.
-This permits comparable bounded measurements without treating a technical error as sold out.
-
-The shared transport observer records attempts and retryable/non-retryable conflicts per commit,
-while retaining the normal SDK batching capability and default conflict resolver. Measurements
-cover the concurrent wave only, excluding setup, the final audit and cleanup. Latency and
-completed operations per second include failures and expected capacity refusals; they are not
-successful-sale throughput. Cash actions can contain both a reservation and a payment command,
-so one operation is not necessarily one command or one commit.
-
-The comparison confirms retry exhaustion at the default budget of three. Ten also runs out;
-thirty-two has both passing cases and an observed SYNC exhaustion. A budget of one hundred
-avoids exhaustion in the observed runs. The latest runs at 32 and 100 reach and pass the complete
-inventory, retained-money, refund-obligation, ticket and resale assertions in both modes.
-These short runs do not select a production default or establish sustained capacity.
-
-`CancellationRaceTest` controls the same race without load. It pauses a new booking's actual
-store call, evaluates cancellation of an existing group, then lets a competing application
-fill the remaining section capacity. The new booking receives the exact capacity refusal;
-the cancellation succeeds, frees its own places, and leaves the competing reservation intact.
-The test passes with default, SYNC and ASYNC consumer handling. It delays transport only;
-all decisions and commits use the actual SDK. No application retry loop, consumer regrouping
-or relaxed product validation is involved.
-
-The mixed-writer matrix remains a qualification probe: its low-budget cases fail explicitly
-on conflict exhaustion rather than hiding technical failures as capacity refusals. Choosing
-how the different sales and payment consumers share inventory remains a separate scaling decision.
+The previous `RuntimePressureTest`, `MixedInventoryPressureTest` and their transport observer
+have been removed. They configured their own SDK consumers and retry budgets and therefore
+could not establish how the actual web application behaves under load.

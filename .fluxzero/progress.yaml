@@ -653,26 +653,24 @@ milestones:
         \ scenario is explicitly distinguished from production capacity; mail, wallet\
         \ and unpublished SDK boundaries remain visible."
   - id: "runtime-pressure"
-    title: "Keep booking outcomes predictable under runtime contention"
+    title: "Keep ticket sales correct under concurrent HTTP journeys"
     kind: "feature"
-    status: "in_progress"
-    description: "Controlled cancellation now retains its own result when an earlier\
-      \ booking is rejected. The three cancellation modes and twelve single-consumer\
-      \ pressure cases pass. Mixed workloads pass full stock, ticket, retained-money,\
-      \ refund and resale checks at retry budgets 32/100 in both modes; budgets 3/10\
-      \ still exhaust retries. Shared inventory across different consumers remains\
-      \ the open scaling boundary. Application defaults are unchanged."
+    status: "done"
+    description: "Qualify the running app through normal OIDC login and customer/organizer\
+      \ HTTP endpoints: standing and seated demand, cancellation, resale, box-office\
+      \ payments and production allocations. SDK consumer and retry-budget probes\
+      \ have been removed. Application and development runtime use published SDK 2.0.0-rc.20."
     acceptance:
-    - "Concurrent requests preserve exact stock and only expected capacity refusals\
-      \ count as sold out."
-    - "Customer success or refusal agrees with the reservation actually committed\
-      \ by the runtime."
-    - "Record completed throughput, latency and actual commit conflicts across increasing\
-      \ pressure."
-    - "Resolve technical failures and qualify all relevant inventory writers before\
-      \ calling this qualification complete."
+    - "Every successful HTTP reservation exists, refused groups consume no stock,\
+      \ and no seat or section is oversold."
+    - "Concurrent cancellation, box-office receipt and production allocation preserve\
+      \ tickets, captured money, refund obligations and resale."
+    - "Report whole-journey latency, HTTP response counts and business outcomes under\
+      \ increasing concurrency with unchanged application settings."
+    - "Clearly separate short local HTTP bursts from deterministic provider behavior\
+      \ tests and production capacity qualification."
     createdAt: "2026-09-22T11:32:50.299225Z"
-    updatedAt: "2026-09-22T15:17:48.422958Z"
+    updatedAt: "2026-09-23T14:32:43.339587Z"
     history:
     - at: "2026-09-22T11:32:50.299225Z"
       status: "in_progress"
@@ -738,3 +736,21 @@ milestones:
         \ SDK correction committed separately; broad SDK suite hit its 300-second\
         \ fork timeout after 3819 completed cases without assertion failures; 216\
         \ focused model/repository checks pass."
+    - at: "2026-09-23T14:28:30.259685Z"
+      status: "in_progress"
+      verification: "First complete HTTP run at 8 concurrent journeys passes, including\
+        \ 218 groups for 436 standard Recital Hall seats, cash capture/refund history\
+        \ and reuse of cancelled inventory. Higher concurrency qualification is in\
+        \ progress."
+    - at: "2026-09-23T14:32:43.339587Z"
+      status: "done"
+      verification: "Published SDK and managed runtime 2.0.0-rc.20. Real HTTP journeys\
+        \ pass at 8, 32, 128 and 256 concurrency using normal local OIDC sessions\
+        \ and unchanged app settings. Each seated sale yields exactly 218 complete\
+        \ groups for 436 standard seats; cancellation, resale, cash captures/refunds,\
+        \ production allocations and stored-order audits pass. At 256, the seated\
+        \ phase makes 8,192 HTTP requests across 2,048 journeys; p95 is 6.751s, so\
+        \ no production throughput claim is made. Known SDK S191 logging still misclassifies\
+        \ expected business refusals as batch errors; it is not muted. Managed compile/reload\
+        \ and selected cancellation regression pass. Internal consumer/retry-budget\
+        \ load probes are removed."
