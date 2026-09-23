@@ -126,7 +126,8 @@ The [verification guide](docs/development.md#verification) maps the other behavi
 ## Try it locally
 
 Install the tools through [Fluxzero Get Started](https://fluxzero.io/get-started/), then open
-this repository in your coding agent. You can ask:
+this repository in your coding agent. The repository is
+`fluxzero-io/fluxzero-sample-ticketing`. You can ask:
 
 > Start this ticketing app with the Fluxzero development environment. Help me reserve two
 > seats together, then show me the organizer workspace as demo-organizer. Explain which
@@ -135,10 +136,12 @@ this repository in your coding agent. You can ask:
 <details>
 <summary>Terminal setup for developers</summary>
 
-Use Java 25, a Node.js version supported by the frontend dependencies, and Mailpit on your PATH
-(`brew install mailpit` on macOS). Run from this repository:
+Use Java 25, Node.js 22.12+ (Node.js 24 LTS recommended), and Mailpit on your PATH
+(`brew install mailpit` on macOS). Clone the repository and start it:
 
 ```sh
+git clone https://github.com/fluxzero-io/fluxzero-sample-ticketing.git
+cd fluxzero-sample-ticketing
 fz dev
 ```
 
@@ -238,3 +241,15 @@ and [`OfferWaitlistPlaces`](src/main/java/io/fluxzero/ticketing/waitlist/api/Off
 - [Development and verification](docs/development.md)
 
 </details>
+
+## License and security
+
+Copyright 2026 Fluxzero B.V. Licensed under [Apache-2.0](LICENSE).
+The event artwork and interface belong to this example; real venue names and the
+[source-backed seating data](docs/seating.md) identify their sources, without implying
+venue affiliation. External dependencies retain their own licenses.
+
+For private vulnerability reporting, see [SECURITY.md](SECURITY.md).
+CI verifies the frontend build and backend behavior on pushes and pull requests.
+This is an executable example using a release candidate of SDK 2.0; adapting it for
+production requires your own deployment and operational qualification.

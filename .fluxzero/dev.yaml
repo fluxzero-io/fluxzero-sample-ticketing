@@ -25,7 +25,7 @@ profiles:
           http: "{url}/readyz"
     frontend:
       directory: frontend
-      setupCommand: "npm install --prefer-offline --no-audit --no-fund && npm run build"
+      setupCommand: "npm ci --no-audit --no-fund && npm run build"
       command: "npm run dev -- --host 127.0.0.1 --port {frontendPort}"
     commands:
       - demo-programme:
@@ -72,7 +72,7 @@ profiles:
           redact: ['whsec_[A-Za-z0-9]+']
     frontend:
       directory: frontend
-      setupCommand: "npm install --prefer-offline --no-audit --no-fund && npm run build"
+      setupCommand: "npm ci --no-audit --no-fund && npm run build"
       command: "npm run dev -- --host 127.0.0.1 --port {frontendPort}"
     commands:
       - demo-programme:

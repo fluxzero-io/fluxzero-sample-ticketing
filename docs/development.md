@@ -24,7 +24,9 @@ sessions, CSRF protection, discovery and production configuration.
 
 Use `fz dev` and the installed Fluxzero skill for the normal build/test loop. The development
 server chooses affected tests and owns compilation and reload. Do not start a second Maven
-build alongside it. CI uses the committed Maven wrapper with Java 25.
+build alongside it. CI uses the committed Maven wrapper with Java 25 and Node.js 24,
+builds the frontend with `npm ci && npm run build`, and runs `./mvnw -B verify`
+on pushes and pull requests.
 
 | Test class | Evidence |
 | --- | --- |
@@ -133,4 +135,4 @@ API; the customer UI does not create or rewrite invoices.
 
 Production merchant qualification, deployment, organizer tenancy, offline/camera admission and
 production load qualification remain future work. See the [functional capability inventory](product-capabilities.md)
-for the remaining customer and operator workflows. Nothing is published or deployed.
+for the remaining customer and operator workflows. The repository does not include a production deployment.

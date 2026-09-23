@@ -3,12 +3,25 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.fluxzero.examples</groupId>
   <artifactId>fluxzero-ticketing</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <name>fluxzero-ticketing</name>
-  <description>A Fluxzero ticketing domain example</description>
+  <version>0.1.0</version>
+  <name>Fluxzero Ticketing</name>
+  <description>A Fluxzero 2.0 example for ticket reservations, payments and admission</description>
+  <url>https://github.com/fluxzero-io/fluxzero-sample-ticketing</url>
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <scm>
+    <connection>scm:git:https://github.com/fluxzero-io/fluxzero-sample-ticketing.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/fluxzero-io/fluxzero-sample-ticketing.git</developerConnection>
+    <url>https://github.com/fluxzero-io/fluxzero-sample-ticketing</url>
+  </scm>
   <properties>
-    <spring-boot.version>3.5.16</spring-boot.version>
-    <jetty.version>12.1.11</jetty.version>
+    <spring-boot.version>4.1.1</spring-boot.version>
+    <jetty.version>12.1.13</jetty.version>
     <fluxzero.version>2.0.0-rc.20</fluxzero.version>
     <java.version>25</java.version>
     <bouncycastle.version>1.86</bouncycastle.version>
@@ -69,7 +82,7 @@
       <dependency>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
-        <version>1.18.46</version>
+        <version>1.18.48</version>
         <scope>provided</scope>
       </dependency>
     </dependencies>
@@ -151,7 +164,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.5.6</version>
+          <version>3.6.0</version>
           <configuration>
             <argLine>-javaagent:${org.mockito:mockito-core:jar}</argLine>
             <systemPropertyVariables>
@@ -167,7 +180,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.15.0</version>
+          <version>3.16.0</version>
           <configuration>
             <release>${java.version}</release>
             <parameters>true</parameters>
@@ -186,17 +199,17 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.5.0</version>
+          <version>3.5.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-install-plugin</artifactId>
-          <version>3.1.4</version>
+          <version>3.2.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-deploy-plugin</artifactId>
-          <version>3.1.4</version>
+          <version>3.2.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -225,7 +238,7 @@
       <plugin>
         <groupId>io.fluxzero.tools</groupId>
         <artifactId>fluxzero-maven-plugin</artifactId>
-        <version>1.18.9</version>
+        <version>1.19.1</version>
         <configuration>
           <packageName>fluxzero-ticketing</packageName>
           <images>
