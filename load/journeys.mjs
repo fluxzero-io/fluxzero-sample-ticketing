@@ -5,16 +5,20 @@ import { Browser, HttpError } from './browser.mjs';
 const base = new URL(process.argv[2] || 'http://localhost:63024');
 assert(['localhost', '127.0.0.1', '[::1]'].includes(base.hostname), 'This runner creates demo sales: use a local environment');
 assert.equal(base.pathname, '/');
-const concurrency = Number(process.argv[3] || 8);
+const concurrency = Number(process.argv[3] || 256);
+const mode = process.argv[4] || 'reads';
+assert(['reads', 'sales'].includes(mode) && process.argv.length <= 5,
+  'Usage: node load/journeys.mjs [url] [concurrency] [reads|sales]');
 assert(Number.isInteger(concurrency) && concurrency >= 1 && concurrency <= 256, 'Concurrency must be 1–256');
 const run = `http-load-${randomUUID()}`;
 const operator = await new Browser(base.origin).login('demo-organizer');
-const customers = await pool(Array.from({ length: concurrency }, (_, i) => i), 8,
-  i => new Browser(base.origin).login(`${run}-${i}`));
+const customers = mode === 'reads' ? [new Browser(base.origin)]
+  : await pool(Array.from({ length: concurrency }, (_, i) => i), 8,
+    i => new Browser(base.origin).login(`${run}-${i}`));
 const catalog = await operator.get('/api/operations/catalog');
 const reports = [];
 const performances = [];
-console.log(JSON.stringify({ run, base: base.origin, concurrency, node: process.version }));
+console.log(JSON.stringify({ run, base: base.origin, concurrency, mode, node: process.version }));
 
 // All operations, including setup and outcome checks, use the application's normal HTTP API.
 
@@ -180,6 +184,32 @@ async function assertOrders(id, expected) {
   }
   assert.deepEqual(found.sort(), expected.map(b => b.id).sort(), 'Every stored order must have a successful HTTP outcome');
 }
+async function readLoad() {
+  const id = await schedule('concertgebouw-recital-2023-07');
+  const stock = await availability(id);
+  assert.equal(stock.bookable, true);
+  const expectedStock = stock.sections.map(s => ({ id: s.id, remaining: s.remaining }));
+  const seatsPath = `/api/programme/${id}/seats?section=stalls`;
+  const seats = await customers[0].get(seatsPath);
+  assert(seats.seats.length > 0);
+  const expectedSeats = seats.seats.map(s => s.seat.id);
+  const scenarios = [
+    ['view-performance', `/api/programme/${id}`, show => assert.equal(show.performance.performanceId, id)],
+    ['view-availability', `/api/programme/${id}/availability`, current => {
+      assert.equal(current.bookable, true);
+      assert.deepEqual(current.sections.map(s => ({ id: s.id, remaining: s.remaining })), expectedStock);
+    }],
+    ['view-seats', seatsPath, page => {
+      assert.deepEqual(page.seats.map(s => s.seat.id), expectedSeats);
+      assert(page.seats.every(s => s.available));
+    }],
+  ];
+  for (const [name, path, verify] of scenarios) {
+    await wave(name, Array.from({ length: 512 }), async () => verify(await customers[0].get(path)));
+  }
+  await assertOrders(id, []);
+}
+
 async function standingSale() {
   const id = await schedule('tivoli-ronda-demo-v1');
   const capacity = await remaining(id);
@@ -312,16 +342,20 @@ async function reservedSeats() {
 }
 
 try {
-  await standingSale();
-  await seatedSale();
-  await mixedSales();
-  await reservedSeats();
+  if (mode === 'reads') {
+    await readLoad();
+  } else {
+    await standingSale();
+    await seatedSale();
+    await mixedSales();
+    await reservedSeats();
+  }
   for (const id of performances) await operator.post(`/api/operations/performances/${id}/cancel`);
-  console.log(JSON.stringify({ run, status: 'passed', reports }));
+  console.log(JSON.stringify({ run, mode, status: 'passed', reports }));
 } catch (error) {
-  console.error(JSON.stringify({ run, status: 'failed', performances, reports, error: error.message }));
+  console.error(JSON.stringify({ run, mode, status: 'failed', performances, reports, error: error.message }));
   // Retain the failed scenario for inspection; never delete history or conceal an uncertain write.
   process.exitCode = 1;
 } finally {
-  await Promise.allSettled([operator, ...customers].map(c => c.post('/app/logout')));
+  await Promise.allSettled([operator, ...customers.filter(c => c.subject)].map(c => c.post('/app/logout')));
 }

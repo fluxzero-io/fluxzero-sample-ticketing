@@ -109,8 +109,10 @@ include things going wrong, as well as successful purchases.
 | The payment provider is slow or temporarily fails | Bookings can complete while provider responses wait; retries retain the same operation identity. |
 | Sales history grows | Creating a new reservation does not read or rewrite the full history of earlier bookings. |
 
-The HTTP load scenarios sign in as customers and an organizer, then use the same web endpoints
-as the UI. They compete for standing places and the Recital Hall's seats, cancel and resell
+The default HTTP load run checks viewing performances, availability and seats. Full sales
+scenarios are an explicit opt-in, deferred until the local logging bottleneck is fixed. Those
+scenarios sign in as customers and an organizer, then use the same web endpoints as the UI.
+They compete for standing places and the Recital Hall's seats, cancel and resell
 reservations, and combine online demand with box-office payments and production allocations.
 Afterward they check that every successful reservation exists, refused groups took no places,
 and refunds preserve the original payments. No alternative consumers or retry settings are used.

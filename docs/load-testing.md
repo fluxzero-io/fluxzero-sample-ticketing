@@ -11,20 +11,40 @@ Start the app with `fz dev` and wait until compilation, startup commands and any
 finish. Use the printed application URL. In another terminal, with Node.js 22 or newer:
 
 ```sh
-node load/journeys.mjs http://localhost:63024 8
+node load/journeys.mjs http://localhost:63024 256
 ```
 
-The last argument is concurrent journeys (1–256). Start at 8, then increase to 32, 128 and 256
-only after the preceding run passes. The runner uses standard Node HTTP APIs, with no extra
-packages. It does not build the app or start another test/application process.
+The default is **read load** at 256 concurrent requests: 512 GETs each for the performance,
+availability and seats endpoints, measured separately. Responses must contain the expected
+performance, unchanged available capacity and seat identities. The runner verifies that no
+orders were created. Pass a different concurrency (1–256) as the third argument if needed.
 
-Use the default local profile with the managed local identity provider. Each run signs in as
-`demo-organizer` and creates its own customer sessions and new performances through the
-organizer API. It only accepts a loopback URL and never submits Stripe payments. It requires
-the supplied demo programme and plans; it does not alter their capacities. Run while the app
-is stable: hot reload, other traffic and background builds affect measurements.
+The organizer signs in through the managed local IDP, schedules a fresh performance through
+HTTP before the measurement, and cancels it afterward. The timed traffic uses public customer
+reads. There are no reservations, payments or sold-out refusals in this mode.
 
-## Journeys and assertions
+This is the temporary baseline while SDK/Dev Server logging issues make rejection-heavy
+local sales traffic unrepresentative. A passing read run does **not** qualify write throughput.
+
+### Full sales scenarios — opt-in
+
+The full scenarios remain available for qualification after the logging fixes. They are not
+part of the default run and are currently deferred:
+
+```sh
+node load/journeys.mjs http://localhost:63024 8 sales
+```
+
+This mode creates customer sessions and exercises the sales scenarios below. Start at 8, then
+increase only after each run passes. Do not treat the known logging stall as an accepted latency.
+
+Both modes use standard Node HTTP APIs with no extra packages. They do not build the app or
+start another application. Use the default local profile with the managed identity provider;
+the runner accepts only loopback URLs, requires the supplied demo programme/plans and never
+submits Stripe payments. Run while the app is stable: hot reload, other traffic and background
+builds affect measurements.
+
+## Sales journeys and assertions
 
 - **Standing on-sale:** customers browse the programme, performance and availability, then
   reserve two places. The deliberately tiny demo standing section fills exactly; remaining
@@ -63,7 +83,8 @@ The runner prints JSON lines with a run ID, phase timings, completed HTTP respon
 journey p50/p95/p99/max latency and exact business outcomes. Each timed phase also groups
 requests by HTTP method, route and status, with request latency and response bytes; generated
 identifiers are removed from route labels. Latency covers a whole journey,
-which can contain several HTTP requests. Throughput includes expected sold-out refusals;
+which is one GET in read mode and can contain several HTTP requests in sales mode.
+Sales throughput includes expected sold-out refusals;
 it is **not** tickets sold per second. Setup/login, outcome audits and final cleanup are outside
 the timed waves. The workload is closed-loop: each worker waits for its journey before starting
 another. It has no think time, fixed arrival rate or long soak period.

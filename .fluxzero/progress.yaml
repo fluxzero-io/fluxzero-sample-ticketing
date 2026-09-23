@@ -771,7 +771,7 @@ milestones:
     - "Preserve authentication, exact inventory, complete groups and retained financial\
       \ history; do not hide failures or change consumer/retry settings."
     createdAt: "2026-09-23T14:44:07.047032Z"
-    updatedAt: "2026-09-23T14:44:07.047032Z"
+    updatedAt: "2026-09-23T14:53:53.927531Z"
     history:
     - at: "2026-09-23T14:44:07.047032Z"
       status: "in_progress"
@@ -782,3 +782,12 @@ milestones:
         \ 650ms/availability and 447ms/seats. Instrumented complete HTTP run passes\
         \ all business audits. SDK logging correction is being handled by the user;\
         \ follow-up belongs to the Dev Server and Test Server."
+    - at: "2026-09-23T14:53:53.927531Z"
+      status: "in_progress"
+      verification: "Read-only HTTP load is now the default: 512 GETs each at concurrency\
+        \ 256 pass with p95 113ms/performance, 593ms/availability and 426ms/seats.\
+        \ Expected content, unchanged stock and zero orders are verified; setup and\
+        \ cleanup use organizer HTTP endpoints. Full sales scenarios remain available\
+        \ only with explicit sales mode and were not rerun. Logging corrections and\
+        \ subsequent sales qualification remain open; local Test Server search optimization\
+        \ is deferred pending a real-runtime qualification."
