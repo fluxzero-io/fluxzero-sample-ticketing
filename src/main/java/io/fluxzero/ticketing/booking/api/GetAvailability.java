@@ -1,6 +1,7 @@
 package io.fluxzero.ticketing.booking.api;
 
 import io.fluxzero.common.api.search.constraints.BetweenConstraint;
+import io.fluxzero.common.api.search.constraints.FacetConstraint;
 import io.fluxzero.common.api.search.constraints.MatchConstraint;
 import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.sdk.tracking.handling.HandleQuery;
@@ -39,7 +40,7 @@ public record GetAvailability(@NotNull PerformanceId performanceId) implements R
                 if (s.mode() == AdmissionMode.RESERVED_SEATING) {
                     long occupied = Fluxzero.search(SeatInventory.class)
                             .match(performanceId, true, "performanceId").match(s.id(), true, "sectionId")
-                            .any(io.fluxzero.common.api.search.constraints.ExistsConstraint.exists("productionHoldId"),
+                            .any(FacetConstraint.matchFacet("productionBlocked", true),
                                     MatchConstraint.match(true, true, "sold"),
                                     BetweenConstraint.atLeast(
                                             now.truncatedTo(SECONDS).plusSeconds(1), "expiresAt"))

@@ -33,6 +33,7 @@ class ProductionAllocationTest extends TicketingTestSupport {
                 .andThen().whenCommandByUser(ALICE, seats(R,"A1")).expectExceptionalResult()
                 .andThen().whenTimeElapses(Duration.ofMinutes(30)).expectSuccessfulResult()
                 .andThen().whenCommandByUser(OPERATOR, new ReleaseProductionInventory(H)).expectSuccessfulResult()
+                .andThen().whenQuery(new GetAvailability(SHOW)).expectResult((Availability a) -> a.sections().getFirst().remaining() == 4)
                 .andThen().whenCommandByUser(OPERATOR, new ReleaseProductionInventory(H)).expectSuccessfulResult()
                 .andThen().whenCommandByUser(ALICE, seats(R,"A1","A2")).expectSuccessfulResult()
                 .expectThat(f -> assertFalse(Fluxzero.loadModel(H).get().active()));

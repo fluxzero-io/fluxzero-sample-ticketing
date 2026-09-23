@@ -1,5 +1,6 @@
 package io.fluxzero.ticketing.booking.api.model;
 
+import io.fluxzero.common.search.Facet;
 import io.fluxzero.common.search.Sortable;
 import io.fluxzero.sdk.modeling.EntityId;
 import io.fluxzero.sdk.modeling.Model;
@@ -16,6 +17,11 @@ public record SeatInventory(@EntityId SeatInventoryId seatInventoryId,
                             @Parent(pathInParent = "seatInventory") PerformanceId performanceId,
                             String sectionId, String seatId, ReservationId reservationId,
                             @Sortable Instant expiresAt, boolean sold, io.fluxzero.ticketing.operations.api.ProductionHoldId productionHoldId) {
+    @Facet
+    public boolean productionBlocked() {
+        return productionHoldId != null;
+    }
+
     public boolean occupiedAt(Instant now) {
         return productionHoldId != null || reservationId != null && (sold || now.isBefore(expiresAt));
     }
