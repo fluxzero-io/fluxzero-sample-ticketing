@@ -60,7 +60,9 @@ remove history. A fresh ephemeral development runtime removes old demo data when
 ## Read the results
 
 The runner prints JSON lines with a run ID, phase timings, completed HTTP response counts,
-journey p50/p95/p99/max latency and exact business outcomes. Latency covers a whole journey,
+journey p50/p95/p99/max latency and exact business outcomes. Each timed phase also groups
+requests by HTTP method, route and status, with request latency and response bytes; generated
+identifiers are removed from route labels. Latency covers a whole journey,
 which can contain several HTTP requests. Throughput includes expected sold-out refusals;
 it is **not** tickets sold per second. Setup/login, outcome audits and final cleanup are outside
 the timed waves. The workload is closed-loop: each worker waits for its journey before starting

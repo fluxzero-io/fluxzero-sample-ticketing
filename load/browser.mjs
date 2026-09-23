@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 /** One local browser session, using the app's OIDC redirects and opaque cookies. */
 export class Browser {
   static completedRequests = 0;
+  static samples = [];
   cookies = new Map();
   constructor(base) { this.base = base; }
 
@@ -46,12 +47,16 @@ export class Browser {
   }
 
   async json(path, body) {
+    const started = performance.now();
     const response = await this.request(path, body === undefined ? {} : {
       method: 'POST', body: JSON.stringify(body),
       headers: { 'Content-Type': 'application/json', Origin: this.base, 'X-Ticketing-Request': '1' },
     });
     const raw = await response.text();
     Browser.completedRequests++;
+    Browser.samples.push({ route: `${body === undefined ? 'GET' : 'POST'} ${path.split('?')[0]
+      .replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/g, ':id')}`, status: response.status,
+      ms: performance.now() - started, bytes: Buffer.byteLength(raw) });
     let data = raw;
     if (raw) { try { data = JSON.parse(raw); } catch { /* Preserve plain HTTP errors. */ } }
     if (!response.ok) throw new HttpError(response.status, path, data);

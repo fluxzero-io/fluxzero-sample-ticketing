@@ -754,3 +754,31 @@ milestones:
         \ expected business refusals as batch errors; it is not muted. Managed compile/reload\
         \ and selected cancellation regression pass. Internal consumer/retry-budget\
         \ load probes are removed."
+  - id: "responsive-ticket-sales"
+    title: "Keep ticket selection responsive during busy sales"
+    kind: "feature"
+    status: "in_progress"
+    description: "JFR identifies blocking console logging and repeated full diagnostic\
+      \ snapshots in the development environment, plus CPU-heavy in-memory search\
+      \ in the local Test Server. These make concurrent HTTP journeys too slow despite\
+      \ correct business outcomes. Fix at the owning layers and compare the unchanged\
+      \ HTTP scenarios afterward."
+    acceptance:
+    - "Expected sold-out responses do not stall unrelated ticket browsing or successful\
+      \ purchases through synchronous diagnostic work."
+    - "Measure request-level and whole-journey latency with the same HTTP scenario,\
+      \ concurrency and data conditions before and after the fixes."
+    - "Preserve authentication, exact inventory, complete groups and retained financial\
+      \ history; do not hide failures or change consumer/retry settings."
+    createdAt: "2026-09-23T14:44:07.047032Z"
+    updatedAt: "2026-09-23T14:44:07.047032Z"
+    history:
+    - at: "2026-09-23T14:44:07.047032Z"
+      status: "in_progress"
+      verification: "JFR at 256 concurrent journeys: 1,362 slow app stdout writes\
+        \ totaling 123s of cumulative write time; log lock waits up to 2.84s. 3,001/3,508\
+        \ Dev Server CPU samples include full diagnostic snapshot writing; 6,811/8,509\
+        \ Test Server samples include search. Read-only control at 256 has p95 193ms/show,\
+        \ 650ms/availability and 447ms/seats. Instrumented complete HTTP run passes\
+        \ all business audits. SDK logging correction is being handled by the user;\
+        \ follow-up belongs to the Dev Server and Test Server."

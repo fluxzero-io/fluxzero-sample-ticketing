@@ -33,7 +33,7 @@ async function pool(items, limit, action) {
 }
 
 async function wave(name, items, action) {
-  const latencies = [], started = performance.now(), requestsBefore = Browser.completedRequests;
+  const latencies = [], started = performance.now(), requestsBefore = Browser.completedRequests, samplesBefore = Browser.samples.length;
   let failures = 0;
   try {
     return await pool(items, concurrency, async (item, index) => {
@@ -49,6 +49,18 @@ async function wave(name, items, action) {
     const report = { name, journeys: items.length, failures, httpResponses: Browser.completedRequests - requestsBefore, elapsedMs: Math.round(elapsedMs),
       completedPerSecond: Math.round(items.length * 1000 / elapsedMs),
       p50Ms: percentile(.5), p95Ms: percentile(.95), p99Ms: percentile(.99), maxMs: percentile(1) };
+    const routes = new Map();
+    for (const sample of Browser.samples.slice(samplesBefore)) {
+      const key = `${sample.route} [${sample.status}]`;
+      if (!routes.has(key)) routes.set(key, []);
+      routes.get(key).push(sample);
+    }
+    report.requests = [...routes].map(([route, samples]) => {
+      samples.sort((a, b) => a.ms - b.ms);
+      return { route, count: samples.length, p50Ms: Math.round(samples[Math.ceil(samples.length * .5) - 1].ms),
+        p95Ms: Math.round(samples[Math.ceil(samples.length * .95) - 1].ms),
+        maxMs: Math.round(samples.at(-1).ms), bytes: samples.reduce((sum, s) => sum + s.bytes, 0) };
+    });
     reports.push(report); console.log(JSON.stringify(report));
   }
 }
