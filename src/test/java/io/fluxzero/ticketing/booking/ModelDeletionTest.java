@@ -23,6 +23,7 @@ import io.fluxzero.ticketing.catalog.api.model.Event;
 import io.fluxzero.ticketing.catalog.api.model.Performance;
 import io.fluxzero.ticketing.catalog.api.model.Venue;
 import io.fluxzero.ticketing.payment.api.RecordPaymentSuccess;
+import io.fluxzero.ticketing.payment.api.RefundId;
 import io.fluxzero.ticketing.payment.api.model.Money;
 import io.fluxzero.ticketing.support.TicketingTestSupport;
 import java.time.Duration;
@@ -151,9 +152,9 @@ class ModelDeletionTest extends TicketingTestSupport {
     }
 
     private static Map<Id<?>, Object> purchaseValues() {
-        var ids = new ArrayList<Id<?>>(List.of(R, P, I, new CreditNoteId(I.getFunctionalId())));
+        var ids = new ArrayList<Id<?>>(List.of(R, P, I, new CreditNoteId(I.getFunctionalId()), RefundId.remaining(P, 0)));
         Fluxzero.loadGraph(R).childModels(Ticket.class).forEach(ticket -> ids.add(ticket.ticketId()));
-        assertEquals(6, ids.size());
+        assertEquals(7, ids.size());
         Map<Id<?>, Object> result = new LinkedHashMap<>();
         ids.forEach(id -> {
             Object value = Fluxzero.loadModel(id).get();
