@@ -123,6 +123,17 @@ this repository in your coding agent. The repository is
 > seats together, then show me the organizer workspace as demo-organizer. Explain which
 > rules protect those seats while someone is paying.
 
+With the Fluxzero plugin installed, enter **`/fluxzero:devboard`** in your coding agent
+to open the project's development dashboard. In one place you can:
+
+- **Preview the app** and try the customer and organizer flows.
+- **Inspect tests** and their results, follow feature progress, and see startup actions.
+- **Switch development profiles**, such as the default `local` profile and the optional
+  `stripe` sandbox profile. The Stripe profile needs [sandbox configuration](docs/integrations.md).
+
+Keep Devboard open while you build: the development environment reloads changes and runs
+affected tests, so you can see both what the app does and which rules have been checked.
+
 <details>
 <summary>Terminal setup for developers</summary>
 
