@@ -76,8 +76,6 @@ an on-sale peak; the latter offers newly released inventory with an acceptance d
 Neither replaces the core capacity checks. Before promising fair high-demand sales, specify
 purchase limits and queue behavior in addition to measuring throughput.
 
-This inventory does not authorize implementing every row. The [local peak-sales test](load-testing.md) qualifies concurrent holds, cancellation, resale
-and delayed provider settlement while later product slices are chosen explicitly.
-Live provider qualification and these functional decisions are distinct from throughput testing.
-That test controls provider latency and failures without spending provider API quotas or
-creating real charges; production throughput remains unqualified.
+Choose further product slices deliberately. Existing behavior tests cover concurrent holds,
+cancellation, resale and delayed provider settlement with controlled responses. Live provider
+qualification and deployment capacity are separate tasks.

@@ -8,7 +8,7 @@ the other small layouts are explicitly demonstrations.
 ## Run and package
 
 Install the tools using [Fluxzero Get Started](https://fluxzero.io/get-started/), then
-run `fz dev`. The app uses the published SDK 2.0.0-rc.20. The managed environment installs
+run `fz dev`. The app uses the published SDK 2.0.0. The managed environment installs
 frontend dependencies, builds its static assets,
 starts Vite and the backend, seeds the demo programme, and supplies a local identity provider.
 Open its printed URL. Verified identities start as customers; the committed local profiles grant

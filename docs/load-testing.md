@@ -1,11 +1,17 @@
-# HTTP ticketing journeys
+# Optional HTTP diagnostics
 
 The load runner calls the **running application's web endpoints**, using ordinary OIDC login,
 opaque session cookies and the same origin/header checks as the UI. It creates no SDK clients,
 consumers, fixture handlers or alternative application. The app's normal routing, transactions,
 scheduling and conflict settings stay in effect.
 
-## Run locally
+These scripts are retained for optional investigation and are not part of getting started,
+CI or the sample's performance claims. Routine qualification focuses on the behavior tests.
+The local development stack shares one machine and uses an in-memory Test Server; its
+journey timings do not establish deployed runtime capacity. Performance qualification is
+currently deferred to a representative deployment.
+
+## Run manually
 
 Start the app with `fz dev` and wait until compilation, startup commands and any selected tests
 finish. Use the printed application URL. In another terminal, with Node.js 22 or newer:
@@ -23,20 +29,18 @@ The organizer signs in through the managed local IDP, schedules a fresh performa
 HTTP before the measurement, and cancels it afterward. The timed traffic uses public customer
 reads. There are no reservations, payments or sold-out refusals in this mode.
 
-This is the temporary baseline while SDK/Dev Server logging issues make rejection-heavy
-local sales traffic unrepresentative. A passing read run does **not** qualify write throughput.
+A passing read run does **not** qualify reservation throughput.
 
 ### Full sales scenarios — opt-in
 
-The full scenarios remain available for qualification after the logging fixes. They are not
-part of the default run and are currently deferred:
+The full scenarios are available explicitly when investigating HTTP behavior:
 
 ```sh
 node load/journeys.mjs http://localhost:63024 8 sales
 ```
 
 This mode creates customer sessions and exercises the sales scenarios below. Start at 8, then
-increase only after each run passes. Do not treat the known logging stall as an accepted latency.
+increase only after each run passes. This measures a complete journey, not just reserving tickets.
 
 Both modes use standard Node HTTP APIs with no extra packages. They do not build the app or
 start another application. Use the default local profile with the managed identity provider;

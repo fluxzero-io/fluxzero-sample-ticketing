@@ -1,6 +1,8 @@
 @AGENTS.md
 
-## Claude Code bootstrap
+Start with [Fluxzero Get started](https://fluxzero.io/get-started) for installation.
+
+## Claude Code bootstrap (manual alternative)
 
 If the Fluxzero plugin is unavailable, run:
 

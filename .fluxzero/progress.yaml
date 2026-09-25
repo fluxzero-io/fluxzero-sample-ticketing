@@ -656,10 +656,10 @@ milestones:
     title: "Keep ticket sales correct under concurrent HTTP journeys"
     kind: "feature"
     status: "done"
-    description: "Qualify the running app through normal OIDC login and customer/organizer\
-      \ HTTP endpoints: standing and seated demand, cancellation, resale, box-office\
-      \ payments and production allocations. SDK consumer and retry-budget probes\
-      \ have been removed. Application and development runtime use published SDK 2.0.0-rc.20."
+    description: "Optional HTTP diagnostics exercise normal OIDC login and customer/organizer\
+      \ endpoints: standing and seated demand, cancellation, resale, box-office payments\
+      \ and production allocations. These correctness checks are distinct from production\
+      \ capacity qualification."
     acceptance:
     - "Every successful HTTP reservation exists, refused groups consume no stock,\
       \ and no seat or section is oversold."
@@ -670,7 +670,7 @@ milestones:
     - "Clearly separate short local HTTP bursts from deterministic provider behavior\
       \ tests and production capacity qualification."
     createdAt: "2026-09-22T11:32:50.299225Z"
-    updatedAt: "2026-09-23T14:32:43.339587Z"
+    updatedAt: "2026-09-25T06:10:46.647314Z"
     history:
     - at: "2026-09-22T11:32:50.299225Z"
       status: "in_progress"
@@ -757,12 +757,10 @@ milestones:
   - id: "responsive-ticket-sales"
     title: "Keep ticket selection responsive during busy sales"
     kind: "feature"
-    status: "in_progress"
-    description: "Sales correctness passes against SDK origin/next/2.0 fac5159379d\
-      \ with Dev Server 1.15.3. The diagnostics snapshot bottleneck is resolved, but\
-      \ ordinary log writes still block child output and local in-memory search remains\
-      \ expensive. High-concurrency latency and one unreproduced read transport failure\
-      \ remain open."
+    status: "planned"
+    description: "Further load testing is deferred by product choice. Qualify busy\
+      \ reservation journeys on a representative deployment before making capacity\
+      \ or latency claims; local diagnostics remain optional."
     acceptance:
     - "Expected sold-out responses do not stall unrelated ticket browsing or successful\
       \ purchases through synchronous diagnostic work."
@@ -771,7 +769,7 @@ milestones:
     - "Preserve authentication, exact inventory, complete groups and retained financial\
       \ history; do not hide failures or change consumer/retry settings."
     createdAt: "2026-09-23T14:44:07.047032Z"
-    updatedAt: "2026-09-23T16:05:40.407705Z"
+    updatedAt: "2026-09-25T06:10:46.597137Z"
     history:
     - at: "2026-09-23T14:44:07.047032Z"
       status: "in_progress"
@@ -801,3 +799,6 @@ milestones:
         \ Dev Server log writes remain. First read run had one fetch failure; four\
         \ diagnostic repeats pass without request retries. Cause remains unknown;\
         \ performance is not qualified."
+    - at: "2026-09-25T06:10:46.597137Z"
+      status: "planned"
+      verification: ""

@@ -62,7 +62,7 @@ on pushes and pull requests.
 | `ProductionAllocationTest`, `BoxOfficeTest`, `TicketTransferTest` | Shared inventory, retained offline receipts, accepted ownership changes and revoked old credentials |
 | `WaitlistTest` | Paged private interest, staff offers, competing groups, expiry, decline and late capture without overselling |
 | `PartialRefundTest`, `PartialStripeRefundTest` | Ticket eligibility, exact partial repayments, cancellation during repayment and delayed provider acknowledgement |
-| `PeakSalesTest` | Concurrent group demand, paused provider responses, resale, late captures and retryable failures; see [load testing](load-testing.md) |
+| `PeakSalesTest` | Concurrent group demand, paused provider responses, resale, late captures and retryable failures |
 | `AutomaticRefundTest` | A core refund obligation starts the already-bound Stripe process without coupling payment state to Stripe |
 
 The race test delays transport to the real SDK store; it does not implement substitute
@@ -85,7 +85,7 @@ Reservation and performance Models additionally maintain public documents for ca
 discovery. Cancellation reactions and continuation use durable events. Inventory uses current documents so a cold stock load does not replay
 its allocation history. Financial and reservation history remain event sourced.
 
-The app and development TestServer use the published **Fluxzero SDK 2.0.0-rc.20**.
+The app and development TestServer use the published **Fluxzero SDK 2.0.0**.
 No local SDK checkout or snapshot installation is required.
 
 A reservation touches at most twelve inventory selections. Seat claims are independent;
@@ -100,16 +100,11 @@ Order details load only the selected reservation graph. Scheduling choices are c
 hundred events and one hundred seating plans; they traverse each of at most one hundred venue
 graphs because halls and immutable plans deliberately have no search documents.
 
-Local qualification checks commit scope after 100 and 1,000 historical reservations, concurrent
-groups competing for capacity, expiry/capture races and cancellation over multiple search pages.
-These tests use real SDK stores and observe actual commit requests. They establish correctness
-and bounded application work, not a production-runtime throughput SLA. Qualify on-sale traffic,
-latency, backpressure and deployment sizing against the chosen production runtime before launch.
-The [peak-sales scenario](load-testing.md) combines concurrent holds, cancellation and resale
-with paused and failing provider responses in a behavior fixture. The separate
-[HTTP journeys](load-testing.md) exercise the running app through its normal login and web
-endpoints. They do not install consumers or change SDK retry settings. Sustained production
-capacity remains a deployment qualification task.
+Behavior tests cover bounded commit scope as retained history grows, competing groups,
+expiry/capture races, cancellation across multiple pages and delayed provider responses.
+They use the real SDK and establish product correctness, not a production throughput claim.
+Production sizing belongs with the chosen runtime and deployment. Optional
+[HTTP diagnostics](load-testing.md) are separate from the normal verification workflow.
 
 Hall-calendar collision checks, programme rescheduling, waiting rooms, seat-plan editing,
 paid secondary resale and camera or offline admission scanning are not implemented. Ticket
