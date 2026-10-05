@@ -7,7 +7,7 @@ import io.fluxzero.ticketing.catalog.api.VenueId;
 import lombok.With;
 
 /** A real venue with sourced descriptive data. */
-@Model(persistence = {ModelPersistence.EVENT_SOURCED, ModelPersistence.DOCUMENT})
+@Model(searchable = true, persistence = {ModelPersistence.EVENT_SOURCED, ModelPersistence.DOCUMENT})
 @With
 public record Venue(@EntityId VenueId venueId, VenueDetails details) {
 

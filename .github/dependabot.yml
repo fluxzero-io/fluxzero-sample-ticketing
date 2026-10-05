@@ -1,6 +1,11 @@
 version: 2
+registries:
+  fluxzero-packages:
+    type: maven-repository
+    url: https://packages.fluxzero.io/maven
 updates:
   - package-ecosystem: maven
+    registries: [fluxzero-packages]
     directory: /
     schedule:
       interval: daily
@@ -24,6 +29,8 @@ updates:
     commit-message:
       prefix: deps
     groups:
+      vite-toolchain:
+        patterns: ["vite", "@vitejs/plugin-react"]
       npm-non-major:
         patterns: ["*"]
         update-types: [minor, patch]

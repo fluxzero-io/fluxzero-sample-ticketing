@@ -232,7 +232,10 @@ Support can check a pending attempt, resume failed execution or start one new at
 terminal provider failure. The displayed attempt identifies the action; repeated clicks cannot
 create additional attempts. Provider details stay in the integration, outside the core graph.
 
-`SeatingPlan` and `Payment` expose searchable documents alongside their event history. The
+`Venue` and `Event` activate search for their composed descendants, including seating plans,
+performances, reservations and payments. `Person` activates its own search scope for staff selection.
+Persistence remains independent: inventory and persons use authoritative current documents, while
+business histories remain event sourced. The
 organizer catalog directly pages events and plans; it never discovers plans by walking venue
 descendants. An order-list row uses exact identities and bounded existence queries; the detail
 pages payment history separately. Admission and ticket reads remain bounded by the twelve-ticket
