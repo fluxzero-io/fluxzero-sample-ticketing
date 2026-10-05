@@ -131,3 +131,17 @@ API; the customer UI does not create or rewrite invoices.
 Production merchant qualification, deployment, organizer tenancy, offline/camera admission and
 production load qualification remain future work. See the [functional capability inventory](product-capabilities.md)
 for the remaining customer and operator workflows. The repository does not include a production deployment.
+
+## Dependency updates
+
+Dependabot checks Maven, frontend npm packages, GitHub Actions and the Docker
+base image daily. Fluxzero SDK updates have their own pull request, separate
+from other Maven updates, so their application checks are easy to identify.
+Minor and patch updates merge automatically only after the required frontend
+and backend verification passes against an up-to-date main branch. Major and
+unclassified updates require manual review. A failing SDK compatibility test
+keeps the update open; it is not retried or skipped to permit a merge.
+
+Auto-merge uses the repository's built-in GitHub token and requires no additional
+secrets. Keep the main-branch verification check required when changing CI job
+names or repository rules.
