@@ -145,3 +145,23 @@ keeps the update open; it is not retried or skipped to permit a merge.
 Auto-merge uses the repository's built-in GitHub token and requires no additional
 secrets. Keep the main-branch verification check required when changing CI job
 names or repository rules.
+
+
+## GitHub releases
+
+After a push to `main` passes the frontend and backend checks, the verification
+workflow publishes a GitHub source release from that exact commit. Pull requests,
+other branches and manual verification runs do not publish releases. Cloud
+deployment is separate from releasing the example's source.
+
+Tags use `vMAJOR.MINOR.PATCH`, starting at `v0.1.0`. Conventional Commits determine
+the next version: breaking changes increment the major, `feat` increments the
+minor, and other changes (including dependency updates) increment the patch.
+Release notes are generated from the GitHub history; GitHub provides the tagged
+source ZIP and tarball. These releases do not publish Maven packages or images.
+
+Re-running the workflow reuses a tag on the same commit and leaves an existing
+release unchanged. Release jobs are queued; if a newer commit has already been
+released, an older build is skipped. A conflicting tag or divergent release
+history fails instead of moving an existing tag. The release job uses the
+repository's built-in token and requires no additional secrets.

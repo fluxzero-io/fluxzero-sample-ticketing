@@ -1,6 +1,7 @@
 name: Verify application
 on:
   push:
+    branches: ["**"]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -10,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+      - name: Check release policy
+        run: python3 .github/scripts/release-state.test.py
       - uses: actions/setup-java@v6.0.1
         with:
           distribution: temurin
@@ -23,3 +26,62 @@ jobs:
       - run: npm ci --no-fund && npm run build
         working-directory: frontend
       - run: ./mvnw -B verify
+
+  release:
+    name: Publish GitHub release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    concurrency:
+      group: release-main
+      cancel-in-progress: false
+      queue: max
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Inspect release history
+        id: history
+        run: |
+          git fetch origin main --tags
+          python3 .github/scripts/release-state.py "$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+      - name: Calculate semantic version
+        if: steps.history.outputs.skip != 'true'
+        id: version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ github.token }}
+          tag_prefix: v
+          release_branches: main
+          default_bump: patch
+          custom_release_rules: "deps:patch:Dependency updates"
+          custom_tag: ${{ steps.history.outputs.version }}
+          commit_sha: ${{ github.sha }}
+          fetch_all_tags: true
+          dry_run: true
+      - name: Publish verified source release
+        if: steps.history.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.new_tag }}
+          RELEASE_NAME: Fluxzero Ticketing
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid stable release tag: $RELEASE_TAG" >&2
+            exit 1
+          fi
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            test "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")" = "$GITHUB_SHA"
+          else
+            git tag "$RELEASE_TAG" "$GITHUB_SHA"
+            git push origin "refs/tags/$RELEASE_TAG"
+          fi
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists; leaving it unchanged."
+          else
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --verify-tag --title "$RELEASE_NAME $RELEASE_TAG" --generate-notes --latest
+          fi
