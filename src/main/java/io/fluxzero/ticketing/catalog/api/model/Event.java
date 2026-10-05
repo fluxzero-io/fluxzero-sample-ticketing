@@ -7,7 +7,7 @@ import io.fluxzero.ticketing.catalog.api.EventId;
 import lombok.With;
 
 /** The programme identity shared by one or more performances. */
-@Model(persistence = {ModelPersistence.EVENT_SOURCED, ModelPersistence.DOCUMENT})
+@Model(searchable = true, persistence = {ModelPersistence.EVENT_SOURCED, ModelPersistence.DOCUMENT})
 @With
 public record Event(@EntityId EventId eventId, EventDetails details) {
 

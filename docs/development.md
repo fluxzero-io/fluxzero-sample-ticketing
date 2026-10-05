@@ -85,7 +85,7 @@ Reservation and performance Models additionally maintain public documents for ca
 discovery. Cancellation reactions and continuation use durable events. Inventory uses current documents so a cold stock load does not replay
 its allocation history. Financial and reservation history remain event sourced.
 
-The app and development TestServer use the published **Fluxzero SDK 2.0.0**.
+The app and development TestServer use the published **Fluxzero SDK 2.16.0**.
 No local SDK checkout or snapshot installation is required.
 
 A reservation touches at most twelve inventory selections. Seat claims are independent;

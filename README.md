@@ -1,6 +1,6 @@
 # Fluxzero Ticketing
 
-A working ticketing example built with **Fluxzero Java SDK 2.0.0**.
+A working ticketing example built with **Fluxzero Java SDK 2.16.0**.
 It includes seat selection, temporary group reservations, payments, refunds, ticket delivery and entrance
 checks, with a customer UI and an organizer workspace.
 

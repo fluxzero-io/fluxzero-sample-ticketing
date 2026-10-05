@@ -5,5 +5,5 @@ import io.fluxzero.sdk.modeling.Model;
 import io.fluxzero.sdk.modeling.ModelPersistence;
 
 /** Recognizable identity from a verified sign-in; names never grant authority. */
-@Model(persistence = ModelPersistence.DOCUMENT)
+@Model(searchable = true, persistence = ModelPersistence.DOCUMENT)
 public record Person(@EntityId(prefix = "person-") String subject, String name) {}
