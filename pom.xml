@@ -22,7 +22,7 @@
   <properties>
     <spring-boot.version>4.1.1</spring-boot.version>
     <jetty.version>12.1.14</jetty.version>
-    <fluxzero.version>2.16.2</fluxzero.version>
+    <fluxzero.version>2.16.3</fluxzero.version>
     <java.version>25</java.version>
     <bouncycastle.version>1.86</bouncycastle.version>
     <pdfbox.version>3.0.8</pdfbox.version>
