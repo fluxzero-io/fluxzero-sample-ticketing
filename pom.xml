@@ -139,12 +139,12 @@
     <dependency>
       <groupId>io.fluxzero.idp</groupId>
       <artifactId>client</artifactId>
-      <version>0.24.0</version>
+      <version>0.25.0</version>
     </dependency>
     <dependency>
       <groupId>io.fluxzero.idp</groupId>
       <artifactId>test-support</artifactId>
-      <version>0.24.0</version>
+      <version>0.25.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -238,7 +238,7 @@
       <plugin>
         <groupId>io.fluxzero.tools</groupId>
         <artifactId>fluxzero-maven-plugin</artifactId>
-        <version>1.19.6</version>
+        <version>1.20.5</version>
         <configuration>
           <packageName>fluxzero-ticketing</packageName>
           <images>
