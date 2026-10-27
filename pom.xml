@@ -20,7 +20,7 @@
     <url>https://github.com/fluxzero-io/fluxzero-sample-ticketing</url>
   </scm>
   <properties>
-    <spring-boot.version>4.1.1</spring-boot.version>
+    <spring-boot.version>4.1.2</spring-boot.version>
     <jetty.version>12.1.14</jetty.version>
     <fluxzero.version>2.25.7</fluxzero.version>
     <java.version>25</java.version>
@@ -139,12 +139,12 @@
     <dependency>
       <groupId>io.fluxzero.idp</groupId>
       <artifactId>client</artifactId>
-      <version>0.26.2</version>
+      <version>0.26.4</version>
     </dependency>
     <dependency>
       <groupId>io.fluxzero.idp</groupId>
       <artifactId>test-support</artifactId>
-      <version>0.26.2</version>
+      <version>0.26.4</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -164,7 +164,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.6.0</version>
+          <version>3.6.1</version>
           <configuration>
             <argLine>-javaagent:${org.mockito:mockito-core:jar}</argLine>
             <systemPropertyVariables>
@@ -238,7 +238,7 @@
       <plugin>
         <groupId>io.fluxzero.tools</groupId>
         <artifactId>fluxzero-maven-plugin</artifactId>
-        <version>1.20.16</version>
+        <version>1.20.20</version>
         <configuration>
           <packageName>fluxzero-ticketing</packageName>
           <images>
