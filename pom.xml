@@ -21,7 +21,7 @@
   </scm>
   <properties>
     <spring-boot.version>4.1.2</spring-boot.version>
-    <jetty.version>12.1.14</jetty.version>
+    <jetty.version>12.1.15</jetty.version>
     <fluxzero.version>2.25.7</fluxzero.version>
     <java.version>25</java.version>
     <bouncycastle.version>1.86</bouncycastle.version>
@@ -238,7 +238,7 @@
       <plugin>
         <groupId>io.fluxzero.tools</groupId>
         <artifactId>fluxzero-maven-plugin</artifactId>
-        <version>1.21.6</version>
+        <version>1.21.10</version>
         <configuration>
           <packageName>fluxzero-ticketing</packageName>
           <images>
