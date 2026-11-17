@@ -20,11 +20,11 @@
     <url>https://github.com/fluxzero-io/fluxzero-sample-ticketing</url>
   </scm>
   <properties>
-    <spring-boot.version>4.1.1</spring-boot.version>
-    <jetty.version>12.1.14</jetty.version>
-    <fluxzero.version>2.19.0</fluxzero.version>
+    <spring-boot.version>4.1.2</spring-boot.version>
+    <jetty.version>12.1.15</jetty.version>
+    <fluxzero.version>2.25.7</fluxzero.version>
     <java.version>25</java.version>
-    <bouncycastle.version>1.86</bouncycastle.version>
+    <bouncycastle.version>1.87</bouncycastle.version>
     <pdfbox.version>3.0.8</pdfbox.version>
     <zxing.version>3.5.4</zxing.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -139,12 +139,12 @@
     <dependency>
       <groupId>io.fluxzero.idp</groupId>
       <artifactId>client</artifactId>
-      <version>0.25.0</version>
+      <version>0.28.1</version>
     </dependency>
     <dependency>
       <groupId>io.fluxzero.idp</groupId>
       <artifactId>test-support</artifactId>
-      <version>0.25.0</version>
+      <version>0.28.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -164,7 +164,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.6.0</version>
+          <version>3.6.1</version>
           <configuration>
             <argLine>-javaagent:${org.mockito:mockito-core:jar}</argLine>
             <systemPropertyVariables>
@@ -194,7 +194,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-enforcer-plugin</artifactId>
-          <version>3.6.3</version>
+          <version>3.7.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -238,7 +238,7 @@
       <plugin>
         <groupId>io.fluxzero.tools</groupId>
         <artifactId>fluxzero-maven-plugin</artifactId>
-        <version>1.20.5</version>
+        <version>1.21.17</version>
         <configuration>
           <packageName>fluxzero-ticketing</packageName>
           <images>
@@ -296,7 +296,7 @@
             <configuration>
               <rules>
                 <requireMavenVersion>
-                  <version>3.6.3</version>
+                  <version>3.7.0</version>
                 </requireMavenVersion>
                 <requireJavaVersion>
                   <version>[25,)</version>
