@@ -1,5 +1,6 @@
 package io.fluxzero.ticketing.booking.api;
 
+import io.fluxzero.common.api.SerializedMessage;
 import io.fluxzero.sdk.Fluxzero;
 import io.fluxzero.sdk.persisting.eventsourcing.InterceptApply;
 import io.fluxzero.sdk.publishing.routing.RoutingKey;
@@ -36,7 +37,9 @@ import static io.fluxzero.ticketing.common.Checks.require;
 public record ReserveTickets(@ApiDoc(required = true) @NotNull ReservationId reservationId, @ApiDoc(required = true) @NotNull @RoutingKey PerformanceId performanceId,
                              @ApiDoc(required = true) @NotEmpty @Size(max = 12) List<@NotNull @Valid Selection> selection) {
     @InterceptApply
-    Object decide(Performance performance, @Nullable SalesWindow salesWindow, User user, Instant sentAt) {
+    Object decide(Performance performance, @Nullable SalesWindow salesWindow, User user, SerializedMessage command) {
+        // Reservation expiry is anchored to the incoming command, including during conflict reevaluation.
+        Instant sentAt = Instant.ofEpochMilli(command.getTimestamp());
         Instant now = Fluxzero.currentTime();
         require(!sentAt.isAfter(now), "Reservation request cannot be future-dated");
         require(sentAt.plus(Duration.ofMinutes(15)).isAfter(now), "Reservation request is too old");
