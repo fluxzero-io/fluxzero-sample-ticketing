@@ -57,6 +57,8 @@ jobs:
           tag_prefix: v
           release_branches: main
           default_bump: patch
+          commit_analyzer_preset: angular
+          ignore_keywords: ''
           custom_release_rules: "deps:patch:Dependency updates"
           custom_tag: ${{ steps.history.outputs.version }}
           commit_sha: ${{ github.sha }}
