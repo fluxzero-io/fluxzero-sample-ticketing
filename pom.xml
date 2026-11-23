@@ -20,7 +20,7 @@
     <url>https://github.com/fluxzero-io/fluxzero-sample-ticketing</url>
   </scm>
   <properties>
-    <spring-boot.version>4.1.2</spring-boot.version>
+    <spring-boot.version>4.2.0</spring-boot.version>
     <jetty.version>12.1.15</jetty.version>
     <fluxzero.version>2.29.9</fluxzero.version>
     <java.version>25</java.version>
@@ -238,7 +238,7 @@
       <plugin>
         <groupId>io.fluxzero.tools</groupId>
         <artifactId>fluxzero-maven-plugin</artifactId>
-        <version>1.21.31</version>
+        <version>1.21.32</version>
         <configuration>
           <packageName>fluxzero-ticketing</packageName>
           <images>
