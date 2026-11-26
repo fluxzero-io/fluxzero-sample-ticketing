@@ -9,3 +9,6 @@ defaults:
     directory: /frontend
   - github-actions
   - docker
+  - package-ecosystem: custom
+    directories:
+      includes: ['/']
